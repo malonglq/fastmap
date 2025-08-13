@@ -54,10 +54,10 @@ class MainWindow(QMainWindow):
         self.map_analyzer = None
         self.analysis_result = None
 
-        # 禁用Qt拖拽系统，使用pywin32 COM接口处理拖拽
+        # 先在顶层窗口启用拖拽（尽早）
         try:
-            self.setAcceptDrops(False)  # 禁用Qt拖拽，避免与pywin32冲突
-            logger.info("==liuq debug== 已禁用Qt拖拽系统，使用pywin32 COM接口")
+            self.setAcceptDrops(True)
+            logger.info("==liuq debug== 顶层窗口预启用拖拽")
         except Exception:
             pass
 
@@ -106,11 +106,10 @@ class MainWindow(QMainWindow):
         self.tab_widget = QTabWidget()
         self.tab_widget.setTabPosition(QTabWidget.North)
         self.tab_widget.setMovable(False)
-        # 禁用标签容器的Qt拖拽，使用pywin32 COM接口
+        # 使标签容器也支持拖拽，并将事件转发给主窗口
         try:
-            self.tab_widget.setAcceptDrops(False)  # 禁用Qt拖拽
-            # 不安装事件过滤器，避免Qt拖拽事件处理
-            logger.info("==liuq debug== 标签容器已禁用Qt拖拽")
+            self.tab_widget.setAcceptDrops(True)
+            self.tab_widget.installEventFilter(self)
         except Exception:
             pass
 
@@ -669,10 +668,9 @@ class MainWindow(QMainWindow):
         try:
             if w is None:
                 return
-            # 禁用Qt拖拽系统，使用pywin32 COM接口
-            w.setAcceptDrops(False)  # 禁用Qt拖拽
-            # 不安装事件过滤器，避免Qt拖拽事件处理
-            logger.info("==liuq debug== 已禁用Qt拖拽: %s", w.__class__.__name__)
+            w.setAcceptDrops(True)
+            w.installEventFilter(self)
+            logger.info("==liuq debug== 已启用拖拽: %s", w.__class__.__name__)
         except Exception as e:
             logger.debug("==liuq debug== 启用拖拽失败: %s", e)
 
@@ -896,19 +894,30 @@ class MainWindow(QMainWindow):
             logger.error("==liuq debug== _show_ole_fallback_window 异常: %s", e)
 
     def dragEnterEvent(self, event):
-        # 禁用Qt拖拽事件处理，使用pywin32 COM接口
         try:
-            logger.debug("==liuq debug== Qt dragEnterEvent 被禁用，使用pywin32处理拖拽")
-            event.ignore()  # 拒绝Qt拖拽事件，让pywin32 COM接口处理
+            has_urls = event.mimeData().hasUrls()
+            urls = event.mimeData().urls() if has_urls else []
+            cnt = len(urls)
+            first = urls[0].toLocalFile() if cnt >= 1 else ""
+            logger.info("==liuq debug== DragEnter: hasUrls=%s count=%d first=%s", has_urls, cnt, first)
+            if has_urls and cnt >= 1:
+                # 放宽条件：先接受，drop 时再校验扩展名
+                event.acceptProposedAction()
+                return
+            event.ignore()
         except Exception as e:
             logger.debug("==liuq debug== dragEnterEvent 异常: %s", e)
             event.ignore()
 
     def dragMoveEvent(self, event):
-        # 禁用Qt拖拽事件处理，使用pywin32 COM接口
         try:
-            logger.debug("==liuq debug== Qt dragMoveEvent 被禁用，使用pywin32处理拖拽")
-            event.ignore()  # 拒绝Qt拖拽事件，让pywin32 COM接口处理
+            if event.mimeData().hasUrls():
+                urls = event.mimeData().urls()
+                if len(urls) == 1:
+                    p = urls[0].toLocalFile()
+                    if p.lower().endswith(('.jpg', '.jpeg')):
+                        event.acceptProposedAction(); return
+            event.ignore()
         except Exception:
             event.ignore()
 
@@ -953,21 +962,36 @@ class MainWindow(QMainWindow):
             logger.info("==liuq debug== SHOW 阶段 pywin 注册流程异常: %s", e)
 
     def eventFilter(self, obj, event):
-        # 禁用Qt拖拽事件过滤，使用pywin32 COM接口
         try:
-            # 不处理拖拽事件，让pywin32 COM接口处理
-            if event.type() in [QEvent.DragEnter, QEvent.DragMove, QEvent.Drop]:
-                logger.debug("==liuq debug== Qt拖拽事件被忽略，使用pywin32处理")
-                return False  # 不处理，让事件继续传播
+            if event.type() == QEvent.DragEnter:
+                self.dragEnterEvent(event); return True
+            if event.type() == QEvent.DragMove:
+                self.dragMoveEvent(event); return True
+            if event.type() == QEvent.Drop:
+                self.dropEvent(event); return True
         except Exception as e:
             logger.debug("==liuq debug== eventFilter 异常: %s", e)
         return super().eventFilter(obj, event)
 
     def dropEvent(self, event):
-        # 禁用Qt拖拽事件处理，使用pywin32 COM接口
         try:
-            logger.debug("==liuq debug== Qt dropEvent 被禁用，使用pywin32处理拖拽")
-            event.ignore()  # 拒绝Qt拖拽事件，让pywin32 COM接口处理
+            urls = event.mimeData().urls()
+            if not urls:
+                logger.info("==liuq debug== Drop: no urls")
+                return
+            p = urls[0].toLocalFile()
+            logger.info("==liuq debug== Drop: %s", p)
+            if not p or not p.lower().endswith(('.jpg', '.jpeg')):
+                QMessageBox.warning(self, "提示", "仅支持 .jpg/.jpeg 文件")
+                return
+            from gui.dialogs.exif_quick_view_dialog import ExifQuickViewDialog
+            dlg = ExifQuickViewDialog(Path(p), self)
+            dlg.exec_()
         except Exception as e:
             logger.error("==liuq debug== dropEvent 异常: %s", e)
-            event.ignore()
+            QMessageBox.critical(self, "错误", f"打开图片失败: {e}")
+        finally:
+            try:
+                event.acceptProposedAction()
+            except Exception:
+                pass
