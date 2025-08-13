@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "feedback-enhanced": {
+      "command": "python",
+      "args": [
+        "mcp_server_mock.py"
+      ],
+      "env": {
+        "MCP_DEBUG": "true"
+      }
+    }
+  },
+  "settings": {
+    "timeout": 30,
+    "retries": 3,
+    "logLevel": "info",
+    "serverUrl": "http://localhost:8000",
+    "healthCheckPath": "/health",
+    "testPath": "/mcp/test"
+  },
+  "status": {
+    "lastCheck": "2025-06-12T09:53:00",
+    "serverRunning": true,
+    "connectionStatus": "connected"
+  }
+}

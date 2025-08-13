@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastMapV2 Map分析报告 - demo_device</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        .container-fluid {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin: 20px auto;
+            padding: 30px;
+            max-width: 95%;
+        }
+        .chart-container {
+            position: relative;
+            height: 500px;
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .map-summary {
+            background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 15px 0;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        .scene-card {
+            background: linear-gradient(45deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px 0;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            transition: transform 0.3s ease;
+        }
+        .scene-card:hover {
+            transform: translateY(-5px);
+        }
+        .stats-card {
+            background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px 0;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .detail-table {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .table-responsive {
+            border-radius: 8px;
+        }
+        .table th {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+        .table td {
+            border-color: #e9ecef;
+            vertical-align: middle;
+        }
+        .scene-indoor { background-color: rgba(255, 107, 107, 0.1); }
+        .scene-outdoor { background-color: rgba(78, 205, 196, 0.1); }
+        .scene-night { background-color: rgba(69, 183, 209, 0.1); }
+        .weight-high { font-weight: bold; color: #e74c3c; }
+        .weight-medium { font-weight: normal; color: #f39c12; }
+        .weight-low { font-weight: normal; color: #27ae60; }
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        @media print {
+            .print-btn { display: none; }
+            .container-fluid { box-shadow: none; margin: 0; }
+            .chart-container { height: 300px; }
+        }
+    </style>
+</head>
+<body>
+    <button class="btn btn-primary print-btn" onclick="window.print()">
+        <i class="fas fa-print"></i> 打印报告
+    </button>
+
+    <div class="container-fluid">
+        <!-- 报告标题 -->
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <h1 class="display-4 mb-3">
+                    <i class="fas fa-map text-primary"></i> FastMapV2 Map分析报告 - demo_device
+                </h1>
+                <p class="lead text-muted">生成时间: 2025-07-25 18:32:18</p>
+                <hr class="my-4">
+            </div>
+        </div>
+
+        <!-- Map配置摘要 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="map-summary">
+                    <h3><i class="fas fa-info-circle"></i> Map配置摘要</h3>
+                    <div class="row text-center mt-3">
+                        <div class="col-md-2">
+                            <h5>总Map点数</h5>
+                            <h2 class="display-6">8</h2>
+                        </div>
+                        <div class="col-md-2">
+                            <h5>室内场景</h5>
+                            <h2 class="display-6">3</h2>
+                        </div>
+                        <div class="col-md-2">
+                            <h5>室外场景</h5>
+                            <h2 class="display-6">3</h2>
+                        </div>
+                        <div class="col-md-2">
+                            <h5>夜景场景</h5>
+                            <h2 class="display-6">2</h2>
+                        </div>
+                        <div class="col-md-2">
+                            <h5>平均权重</h5>
+                            <h2 class="display-6">0.754</h2>
+                        </div>
+                        <div class="col-md-2">
+                            <h5>处理耗时</h5>
+                            <h2 class="display-6">0.03s</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div class="row mb-4">
+            <!-- 坐标散点图 -->
+            <div class="col-lg-6 mb-4">
+                <h3><i class="fas fa-dot-circle text-info"></i> Map坐标分布</h3>
+                <div class="chart-container">
+                    <canvas id="scatterChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 权重热力图 -->
+            <div class="col-lg-6 mb-4">
+                <h3><i class="fas fa-fire text-danger"></i> 权重热力分布</h3>
+                <div class="chart-container">
+                    <canvas id="heatmapChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 触发条件范围图 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h3><i class="fas fa-chart-bar text-success"></i> 触发条件范围分析</h3>
+                <div class="chart-container">
+                    <canvas id="rangeChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 场景统计分析 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h3><i class="fas fa-layer-group text-warning"></i> 场景统计分析</h3>
+                <div class="row">
+                    
+                    <div class="col-md-4">
+                        <div class="scene-card">
+                            <h5><i class="fas fa-map-marker-alt"></i> Indoor 场景</h5>
+                            <div class="mt-3">
+                                <p><strong>Map点数:</strong> 3</p>
+                                <p><strong>平均权重:</strong> 0.773</p>
+                                <p><strong>最大权重:</strong> 0.850</p>
+                                <p><strong>最小权重:</strong> 0.720</p>
+                                <p><strong>权重标准差:</strong> 0.056</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="scene-card">
+                            <h5><i class="fas fa-map-marker-alt"></i> Outdoor 场景</h5>
+                            <div class="mt-3">
+                                <p><strong>Map点数:</strong> 3</p>
+                                <p><strong>平均权重:</strong> 0.637</p>
+                                <p><strong>最大权重:</strong> 0.680</p>
+                                <p><strong>最小权重:</strong> 0.580</p>
+                                <p><strong>权重标准差:</strong> 0.042</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="scene-card">
+                            <h5><i class="fas fa-map-marker-alt"></i> Night 场景</h5>
+                            <div class="mt-3">
+                                <p><strong>Map点数:</strong> 2</p>
+                                <p><strong>平均权重:</strong> 0.900</p>
+                                <p><strong>最大权重:</strong> 0.920</p>
+                                <p><strong>最小权重:</strong> 0.880</p>
+                                <p><strong>权重标准差:</strong> 0.020</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+
+        <!-- 权重分析 -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="stats-card">
+                    <h4><i class="fas fa-weight-hanging"></i> 权重统计</h4>
+                    <div class="mt-3">
+                        <p><strong>平均值:</strong> 0.754</p>
+                        <p><strong>中位数:</strong> 0.735</p>
+                        <p><strong>标准差:</strong> 0.112</p>
+                        <p><strong>最小值:</strong> 0.580</p>
+                        <p><strong>最大值:</strong> 0.920</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="stats-card">
+                    <h4><i class="fas fa-crosshairs"></i> 坐标统计</h4>
+                    <div class="mt-3">
+                        <p><strong>X坐标范围:</strong> 95.0 ~ 350.0</p>
+                        <p><strong>Y坐标范围:</strong> 90.0 ~ 450.0</p>
+                        <p><strong>X坐标中心:</strong> 213.1</p>
+                        <p><strong>Y坐标中心:</strong> 263.8</p>
+                        <p><strong>总Map点数:</strong> 8</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 详细Map点列表 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h3><i class="fas fa-list text-secondary"></i> 详细Map点列表</h3>
+                <div class="detail-table">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>序号</th>
+                                    <th>别名</th>
+                                    <th>场景类型</th>
+                                    <th>X坐标</th>
+                                    <th>Y坐标</th>
+                                    <th>权重</th>
+                                    <th>BV范围</th>
+                                    <th>IR范围</th>
+                                    <th>CCT范围</th>
+                                    <th>检测标志</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 报告尾部 -->
+        <div class="row">
+            <div class="col-12 text-center">
+                <hr class="my-4">
+                <p class="text-muted">
+                    <i class="fas fa-robot"></i>
+                    FastMapV2 - 对比机Map分析&仿写工具 v2.0.0 |
+                    龙sir团队 |
+                    报告生成时间: 2025-07-25 18:32:18
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 图表脚本
+        // FastMapV2 图表脚本
+// 生成时间: 2025-07-25 18:32:18
+
+
+// 散点图 - Map坐标分布图
+const scatterChartConfig = {
+  "type": "scatter",
+  "data": {
+    "datasets": [
+      {
+        "label": "indoor\u573a\u666f",
+        "data": [
+          {
+            "x": 120.0,
+            "y": 180.0
+          },
+          {
+            "x": 160.0,
+            "y": 250.0
+          },
+          {
+            "x": 95.0,
+            "y": 220.0
+          }
+        ],
+        "backgroundColor": "#FF6384",
+        "borderColor": "#FF6384"
+      },
+      {
+        "label": "outdoor\u573a\u666f",
+        "data": [
+          {
+            "x": 320.0,
+            "y": 450.0
+          },
+          {
+            "x": 350.0,
+            "y": 420.0
+          },
+          {
+            "x": 280.0,
+            "y": 380.0
+          }
+        ],
+        "backgroundColor": "#36A2EB",
+        "borderColor": "#36A2EB"
+      },
+      {
+        "label": "night\u573a\u666f",
+        "data": [
+          {
+            "x": 180.0,
+            "y": 120.0
+          },
+          {
+            "x": 200.0,
+            "y": 90.0
+          }
+        ],
+        "backgroundColor": "#FFCE56",
+        "borderColor": "#FFCE56"
+      }
+    ]
+  },
+  "options": {
+    "responsive": true,
+    "maintainAspectRatio": false,
+    "plugins": {
+      "title": {
+        "display": true,
+        "text": "Map\u5750\u6807\u5206\u5e03\u56fe",
+        "font": {
+          "size": 16
+        }
+      },
+      "legend": {
+        "display": true,
+        "position": "top"
+      },
+      "tooltip": {
+        "callbacks": {
+          "label": "function(context) { return context.dataset.label + \": (\" + context.parsed.x + \", \" + context.parsed.y + \")\"; }"
+        }
+      }
+    },
+    "scales": {
+      "x": {
+        "display": true,
+        "title": {
+          "display": true,
+          "text": "X\u5750\u6807"
+        },
+        "type": "linear"
+      },
+      "y": {
+        "display": true,
+        "title": {
+          "display": true,
+          "text": "Y\u5750\u6807"
+        },
+        "type": "linear"
+      }
+    }
+  }
+};
+const scatterChartCtx = document.getElementById('scatterChart').getContext('2d');
+const scatterChart = new Chart(scatterChartCtx, scatterChartConfig);
+
+
+// 热力图 - 权重热力分布图
+const heatmapChartConfig = {
+  "type": "scatter",
+  "data": {
+    "datasets": [
+      {
+        "label": "\u6743\u91cd\u503c",
+        "data": [
+          {
+            "x": 0,
+            "y": 0,
+            "v": 0.6323140035047758
+          },
+          {
+            "x": 1,
+            "y": 0,
+            "v": 0.5285177494262083
+          },
+          {
+            "x": 2,
+            "y": 0,
+            "v": 0.6264671135249288
+          },
+          {
+            "x": 3,
+            "y": 0,
+            "v": 0.7083015829294156
+          },
+          {
+            "x": 4,
+            "y": 0,
+            "v": 0.7769502237558695
+          },
+          {
+            "x": 5,
+            "y": 0,
+            "v": 0.5625385599738045
+          },
+          {
+            "x": 6,
+            "y": 0,
+            "v": 0.9100884611857497
+          },
+          {
+            "x": 7,
+            "y": 0,
+            "v": 0.6645328488155577
+          },
+          {
+            "x": 8,
+            "y": 0,
+            "v": 0.9894669101213823
+          },
+          {
+            "x": 9,
+            "y": 0,
+            "v": 0.7762470578271576
+          },
+          {
+            "x": 0,
+            "y": 1,
+            "v": 1.0500733380410114
+          },
+          {
+            "x": 1,
+            "y": 1,
+            "v": 1.073746316671929
+          },
+          {
+            "x": 2,
+            "y": 1,
+            "v": 0.703338502732246
+          },
+          {
+            "x": 3,
+            "y": 1,
+            "v": 0.7212992220957863
+          },
+          {
+            "x": 4,
+            "y": 1,
+            "v": 1.1267353862889793
+          },
+          {
+            "x": 5,
+            "y": 1,
+            "v": 0.68944887842839
+          },
+          {
+            "x": 6,
+            "y": 1,
+            "v": 0.851656292695559
+          },
+          {
+            "x": 7,
+            "y": 1,
+            "v": 0.8252880290424874
+          },
+          {
+            "x": 8,
+            "y": 1,
+            "v": 0.6813798073512003
+          },
+          {
+            "x": 9,
+            "y": 1,
+            "v": 0.5261782224502793
+          },
+          {
+            "x": 0,
+            "y": 2,
+            "v": 1.0369560453507838
+          },
+          {
+            "x": 1,
+            "y": 2,
+            "v": 0.9285778395139166
+          },
+          {
+            "x": 2,
+            "y": 2,
+            "v": 0.825718313351327
+          },
+          {
+            "x": 3,
+            "y": 2,
+            "v": 1.1059763875090391
+          },
+          {
+            "x": 4,
+            "y": 2,
+            "v": 0.7701799819876981
+          },
+          {
+            "x": 5,
+            "y": 2,
+            "v": 0.7941297973877609
+          },
+          {
+            "x": 6,
+            "y": 2,
+            "v": 0.7449962149483902
+          },
+          {
+            "x": 7,
+            "y": 2,
+            "v": 0.9740703524497987
+          },
+          {
+            "x": 8,
+            "y": 2,
+            "v": 0.5911333221551334
+          },
+          {
+            "x": 9,
+            "y": 2,
+            "v": 0.6946896205041205
+          },
+          {
+            "x": 0,
+            "y": 3,
+            "v": 0.6989979565340527
+          },
+          {
+            "x": 1,
+            "y": 3,
+            "v": 0.5699380236192813
+          },
+          {
+            "x": 2,
+            "y": 3,
+            "v": 0.5301621522304164
+          },
+          {
+            "x": 3,
+            "y": 3,
+            "v": 0.410533405788704
+          },
+          {
+            "x": 4,
+            "y": 3,
+            "v": 0.8953612041836657
+          },
+          {
+            "x": 5,
+            "y": 3,
+            "v": 0.8414201695006269
+          },
+          {
+            "x": 6,
+            "y": 3,
+            "v": 1.0440733890554115
+          },
+          {
+            "x": 7,
+            "y": 3,
+            "v": 0.38773361680575075
+          },
+          {
+            "x": 8,
+            "y": 3,
+            "v": 0.7955307449079795
+          },
+          {
+            "x": 9,
+            "y": 3,
+            "v": 0.41992036369011154
+          },
+          {
+            "x": 0,
+            "y": 4,
+            "v": 0.6596894995036332
+          },
+          {
+            "x": 1,
+            "y": 4,
+            "v": 1.057933910464239
+          },
+          {
+            "x": 2,
+            "y": 4,
+            "v": 0.46045663862592856
+          },
+          {
+            "x": 3,
+            "y": 4,
+            "v": 0.4642873213136849
+          },
+          {
+            "x": 4,
+            "y": 4,
+            "v": 0.5630691699200283
+          },
+          {
+            "x": 5,
+            "y": 4,
+            "v": 0.7811229794579795
+          },
+          {
+            "x": 6,
+            "y": 4,
+            "v": 0.9998180091734058
+          },
+          {
+            "x": 7,
+            "y": 4,
+            "v": 1.1028063735906797
+          },
+          {
+            "x": 8,
+            "y": 4,
+            "v": 0.6311527802330463
+          },
+          {
+            "x": 9,
+            "y": 4,
+            "v": 0.5780894771523567
+          },
+          {
+            "x": 0,
+            "y": 5,
+            "v": 0.7211483590081296
+          },
+          {
+            "x": 1,
+            "y": 5,
+            "v": 0.5475916684810177
+          },
+          {
+            "x": 2,
+            "y": 5,
+            "v": 1.0228064925543983
+          },
+          {
+            "x": 3,
+            "y": 5,
+            "v": 0.462186671164261
+          },
+          {
+            "x": 4,
+            "y": 5,
+            "v": 0.8143755044557038
+          },
+          {
+            "x": 5,
+            "y": 5,
+            "v": 0.9675730933353656
+          },
+          {
+            "x": 6,
+            "y": 5,
+            "v": 0.5700388064301584
+          },
+          {
+            "x": 7,
+            "y": 5,
+            "v": 0.9129909618607625
+          },
+          {
+            "x": 8,
+            "y": 5,
+            "v": 0.747068701970403
+          },
+          {
+            "x": 9,
+            "y": 5,
+            "v": 0.4820164332489272
+          },
+          {
+            "x": 0,
+            "y": 6,
+            "v": 1.0969157060344998
+          },
+          {
+            "x": 1,
+            "y": 6,
+            "v": 0.4564665191575992
+          },
+          {
+            "x": 2,
+            "y": 6,
+            "v": 0.43392410603486986
+          },
+          {
+            "x": 3,
+            "y": 6,
+            "v": 0.8312516597422572
+          },
+          {
+            "x": 4,
+            "y": 6,
+            "v": 0.48430520045846936
+          },
+          {
+            "x": 5,
+            "y": 6,
+            "v": 0.4494583022164308
+          },
+          {
+            "x": 6,
+            "y": 6,
+            "v": 1.0736355232938495
+          },
+          {
+            "x": 7,
+            "y": 6,
+            "v": 0.3775290552190351
+          },
+          {
+            "x": 8,
+            "y": 6,
+            "v": 1.0063635530464963
+          },
+          {
+            "x": 9,
+            "y": 6,
+            "v": 0.7735928260772493
+          },
+          {
+            "x": 0,
+            "y": 7,
+            "v": 0.8269015112472816
+          },
+          {
+            "x": 1,
+            "y": 7,
+            "v": 0.9667576658568406
+          },
+          {
+            "x": 2,
+            "y": 7,
+            "v": 0.6254234850643455
+          },
+          {
+            "x": 3,
+            "y": 7,
+            "v": 0.4766890495548381
+          },
+          {
+            "x": 4,
+            "y": 7,
+            "v": 0.8795771208044314
+          },
+          {
+            "x": 5,
+            "y": 7,
+            "v": 0.6690769037641731
+          },
+          {
+            "x": 6,
+            "y": 7,
+            "v": 0.8735155335195539
+          },
+          {
+            "x": 7,
+            "y": 7,
+            "v": 0.5932499441547452
+          },
+          {
+            "x": 8,
+            "y": 7,
+            "v": 0.6577739912177679
+          },
+          {
+            "x": 9,
+            "y": 7,
+            "v": 0.9533894588706763
+          },
+          {
+            "x": 0,
+            "y": 8,
+            "v": 0.4091039625695604
+          },
+          {
+            "x": 1,
+            "y": 8,
+            "v": 0.7527165893169157
+          },
+          {
+            "x": 2,
+            "y": 8,
+            "v": 1.0230654094066773
+          },
+          {
+            "x": 3,
+            "y": 8,
+            "v": 0.7169119868016613
+          },
+          {
+            "x": 4,
+            "y": 8,
+            "v": 0.9009627415509768
+          },
+          {
+            "x": 5,
+            "y": 8,
+            "v": 0.7036568874899405
+          },
+          {
+            "x": 6,
+            "y": 8,
+            "v": 0.9379195692703971
+          },
+          {
+            "x": 7,
+            "y": 8,
+            "v": 0.3932028372088024
+          },
+          {
+            "x": 8,
+            "y": 8,
+            "v": 0.9020954209178305
+          },
+          {
+            "x": 9,
+            "y": 8,
+            "v": 0.5667672898599432
+          },
+          {
+            "x": 0,
+            "y": 9,
+            "v": 0.588801541558778
+          },
+          {
+            "x": 1,
+            "y": 9,
+            "v": 0.4276040061712686
+          },
+          {
+            "x": 2,
+            "y": 9,
+            "v": 0.7774965052924894
+          },
+          {
+            "x": 3,
+            "y": 9,
+            "v": 0.8985892464526064
+          },
+          {
+            "x": 4,
+            "y": 9,
+            "v": 0.5412217315714017
+          },
+          {
+            "x": 5,
+            "y": 9,
+            "v": 0.735129305239231
+          },
+          {
+            "x": 6,
+            "y": 9,
+            "v": 1.01029108253891
+          },
+          {
+            "x": 7,
+            "y": 9,
+            "v": 0.9487504655202059
+          },
+          {
+            "x": 8,
+            "y": 9,
+            "v": 0.8259149665440858
+          },
+          {
+            "x": 9,
+            "y": 9,
+            "v": 1.1149371023106405
+          }
+        ],
+        "backgroundColor": "function(context) { const value = context.parsed.v; return `rgba(255, ${255-Math.floor(value*255)}, ${255-Math.floor(value*255)}, 0.8)`; }",
+        "pointRadius": "function(context) { return Math.max(3, context.parsed.v * 20); }"
+      }
+    ]
+  },
+  "options": {
+    "responsive": true,
+    "maintainAspectRatio": false,
+    "plugins": {
+      "title": {
+        "display": true,
+        "text": "\u6743\u91cd\u70ed\u529b\u5206\u5e03\u56fe",
+        "font": {
+          "size": 16
+        }
+      },
+      "legend": {
+        "display": true,
+        "position": "top"
+      },
+      "tooltip": {
+        "callbacks": {
+          "label": "function(context) { return \"\u6743\u91cd: \" + context.parsed.v.toFixed(3); }"
+        }
+      }
+    },
+    "scales": {
+      "x": {
+        "display": true,
+        "title": {
+          "display": true,
+          "text": "X\u5750\u6807\u533a\u95f4"
+        },
+        "type": "linear"
+      },
+      "y": {
+        "display": true,
+        "title": {
+          "display": true,
+          "text": "Y\u5750\u6807\u533a\u95f4"
+        },
+        "type": "linear"
+      }
+    }
+  }
+};
+const heatmapChartCtx = document.getElementById('heatmapChart').getContext('2d');
+const heatmapChart = new Chart(heatmapChartCtx, heatmapChartConfig);
+
+
+// 范围图 - Map触发条件范围图
+const rangeChartConfig = {
+  "type": "bar",
+  "data": {
+    "labels": [
+      "BV\u8303\u56f4",
+      "IR\u8303\u56f4",
+      "CCT\u8303\u56f4"
+    ],
+    "datasets": [
+      {
+        "label": "\u6700\u5c0f\u503c",
+        "data": [
+          100.0,
+          300.0,
+          2000.0
+        ],
+        "backgroundColor": [
+          "#FF638480",
+          "#36A2EB80",
+          "#FFCE5680"
+        ],
+        "borderColor": [
+          "#FF6384",
+          "#36A2EB",
+          "#FFCE56"
+        ],
+        "borderWidth": 1
+      },
+      {
+        "label": "\u6700\u5927\u503c",
+        "data": [
+          12000.0,
+          1400.0,
+          7500.0
+        ],
+        "backgroundColor": [
+          "#FF638440",
+          "#36A2EB40",
+          "#FFCE5640"
+        ],
+        "borderColor": [
+          "#FF6384",
+          "#36A2EB",
+          "#FFCE56"
+        ],
+        "borderWidth": 1
+      }
+    ]
+  },
+  "options": {
+    "responsive": true,
+    "maintainAspectRatio": false,
+    "plugins": {
+      "title": {
+        "display": true,
+        "text": "Map\u89e6\u53d1\u6761\u4ef6\u8303\u56f4\u56fe",
+        "font": {
+          "size": 16
+        }
+      },
+      "legend": {
+        "display": true,
+        "position": "top"
+      }
+    },
+    "scales": {
+      "x": {
+        "display": true,
+        "title": {
+          "display": true,
+          "text": "\u53c2\u6570\u7c7b\u578b"
+        }
+      },
+      "y": {
+        "display": true,
+        "title": {
+          "display": true,
+          "text": "\u53c2\u6570\u503c"
+        }
+      }
+    }
+  }
+};
+const rangeChartCtx = document.getElementById('rangeChart').getContext('2d');
+const rangeChart = new Chart(rangeChartCtx, rangeChartConfig);
+
+
+        // 表格增强功能
+        document.addEventListener('DOMContentLoaded', function() {
+            // 添加表格行点击高亮
+            const tableRows = document.querySelectorAll('.detail-table tbody tr');
+            tableRows.forEach(row => {
+                row.addEventListener('click', function() {
+                    tableRows.forEach(r => r.classList.remove('table-active'));
+                    this.classList.add('table-active');
+                });
+            });
+
+            // 添加图表响应式处理
+            window.addEventListener('resize', function() {
+                if (typeof scatterChart !== 'undefined') scatterChart.resize();
+                if (typeof heatmapChart !== 'undefined') heatmapChart.resize();
+                if (typeof rangeChart !== 'undefined') rangeChart.resize();
+            });
+        });
+    </script>
+</body>
+</html>

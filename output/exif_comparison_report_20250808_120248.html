@@ -1,0 +1,359 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXIF对比分析报告</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        h2 { color: #007bff; margin-top: 30px; }
+        .summary { background: #e9f4ff; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .chart-container { margin: 20px 0; height: 360px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #007bff; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .highlight-high { background-color: #ffebee !important; }
+        .highlight-medium { background-color: #fff3e0 !important; }
+        .field-section { margin: 30px 0; border: 1px solid #ddd; border-radius: 5px; padding: 15px; }
+        .kpi-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .kpi-card { background:#fafafa; border:1px solid #eee; border-radius:6px; padding:12px; text-align:center; }
+        .kpi-title { color:#666; font-size:12px; }
+        .kpi-value { font-size:20px; font-weight:bold; margin-top:6px; }
+        .muted { color:#888; font-size:12px; }
+        .pill { display:inline-block; padding:2px 6px; border-radius:10px; background:#eef5ff; color:#3572b0; font-size:12px; margin-left:6px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>EXIF对比分析报告</h1>
+
+        <div class="summary">
+            <h3>报告摘要</h3>
+            <p><strong>测试机文件:</strong> zf_awb_exif_data1.csv</p>
+            <p><strong>对比机文件:</strong> zf_awb_exif_data2.csv</p>
+            <p><strong>匹配场景数:</strong> 2 <span class="pill">覆盖率 100.0%</span> <span class="pill">方法 sequence_number</span></p>
+            <p class="muted">未匹配 测试机: 0 | 对比机: 0</p>
+            <p><strong>分析字段数:</strong> 3</p>
+            <p><strong>生成时间:</strong> 2025-08-08 12:02:48</p>
+        </div>
+
+        <h2>核心KPI总览</h2>
+        <div class="kpi-cards"><div class='kpi-card'><div class='kpi-title'>color_sensor_irRatio</div><div class='kpi-value'>MAE 0.000</div><div class='kpi-value'>RMSE 0.000</div><div class='kpi-value'>R² 1.000</div><div class='kpi-title'>异常率 0.00%</div></div><div class='kpi-card'><div class='kpi-title'>color_sensor_sensorCct</div><div class='kpi-value'>MAE 0.000</div><div class='kpi-value'>RMSE 0.000</div><div class='kpi-value'>R² 1.000</div><div class='kpi-title'>异常率 0.00%</div></div><div class='kpi-card'><div class='kpi-title'>meta_data_currentFrame_bv</div><div class='kpi-value'>MAE 0.000</div><div class='kpi-value'>RMSE 0.000</div><div class='kpi-value'>R² 1.000</div><div class='kpi-title'>异常率 0.00%</div></div></div>
+
+        <h2>核心指标趋势图</h2>
+        
+        <div class="field-section">
+            <h3>color_sensor_irRatio</h3>
+            <div class="chart-container">
+                <canvas id="chart_color_sensor_irRatio"></canvas>
+            </div>
+        </div>
+        
+        <div class="field-section">
+            <h3>color_sensor_sensorCct</h3>
+            <div class="chart-container">
+                <canvas id="chart_color_sensor_sensorCct"></canvas>
+            </div>
+        </div>
+        
+        <div class="field-section">
+            <h3>meta_data_currentFrame_bv</h3>
+            <div class="chart-container">
+                <canvas id="chart_meta_data_currentFrame_bv"></canvas>
+            </div>
+        </div>
+        
+
+        <h2>异常样本 TopN</h2>
+        <table><thead><tr><th>字段</th><th>序列号</th><th>差值%</th></tr></thead><tbody><tr class=''><td>color_sensor_irRatio</td><td>32</td><td>0.00%</td></tr><tr class=''><td>color_sensor_irRatio</td><td>1</td><td>0.00%</td></tr><tr class=''><td>color_sensor_sensorCct</td><td>32</td><td>0.00%</td></tr><tr class=''><td>color_sensor_sensorCct</td><td>1</td><td>0.00%</td></tr><tr class=''><td>meta_data_currentFrame_bv</td><td>32</td><td>0.00%</td></tr><tr class=''><td>meta_data_currentFrame_bv</td><td>1</td><td>0.00%</td></tr></tbody></table>
+
+        <h2>详细数据对比表</h2>
+        
+    <table>
+        <thead>
+            <tr>
+                <th>序列号</th>
+                <th>测试机文件</th>
+                <th>对比机文件</th>
+    
+                <th>color_sensor_irRatio<br>(测试机)</th>
+                <th>color_sensor_irRatio<br>(对比机)</th>
+                <th>color_sensor_irRatio<br>(差值)</th>
+                <th>color_sensor_irRatio<br>(差值%)</th>
+        
+                <th>color_sensor_sensorCct<br>(测试机)</th>
+                <th>color_sensor_sensorCct<br>(对比机)</th>
+                <th>color_sensor_sensorCct<br>(差值)</th>
+                <th>color_sensor_sensorCct<br>(差值%)</th>
+        
+                <th>meta_data_currentFrame_bv<br>(测试机)</th>
+                <th>meta_data_currentFrame_bv<br>(对比机)</th>
+                <th>meta_data_currentFrame_bv<br>(差值)</th>
+                <th>meta_data_currentFrame_bv<br>(差值%)</th>
+        
+            </tr>
+        </thead>
+        <tbody>
+    
+            <tr>
+                <td>32</td>
+                <td>32_zhufeng_IMG20250101194241_ori.jpg</td>
+                <td>32_zhufeng_IMG20250101194241_ori.jpg</td>
+        
+                <td>0.811676443</td>
+                <td>0.811676443</td>
+                <td class="">0.0000</td>
+                <td class="">0.00%</td>
+            
+                <td>5309</td>
+                <td>5309</td>
+                <td class="">0.0000</td>
+                <td class="">0.00%</td>
+            
+                <td>5.791015625</td>
+                <td>5.791015625</td>
+                <td class="">0.0000</td>
+                <td class="">0.00%</td>
+            </tr>
+            <tr>
+                <td>1</td>
+                <td>1_zhufeng_IMG20250101192850_ori.jpg</td>
+                <td>1_zhufeng_IMG20250101192850_ori.jpg</td>
+        
+                <td>0.855261266</td>
+                <td>0.855261266</td>
+                <td class="">0.0000</td>
+                <td class="">0.00%</td>
+            
+                <td>5337</td>
+                <td>5337</td>
+                <td class="">0.0000</td>
+                <td class="">0.00%</td>
+            
+                <td>5.263671875</td>
+                <td>5.263671875</td>
+                <td class="">0.0000</td>
+                <td class="">0.00%</td>
+            </tr>
+        </tbody>
+    </table>
+    
+
+        <h2>统计摘要</h2>
+        
+    <table>
+        <thead>
+            <tr>
+                <th>字段名</th>
+                <th>测试机均值</th>
+                <th>对比机均值</th>
+                <th>测试机范围</th>
+                <th>对比机范围</th>
+                <th>平均差值</th>
+                <th>平均差值百分比</th>
+            </tr>
+        </thead>
+        <tbody>
+    
+            <tr>
+                <td>color_sensor_irRatio</td>
+                <td>0.8335</td>
+                <td>0.8335</td>
+                <td>0.8117 ~ 0.8553</td>
+                <td>0.8117 ~ 0.8553</td>
+                <td class="">0.0000</td>
+                <td class="">0.00%</td>
+            </tr>
+        
+            <tr>
+                <td>color_sensor_sensorCct</td>
+                <td>5323.0000</td>
+                <td>5323.0000</td>
+                <td>5309.0000 ~ 5337.0000</td>
+                <td>5309.0000 ~ 5337.0000</td>
+                <td class="">0.0000</td>
+                <td class="">0.00%</td>
+            </tr>
+        
+            <tr>
+                <td>meta_data_currentFrame_bv</td>
+                <td>5.5273</td>
+                <td>5.5273</td>
+                <td>5.2637 ~ 5.7910</td>
+                <td>5.2637 ~ 5.7910</td>
+                <td class="">0.0000</td>
+                <td class="">0.00%</td>
+            </tr>
+        
+        </tbody>
+    </table>
+    
+    </div>
+
+    <script>
+        
+        // 图表: color_sensor_irRatio
+        const ctx_chart_color_sensor_irRatio = document.getElementById('chart_color_sensor_irRatio').getContext('2d');
+        new Chart(ctx_chart_color_sensor_irRatio, {
+            type: 'line',
+            data: {
+                labels: ["32", "1"],
+                datasets: [{
+                    label: '测试机',
+                    data: [0.811676443, 0.855261266],
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.1
+                }, {
+                    label: '对比机',
+                    data: [0.811676443, 0.855261266],
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "color_sensor_irRatio \u8d8b\u52bf\u5bf9\u6bd4"
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: '序列号'
+                        }
+                    },
+                    y: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: '数值'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 图表: color_sensor_sensorCct
+        const ctx_chart_color_sensor_sensorCct = document.getElementById('chart_color_sensor_sensorCct').getContext('2d');
+        new Chart(ctx_chart_color_sensor_sensorCct, {
+            type: 'line',
+            data: {
+                labels: ["32", "1"],
+                datasets: [{
+                    label: '测试机',
+                    data: [5309.0, 5337.0],
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.1
+                }, {
+                    label: '对比机',
+                    data: [5309.0, 5337.0],
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "color_sensor_sensorCct \u8d8b\u52bf\u5bf9\u6bd4"
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: '序列号'
+                        }
+                    },
+                    y: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: '数值'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 图表: meta_data_currentFrame_bv
+        const ctx_chart_meta_data_currentFrame_bv = document.getElementById('chart_meta_data_currentFrame_bv').getContext('2d');
+        new Chart(ctx_chart_meta_data_currentFrame_bv, {
+            type: 'line',
+            data: {
+                labels: ["32", "1"],
+                datasets: [{
+                    label: '测试机',
+                    data: [5.791015625, 5.263671875],
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.1
+                }, {
+                    label: '对比机',
+                    data: [5.791015625, 5.263671875],
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: "meta_data_currentFrame_bv \u8d8b\u52bf\u5bf9\u6bd4"
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: '序列号'
+                        }
+                    },
+                    y: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: '数值'
+                        }
+                    }
+                }
+            }
+        });
+        
+    </script>
+</body>
+</html>
+        

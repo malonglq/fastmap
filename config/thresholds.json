@@ -1,0 +1,16 @@
+{
+  "thresholds": {
+    "cct": {
+      "small_max": 100.0,
+      "medium_min": 100.0,
+      "medium_max": 500.0,
+      "large_min": 500.0
+    },
+    "percentage": {
+      "small_max": 1.0,
+      "medium_min": 1.0,
+      "medium_max": 10.0,
+      "large_min": 10.0
+    }
+  }
+}

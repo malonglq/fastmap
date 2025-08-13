@@ -1,0 +1,32 @@
+{
+  "field_mappings": {
+    "meta_data_lastFrame_bv": "BV_Last_Frame",
+    "meta_data_currentFrame_bv": "BV_Current_Frame",
+    "color_sensor_irRatio": "IR_Ratio",
+    "color_sensor_rGain": "R_Gain",
+    "color_sensor_gGain": "G_Gain",
+    "color_sensor_bGain": "B_Gain",
+    "color_sensor_cct": "CCT",
+    "color_sensor_lux": "Lux"
+  },
+  "core_fields": [
+    "BV_Last_Frame",
+    "BV_Current_Frame",
+    "IR_Ratio",
+    "R_Gain",
+    "G_Gain",
+    "B_Gain",
+    "CCT",
+    "Lux"
+  ],
+  "display_names": {
+    "BV_Last_Frame": "BV值(上一帧)",
+    "BV_Current_Frame": "BV值(当前帧)",
+    "IR_Ratio": "红外比值",
+    "R_Gain": "红色增益",
+    "G_Gain": "绿色增益",
+    "B_Gain": "蓝色增益",
+    "CCT": "色温",
+    "Lux": "照度"
+  }
+}
