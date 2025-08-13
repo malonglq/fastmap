@@ -80,7 +80,15 @@ class MainWindow(QMainWindow):
 
 
 
-
+    def _ensure_native_drop_installed(self, phase: str = ""):
+        try:
+            from utils.win_drop import install_win_drop
+            hwnd = int(self.winId())
+            self._native_drop_filter = install_win_drop(hwnd, self._on_native_files)
+            if self._native_drop_filter:
+                logger.info("==liuq debug== 已安装 Windows 原生拖拽过滤器 (WM_DROPFILES) phase=%s hwnd=%s", phase, hwnd)
+        except Exception as e:
+            logger.debug("==liuq debug== _ensure_native_drop_installed 失败: %s", e)
 
 
     def setup_ui(self):
@@ -145,7 +153,11 @@ class MainWindow(QMainWindow):
         # 5. 报告标签页
         self.report_tab = self.create_report_tab()
         self.tab_widget.addTab(self.report_tab, "分析报告")
-
+        # Windows 原生拖拽兜底（WM_DROPFILES）
+        try:
+            self._ensure_native_drop_installed(phase="create_tabs")
+        except Exception as e:
+            logger.debug("==liuq debug== 安装原生拖拽过滤器失败: %s", e)
 
 
         # 设置默认选中第一个标签页
@@ -653,12 +665,7 @@ class MainWindow(QMainWindow):
         )
 
         if reply == QMessageBox.Yes:
-            try:
-                from utils.ole_drop import revoke_ole_droptarget
-                revoke_ole_droptarget(int(self.winId()))
-                logger.info("==liuq debug== 已撤销 OLE IDropTarget")
-            except Exception as _e:
-                logger.debug("==liuq debug== 撤销 OLE IDropTarget 失败: %s", _e)
+            # ole_drop清理代码已删除 - ole_drop.py已删除
             logger.info("==liuq debug== 用户确认退出应用程序")
             event.accept()
         else:
@@ -744,154 +751,11 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logger.debug("==liuq debug== 启动拖拽区域监控失败: %s", e)
 
-    def _install_ole_drop(self):
-        """尝试为主窗与关键子控件注册 OLE IDropTarget；失败则创建兜底小窗。"""
-        success = 0
-        try:
-            from utils.ole_drop import install_ole_droptarget
-            # 1) 主窗口
-            try:
-                hwnd = int(self.winId())
-                dt = install_ole_droptarget(hwnd, self._on_native_files)
-                if dt is not None:
-                    self._ole_dt_main = dt
-                    success += 1
-                    logger.info("==liuq debug== OLE 主窗口注册成功 hwnd=%s", hwnd)
-            except Exception as e:
-                logger.debug("==liuq debug== OLE 主窗口注册异常: %s", e)
-            # 2) 中央容器与标签容器
-            try:
-                for tag, w in [("central", getattr(self, "_central_widget", None)), ("tabs", getattr(self, "tab_widget", None))]:
-                    if w is None:
-                        continue
-                    try:
-                        w.setAttribute(Qt.WA_NativeWindow, True)
-                    except Exception:
-                        pass
-                    try:
-                        hwnd_w = int(w.winId())
-                        dtw = install_ole_droptarget(hwnd_w, self._on_native_files)
-                        if dtw is not None:
-                            success += 1
-                            logger.info("==liuq debug== OLE %s 注册成功 hwnd=%s", tag, hwnd_w)
-                    except Exception as e:
-                        logger.debug("==liuq debug== OLE %s 注册异常: %s", tag, e)
-            except Exception as e:
-                logger.debug("==liuq debug== OLE 子控件批量注册异常: %s", e)
-            # 3) 重要视图（如存在）
-            try:
-                views = []
-                if hasattr(self, "map_table"):
-                    views.append(("map_table", self.map_table))
-                    try:
-                        if hasattr(self.map_table, "viewport") and self.map_table.viewport() is not None:
-                            views.append(("map_table.viewport", self.map_table.viewport()))
-                    except Exception:
-                        pass
-                if hasattr(self, "map_shape_viewer"):
-                    views.append(("map_shape_viewer", self.map_shape_viewer))
-                for tag, vw in views:
-                    try:
-                        vw.setAttribute(Qt.WA_NativeWindow, True)
-                    except Exception:
-                        pass
-                    try:
-                        hwnd_v = int(vw.winId())
-                        dtv = install_ole_droptarget(hwnd_v, self._on_native_files)
-                        if dtv is not None:
-                            success += 1
-                            logger.info("==liuq debug== OLE %s 注册成功 hwnd=%s", tag, hwnd_v)
-                    except Exception as e:
-                        logger.debug("==liuq debug== OLE %s 注册异常: %s", tag, e)
-            except Exception as e:
-                logger.debug("==liuq debug== OLE 视图注册阶段异常: %s", e)
-        except Exception as e:
-            logger.error("==liuq debug== _install_ole_drop 异常: %s", e)
-        # 兜底：若均未成功，弹出小窗
-        try:
-            if success <= 0:
-                logger.info("==liuq debug== OLE 在主窗/子控件均未成功，启动兜底小窗…")
-                self._show_ole_fallback_window()
-        except Exception as e:
-            logger.error("==liuq debug== 启动兜底小窗异常: %s", e)
+    # _install_ole_drop方法已删除 - ole_drop.py COM接口实现无效
 
-    def _show_ole_fallback_window(self):
-        """创建一个置顶小窗作为拖拽兜底入口，并注册 OLE。"""
-        try:
-            from utils.ole_drop import install_ole_droptarget
-            win = QWidget(None)
-            win.setWindowTitle("拖入图片这里 → EXIF")
-            win.resize(280, 120)
-            try:
-                win.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint | Qt.Tool)
-            except Exception:
-                pass
-            try:
-                win.setAttribute(Qt.WA_NativeWindow, True)
-            except Exception:
-                pass
-            # 简单内容
-            lay = QVBoxLayout(win)
-            lab = QLabel("将 .jpg/.jpeg 拖到这里\n将自动弹出 EXIF")
-            lab.setAlignment(Qt.AlignCenter)
-            lay.addWidget(lab)
-            # 放置在主窗口右下角附近
-            try:
-                g = self.geometry()
-                win.move(g.x() + g.width() - 320, g.y() + g.height() - 200)
-            except Exception:
-                pass
-            # 注册 OLE 并显示
-            hwnd = int(win.winId())
-            dt = install_ole_droptarget(hwnd, self._on_native_files)
-            if dt is not None:
-                self._ole_fallback_win = win
-                self._ole_fallback_dt = dt
-                win.show()
-                logger.info("==liuq debug== OLE 兜底小窗 注册成功 hwnd=%s", hwnd)
-            else:
-                logger.info("==liuq debug== OLE 兜底小窗 注册失败（可能被策略阻止）")
-        except Exception as e:
-            logger.error("==liuq debug== _show_ole_fallback_window 异常: %s", e)
+    # _show_ole_fallback_window方法已删除 - ole_drop.py COM接口实现无效
 
-    def _show_pywin_fallback_window(self):
-        """创建一个置顶小窗，使用 pywin32 注册 IDropTarget 作为兜底。"""
-        try:
-            from utils.pywin_drop import install_pywin_drop
-            win = QWidget(None)
-            win.setWindowTitle("拖到这里 (pywin)")
-            win.resize(260, 100)
-            try:
-                win.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint | Qt.Tool)
-            except Exception:
-                pass
-            try:
-                win.setAttribute(Qt.WA_NativeWindow, True)
-            except Exception:
-                pass
-            lay = QVBoxLayout(win)
-            lab = QLabel("将 .jpg/.jpeg 文件\n拖到这里")
-            lab.setAlignment(Qt.AlignCenter)
-            lay.addWidget(lab)
-            try:
-                g = self.geometry()
-                win.move(g.x() + g.width() - 300, g.y() + g.height() - 220)
-            except Exception:
-                pass
-            hwnd = int(win.winId())
-            dt = install_pywin_drop(hwnd, self._on_native_files)
-            if dt is not None:
-                self._pywin_fallback_win = win
-                self._pywin_fallback_dt = dt
-                win.show()
-                logger.info("==liuq debug== pywin 兜底小窗 注册成功 hwnd=%s", hwnd)
-            else:
-                logger.info("==liuq debug== pywin 兜底小窗 注册失败")
-        except Exception as e:
-            logger.error("==liuq debug== _show_pywin_fallback_window 异常: %s", e)
-
-        except Exception as e:
-            logger.error("==liuq debug== _show_ole_fallback_window 异常: %s", e)
+    # _show_pywin_fallback_window方法已删除 - pywin_drop.py COM接口实现失败
 
     def dragEnterEvent(self, event):
         try:
@@ -941,25 +805,12 @@ class MainWindow(QMainWindow):
     def showEvent(self, event):
         super().showEvent(event)
         try:
-            logger.info("==liuq debug== SHOW 事件触发，开始 pywin 注册流程")
-            from utils.pywin_drop import install_pywin_drop
-            self._pywin_any_ok = False
-            for tag, w in [("main", self), ("central", getattr(self, "_central_widget", None)), ("tabs", getattr(self, "tab_widget", None))]:
-                if w is None:
-                    continue
-                try:
-                    hwnd = int(w.winId())
-                    dt = install_pywin_drop(hwnd, self._on_native_files)
-                    if dt is not None:
-                        self._pywin_any_ok = True
-                        logger.info("==liuq debug== pywin %s 注册成功 hwnd=%s", tag, hwnd)
-                except Exception as e:
-                    logger.info("==liuq debug== pywin %s 注册异常: %s", tag, e)
-            if not self._pywin_any_ok:
-                logger.info("==liuq debug== pywin 主窗与子控件均未成功，显示兜底小窗")
-                self._show_pywin_fallback_window()
+            logger.info("==liuq debug== SHOW 事件触发")
+            # pywin_drop.py已删除 - 该COM接口实现失败，不影响拖拽功能
+            # 拖拽功能由Qt拖拽系统 + win_drop.py (WM_DROPFILES) 提供
+            logger.info("==liuq debug== 跳过pywin_drop注册（已删除失败的COM实现）")
         except Exception as e:
-            logger.info("==liuq debug== SHOW 阶段 pywin 注册流程异常: %s", e)
+            logger.debug("==liuq debug== showEvent 异常: %s", e)
 
     def eventFilter(self, obj, event):
         try:
