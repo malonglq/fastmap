@@ -1006,3 +1006,285 @@ TypeError: 'bool' object is not callable
 2025-08-13 14:21:09,361 - __main__ - INFO - ==liuq debug== 启动应用程序主循环
 2025-08-13 14:21:15,382 - gui.main_window - INFO - ==liuq debug== 用户确认退出应用程序
 2025-08-13 14:21:15,476 - __main__ - INFO - ==liuq debug== 应用程序退出，退出码: 0
+2025-08-13 14:25:25,051 - __main__ - INFO - ==liuq debug== FastMapV2 日志系统初始化完成
+2025-08-13 14:25:25,052 - __main__ - INFO - ==liuq debug== FastMapV2 应用程序启动
+2025-08-13 14:25:25,617 - __main__ - INFO - ==liuq debug== 依赖检查通过
+2025-08-13 14:25:25,636 - __main__ - INFO - ==liuq debug== QApplication创建成功
+2025-08-13 14:25:25,639 - __main__ - INFO - ==liuq debug== 主窗口模块导入成功
+2025-08-13 14:25:25,640 - gui.main_window - INFO - ==liuq debug== 开始初始化主窗口
+2025-08-13 14:25:25,641 - gui.main_window - INFO - ==liuq debug== 顶层窗口预启用拖拽
+2025-08-13 14:25:25,660 - core.interfaces.xml_data_processor - INFO - ==liuq debug== XML数据处理接口模块加载完成
+2025-08-13 14:25:25,665 - core.interfaces.xml_field_definition - INFO - ==liuq debug== XML字段定义系统模块加载完成
+2025-08-13 14:25:25,666 - core.interfaces.field_definition_provider - INFO - ==liuq debug== 字段定义提供者接口模块加载完成
+2025-08-13 14:25:25,668 - core.interfaces.data_binding_manager - INFO - ==liuq debug== 数据绑定管理接口模块加载完成
+2025-08-13 14:25:25,669 - core.interfaces - INFO - ==liuq debug== 核心接口模块加载完成
+2025-08-13 14:25:25,669 - core.services.data_binding_manager_impl - INFO - ==liuq debug== 数据绑定管理器实现模块加载完成
+2025-08-13 14:25:25,670 - core.services.field_editor_factory - INFO - ==liuq debug== 字段编辑器工厂初始化完成
+2025-08-13 14:25:25,671 - core.services.field_editor_factory - INFO - ==liuq debug== 字段编辑器工厂模块加载完成
+2025-08-13 14:25:25,672 - core.services.field_registry_service - INFO - ==liuq debug== 从XML_FIELD_CONFIG创建了 39 个字段定义
+2025-08-13 14:25:25,673 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: alias_name -> 分组: basic
+2025-08-13 14:25:25,673 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: x -> 分组: basic
+2025-08-13 14:25:25,673 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: y -> 分组: basic
+2025-08-13 14:25:25,674 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: weight -> 分组: basic
+2025-08-13 14:25:25,674 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: trans_step -> 分组: basic
+2025-08-13 14:25:25,674 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: offset_x -> 分组: basic
+2025-08-13 14:25:25,674 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: offset_y -> 分组: basic
+2025-08-13 14:25:25,675 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: bv_min -> 分组: ranges
+2025-08-13 14:25:25,675 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: bv_max -> 分组: ranges
+2025-08-13 14:25:25,675 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: tran_bv_min -> 分组: custom
+2025-08-13 14:25:25,675 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: tran_bv_max -> 分组: custom
+2025-08-13 14:25:25,676 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: ctemp_min -> 分组: ranges
+2025-08-13 14:25:25,676 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: ctemp_max -> 分组: ranges
+2025-08-13 14:25:25,676 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: tran_ctemp_min -> 分组: custom
+2025-08-13 14:25:25,676 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: tran_ctemp_max -> 分组: custom
+2025-08-13 14:25:25,677 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: ir_min -> 分组: ranges
+2025-08-13 14:25:25,677 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: ir_max -> 分组: ranges
+2025-08-13 14:25:25,677 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: tran_ir_min -> 分组: custom
+2025-08-13 14:25:25,677 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: tran_ir_max -> 分组: custom
+2025-08-13 14:25:25,677 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: ac_min -> 分组: ranges
+2025-08-13 14:25:25,678 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: ac_max -> 分组: ranges
+2025-08-13 14:25:25,678 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: tran_ac_min -> 分组: custom
+2025-08-13 14:25:25,678 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: tran_ac_max -> 分组: custom
+2025-08-13 14:25:25,678 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: count_min -> 分组: ranges
+2025-08-13 14:25:25,679 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: count_max -> 分组: ranges
+2025-08-13 14:25:25,679 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: tran_count_min -> 分组: custom
+2025-08-13 14:25:25,679 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: tran_count_max -> 分组: custom
+2025-08-13 14:25:25,679 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: color_cct_min -> 分组: ranges
+2025-08-13 14:25:25,680 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: color_cct_max -> 分组: ranges
+2025-08-13 14:25:25,680 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: tran_color_cct_min -> 分组: custom
+2025-08-13 14:25:25,680 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: tran_color_cct_max -> 分组: custom
+2025-08-13 14:25:25,680 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: diff_ctemp_min -> 分组: ranges
+2025-08-13 14:25:25,680 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: diff_ctemp_max -> 分组: ranges
+2025-08-13 14:25:25,681 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: tran_diff_ctemp_min -> 分组: custom
+2025-08-13 14:25:25,681 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: tran_diff_ctemp_max -> 分组: custom
+2025-08-13 14:25:25,681 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: face_ctemp_min -> 分组: ranges
+2025-08-13 14:25:25,681 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: face_ctemp_max -> 分组: ranges
+2025-08-13 14:25:25,681 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: tran_face_ctemp_min -> 分组: custom
+2025-08-13 14:25:25,682 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: tran_face_ctemp_max -> 分组: custom
+2025-08-13 14:25:25,682 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: ml -> 分组: ranges
+2025-08-13 14:25:25,682 - core.services.field_registry_service - WARNING - ==liuq debug== 覆盖已存在的字段: weight
+2025-08-13 14:25:25,682 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: weight -> 分组: basic
+2025-08-13 14:25:25,682 - core.services.field_registry_service - WARNING - ==liuq debug== 覆盖已存在的字段: trans_step
+2025-08-13 14:25:25,683 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: trans_step -> 分组: basic
+2025-08-13 14:25:25,683 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: e_ratio_min -> 分组: ranges
+2025-08-13 14:25:25,683 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: e_ratio_max -> 分组: ranges
+2025-08-13 14:25:25,683 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: bv_range -> 分组: ranges
+2025-08-13 14:25:25,683 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: ir_range -> 分组: ranges
+2025-08-13 14:25:25,683 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: cct_range -> 分组: ranges
+2025-08-13 14:25:25,684 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册成功: detect_flag -> 分组: advanced
+2025-08-13 14:25:25,684 - core.services.field_registry_service - INFO - ==liuq debug== 预定义字段注册完成，共注册 48 个字段（包含 39 个XML配置字段）
+2025-08-13 14:25:25,684 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册服务初始化完成
+2025-08-13 14:25:25,684 - core.services.field_registry_service - INFO - ==liuq debug== 字段注册服务模块加载完成
+2025-08-13 14:25:25,694 - core.services.xml_writer_service - INFO - ==liuq debug== XML写入服务模块加载完成
+2025-08-13 14:25:25,697 - core.managers.table_column_manager - INFO - ==liuq debug== 表格列管理器初始化完成
+2025-08-13 14:25:25,698 - core.managers.table_column_manager - INFO - ==liuq debug== 表格列管理器模块加载完成
+2025-08-13 14:25:25,700 - core.services.data_binding_manager_impl - INFO - ==liuq debug== 数据绑定管理器初始化完成
+2025-08-13 14:25:25,700 - gui.widgets.map_table_widget - INFO - ==liuq debug== 从字段注册系统获取到 46 个可编辑字段
+2025-08-13 14:25:25,700 - core.managers.table_column_manager - INFO - ==liuq debug== 开始生成默认表格配置（基于核心字段的动态模式）
+2025-08-13 14:25:25,700 - core.managers.table_column_manager - INFO - ==liuq debug== 找到 40 个核心字段用于默认表格配置
+2025-08-13 14:25:25,701 - core.managers.table_column_manager - INFO - ==liuq debug== 40列配置验证通过
+2025-08-13 14:25:25,701 - core.managers.table_column_manager - INFO - ==liuq debug== 默认表格配置生成完成，共 40 列（40列兼容模式）
+2025-08-13 14:25:25,701 - gui.widgets.map_table_widget - INFO - ==liuq debug== 表格配置初始化完成，共 40 个可见列
+2025-08-13 14:25:25,701 - gui.widgets.map_table_widget - INFO - ==liuq debug== 表格配置初始化完成，共 40 个可见列
+2025-08-13 14:25:25,718 - gui.widgets.map_table_widget - INFO - ==liuq debug== 设置表格，共 40 个可见列
+2025-08-13 14:25:26,124 - gui.widgets.map_table_widget - INFO - ==liuq debug== 加载字段定义完成，共 46 个字段
+2025-08-13 14:25:26,124 - gui.widgets.map_table_widget - INFO - ==liuq debug== 启用表格单元格编辑功能
+2025-08-13 14:25:26,126 - gui.widgets.map_table_widget - INFO - ==liuq debug== Map点表格组件初始化完成
+2025-08-13 14:25:26,550 - gui.widgets.map_shape_viewer - INFO - ==liuq debug== Map形状查看器UI设置完成
+2025-08-13 14:25:26,550 - gui.widgets.map_shape_viewer - INFO - ==liuq debug== Map形状查看器初始化完成
+2025-08-13 14:25:26,583 - gui.styles.theme - INFO - ==liuq debug== FastMapV2主题初始化完成: light
+2025-08-13 14:25:26,585 - core.services.unified_report_manager - INFO - ==liuq debug== 加载历史记录: 0条
+2025-08-13 14:25:26,585 - core.services.unified_report_manager - INFO - ==liuq debug== 统一报告管理器初始化完成
+2025-08-13 14:25:27,020 - gui.tabs.analysis_report_tab - INFO - ==liuq debug== 刷新历史记录: 0条
+2025-08-13 14:25:27,021 - gui.tabs.analysis_report_tab - INFO - ==liuq debug== 分析报告标签页初始化完成
+2025-08-13 14:25:27,083 - utils.win_drop - INFO - ==liuq debug== DragAcceptFiles调用，hwnd=0x30ffe
+2025-08-13 14:25:27,085 - utils.win_drop - INFO - ==liuq debug== 原生事件过滤器安装成功
+2025-08-13 14:25:27,085 - gui.main_window - INFO - ==liuq debug== 已安装 Windows 原生拖拽过滤器 (WM_DROPFILES) phase=create_tabs hwnd=200702
+2025-08-13 14:25:27,086 - gui.main_window - INFO - ==liuq debug== 所有标签页创建完成
+2025-08-13 14:25:27,097 - gui.main_window - INFO - ==liuq debug== 界面样式设置完成
+2025-08-13 14:25:27,097 - gui.main_window - INFO - ==liuq debug== UI界面设置完成
+2025-08-13 14:25:27,113 - gui.main_window - INFO - ==liuq debug== 菜单栏设置完成
+2025-08-13 14:25:27,115 - gui.main_window - INFO - ==liuq debug== 状态栏设置完成
+2025-08-13 14:25:27,115 - gui.main_window - INFO - ==liuq debug== 信号连接设置完成
+2025-08-13 14:25:27,115 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: MainWindow
+2025-08-13 14:25:27,116 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,116 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QTabWidget
+2025-08-13 14:25:27,117 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QStackedWidget
+2025-08-13 14:25:27,117 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: AnalysisReportTab
+2025-08-13 14:25:27,117 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLabel
+2025-08-13 14:25:27,117 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QSplitter
+2025-08-13 14:25:27,118 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QGroupBox
+2025-08-13 14:25:27,118 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,118 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,118 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QTableWidget
+2025-08-13 14:25:27,118 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,119 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,119 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,119 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QScrollBar
+2025-08-13 14:25:27,119 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,119 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QScrollBar
+2025-08-13 14:25:27,120 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QHeaderView
+2025-08-13 14:25:27,120 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,120 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,120 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,120 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QScrollBar
+2025-08-13 14:25:27,120 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,121 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QScrollBar
+2025-08-13 14:25:27,121 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QHeaderView
+2025-08-13 14:25:27,121 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,121 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,121 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,122 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QScrollBar
+2025-08-13 14:25:27,122 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,122 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QScrollBar
+2025-08-13 14:25:27,122 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QAbstractButton
+2025-08-13 14:25:27,122 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QGroupBox
+2025-08-13 14:25:27,123 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,123 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,123 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,123 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QSplitterHandle
+2025-08-13 14:25:27,123 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QSplitterHandle
+2025-08-13 14:25:27,124 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,124 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QProgressBar
+2025-08-13 14:25:27,124 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLabel
+2025-08-13 14:25:27,124 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,125 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLabel
+2025-08-13 14:25:27,125 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLabel
+2025-08-13 14:25:27,125 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,125 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLabel
+2025-08-13 14:25:27,125 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLabel
+2025-08-13 14:25:27,126 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: ExifProcessingTab
+2025-08-13 14:25:27,126 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLabel
+2025-08-13 14:25:27,126 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLineEdit
+2025-08-13 14:25:27,126 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,126 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLabel
+2025-08-13 14:25:27,127 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QListWidget
+2025-08-13 14:25:27,127 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,127 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,127 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,128 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QScrollBar
+2025-08-13 14:25:27,128 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,128 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QScrollBar
+2025-08-13 14:25:27,128 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLabel
+2025-08-13 14:25:27,128 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,128 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,129 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,129 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,129 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,129 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,129 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,130 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,130 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QCheckBox
+2025-08-13 14:25:27,130 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QCheckBox
+2025-08-13 14:25:27,130 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLabel
+2025-08-13 14:25:27,131 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLineEdit
+2025-08-13 14:25:27,131 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,131 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,131 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLabel
+2025-08-13 14:25:27,131 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,131 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,132 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,132 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLabel
+2025-08-13 14:25:27,132 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLabel
+2025-08-13 14:25:27,132 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,132 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QSplitter
+2025-08-13 14:25:27,133 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: MapShapeViewer
+2025-08-13 14:25:27,133 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLabel
+2025-08-13 14:25:27,133 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: FigureCanvasQTAgg
+2025-08-13 14:25:27,133 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLabel
+2025-08-13 14:25:27,133 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: MapTableWidget
+2025-08-13 14:25:27,133 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLabel
+2025-08-13 14:25:27,133 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLabel
+2025-08-13 14:25:27,134 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLineEdit
+2025-08-13 14:25:27,134 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QPushButton
+2025-08-13 14:25:27,134 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QTableWidget
+2025-08-13 14:25:27,134 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,134 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,134 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,135 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QScrollBar
+2025-08-13 14:25:27,135 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QHeaderView
+2025-08-13 14:25:27,135 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,135 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,135 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,135 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QScrollBar
+2025-08-13 14:25:27,135 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,136 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QScrollBar
+2025-08-13 14:25:27,136 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QAbstractButton
+2025-08-13 14:25:27,136 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: SimpleHeaderView
+2025-08-13 14:25:27,136 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,136 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,136 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,136 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QScrollBar
+2025-08-13 14:25:27,137 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,137 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QScrollBar
+2025-08-13 14:25:27,137 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QWidget
+2025-08-13 14:25:27,137 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QScrollBar
+2025-08-13 14:25:27,137 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLabel
+2025-08-13 14:25:27,137 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QSplitterHandle
+2025-08-13 14:25:27,137 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QSplitterHandle
+2025-08-13 14:25:27,137 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QTabBar
+2025-08-13 14:25:27,138 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QToolButton
+2025-08-13 14:25:27,138 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QToolButton
+2025-08-13 14:25:27,138 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QMenuBar
+2025-08-13 14:25:27,138 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QToolButton
+2025-08-13 14:25:27,138 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QMenu
+2025-08-13 14:25:27,138 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QMenu
+2025-08-13 14:25:27,138 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QMenu
+2025-08-13 14:25:27,139 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QStatusBar
+2025-08-13 14:25:27,139 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QSizeGrip
+2025-08-13 14:25:27,139 - gui.main_window - INFO - ==liuq debug== 已启用拖拽: QLabel
+2025-08-13 14:25:27,139 - gui.main_window - INFO - ==liuq debug== 已在 QApplication 安装全局事件过滤器
+2025-08-13 14:25:27,139 - gui.main_window - INFO - ==liuq debug== BOOT_SIGNATURE: DnD_v3_pywin32_enabled
+2025-08-13 14:25:27,140 - gui.main_window - INFO - ==liuq debug== 主窗口初始化完成
+2025-08-13 14:25:27,141 - gui.main_window - INFO - ==liuq debug== 拖拽区域已创建并开始监控: D:\Users\w9065706\Desktop\FastMap_拖拽区域
+2025-08-13 14:25:27,141 - gui.main_window - INFO - ==liuq debug== pywin 注册将于窗口显示后执行(SHOW)
+2025-08-13 14:25:27,161 - gui.main_window - INFO - ==liuq debug== SHOW 事件触发，开始 pywin 注册流程
+2025-08-13 14:25:27,195 - utils.pywin_drop - INFO - ==liuq debug== pywin 已注册剪贴板格式: FileGroupDescriptorW/FileContents
+2025-08-13 14:25:27,195 - utils.pywin_drop - INFO - ==liuq debug== pywin OleInitialize 成功
+2025-08-13 14:25:27,210 - utils.pywin_drop - INFO - ==liuq debug== pywin RegisterDragDrop 异常: 'bool' object is not callable
+Traceback (most recent call last):
+  File "E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\utils\pywin_drop.py", line 190, in install_pywin_drop
+    com_obj = wrap(dt, usePolicy=True)
+  File "d:\users\w9065706\appdata\local\programs\python\Python39\lib\site-packages\win32com\server\util.py", line 26, in wrap
+    ob = usePolicy(ob)
+TypeError: 'bool' object is not callable
+
+2025-08-13 14:25:27,216 - utils.pywin_drop - INFO - ==liuq debug== pywin OleInitialize 成功
+2025-08-13 14:25:27,216 - utils.pywin_drop - INFO - ==liuq debug== pywin RegisterDragDrop 异常: 'bool' object is not callable
+Traceback (most recent call last):
+  File "E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\utils\pywin_drop.py", line 190, in install_pywin_drop
+    com_obj = wrap(dt, usePolicy=True)
+  File "d:\users\w9065706\appdata\local\programs\python\Python39\lib\site-packages\win32com\server\util.py", line 26, in wrap
+    ob = usePolicy(ob)
+TypeError: 'bool' object is not callable
+
+2025-08-13 14:25:27,217 - utils.pywin_drop - INFO - ==liuq debug== pywin OleInitialize 成功
+2025-08-13 14:25:27,218 - utils.pywin_drop - INFO - ==liuq debug== pywin RegisterDragDrop 异常: 'bool' object is not callable
+Traceback (most recent call last):
+  File "E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\utils\pywin_drop.py", line 190, in install_pywin_drop
+    com_obj = wrap(dt, usePolicy=True)
+  File "d:\users\w9065706\appdata\local\programs\python\Python39\lib\site-packages\win32com\server\util.py", line 26, in wrap
+    ob = usePolicy(ob)
+TypeError: 'bool' object is not callable
+
+2025-08-13 14:25:27,218 - gui.main_window - INFO - ==liuq debug== pywin 主窗与子控件均未成功，显示兜底小窗
+2025-08-13 14:25:27,231 - utils.pywin_drop - INFO - ==liuq debug== pywin OleInitialize 成功
+2025-08-13 14:25:27,232 - utils.pywin_drop - INFO - ==liuq debug== pywin RegisterDragDrop 异常: 'bool' object is not callable
+Traceback (most recent call last):
+  File "E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\utils\pywin_drop.py", line 190, in install_pywin_drop
+    com_obj = wrap(dt, usePolicy=True)
+  File "d:\users\w9065706\appdata\local\programs\python\Python39\lib\site-packages\win32com\server\util.py", line 26, in wrap
+    ob = usePolicy(ob)
+TypeError: 'bool' object is not callable
+
+2025-08-13 14:25:27,232 - gui.main_window - INFO - ==liuq debug== pywin 兜底小窗 注册失败
+2025-08-13 14:25:27,409 - __main__ - INFO - ==liuq debug== 主窗口创建并显示成功
+2025-08-13 14:25:27,409 - __main__ - INFO - ==liuq debug== 启动应用程序主循环
+2025-08-13 14:25:29,093 - utils.win_drop - INFO - ==liuq debug== win_drop检测到WM_DROPFILES消息
+2025-08-13 14:25:29,093 - utils.win_drop - INFO - ==liuq debug== win_drop解析到1个文件
+2025-08-13 14:25:29,093 - utils.win_drop - INFO - ==liuq debug== win_drop文件列表: ['E:\\场景库\\25001_hongyan\\sab\\17_IMG20250701151906_ori.jpg']
+2025-08-13 14:25:29,094 - gui.main_window - INFO - ==liuq debug== NativeDrop: E:\场景库\25001_hongyan\sab\17_IMG20250701151906_ori.jpg
+2025-08-13 14:25:29,100 - core.services.exif_parser_service - INFO - ==liuq debug== 加载 DLL: E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\0_3a_parser_py\dll\Release\3a_parser.dll
+2025-08-13 14:25:29,135 - core.services.exif_parser_service - INFO - ==liuq debug== DLL 初始化完成: handle=c_void_p(2729886519056)
+2025-08-13 14:27:05,253 - gui.main_window - INFO - ==liuq debug== 用户确认退出应用程序
+2025-08-13 14:27:05,317 - __main__ - INFO - ==liuq debug== 应用程序退出，退出码: 0

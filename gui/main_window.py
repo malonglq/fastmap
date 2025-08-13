@@ -20,9 +20,9 @@ from PyQt5.QtWidgets import (
     QMainWindow, QTabWidget, QVBoxLayout, QHBoxLayout,
     QWidget, QMenuBar, QStatusBar, QAction, QMessageBox,
     QLabel, QPushButton, QTextEdit, QSplitter,
-    QFileDialog, QApplication, QAbstractScrollArea
+    QFileDialog, QApplication
 )
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QEvent
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QIcon, QFont
 
 logger = logging.getLogger(__name__)
@@ -80,15 +80,7 @@ class MainWindow(QMainWindow):
 
 
 
-    def _ensure_native_drop_installed(self, phase: str = ""):
-        try:
-            from utils.win_drop import install_win_drop
-            hwnd = int(self.winId())
-            self._native_drop_filter = install_win_drop(hwnd, self._on_native_files)
-            if self._native_drop_filter:
-                logger.info("==liuq debug== 已安装 Windows 原生拖拽过滤器 (WM_DROPFILES) phase=%s hwnd=%s", phase, hwnd)
-        except Exception as e:
-            logger.debug("==liuq debug== _ensure_native_drop_installed 失败: %s", e)
+    # _ensure_native_drop_installed方法已删除 - 使用极简拖拽系统
 
 
     def setup_ui(self):
@@ -681,33 +673,55 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logger.debug("==liuq debug== 启用拖拽失败: %s", e)
 
-    def _install_all_drop_handlers(self, root: QWidget):
-        try:
-            if root is None:
-                return
-            self._install_drop_handlers(root)
-            for w in root.findChildren(QWidget):
-                self._install_drop_handlers(w)
-                try:
-                    # 针对 QAbstractScrollArea 的 viewport 也启用
-                    if isinstance(w, QAbstractScrollArea) and w.viewport() is not None:
-                        self._install_drop_handlers(w.viewport())
-                except Exception as _:
-                    pass
-        except Exception as e:
-            logger.debug("==liuq debug== _install_all_drop_handlers 异常: %s", e)
+    # _install_all_drop_handlers方法已删除 - 使用极简拖拽系统
 
     def setup_drag_and_drop(self):
+        """设置极简拖拽功能 - 只处理文件管理器本地文件拖拽"""
         try:
-            # 递归安装
-            self._install_all_drop_handlers(self)
-            # 在 QApplication 层安装全局事件过滤器
-            app = QApplication.instance()
-            if app:
-                app.installEventFilter(self)
-                logger.info("==liuq debug== 已在 QApplication 安装全局事件过滤器")
+            logger.info("==liuq debug== 启用极简拖拽系统")
+            self.setAcceptDrops(True)
         except Exception as e:
-            logger.debug("==liuq debug== setup_drag_and_drop 异常: %s", e)
+            logger.error("==liuq debug== 设置拖拽功能异常: %s", e)
+
+    def dragEnterEvent(self, event):
+        """拖拽进入事件 - 只接受本地文件"""
+        if event.mimeData().hasUrls():
+            urls = event.mimeData().urls()
+            local_files = [url.toLocalFile() for url in urls if url.isLocalFile()]
+            if local_files:
+                event.acceptProposedAction()
+                logger.info("==liuq debug== 检测到 %d 个本地文件拖拽", len(local_files))
+            else:
+                event.ignore()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        """拖拽移动事件"""
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        """拖拽释放事件 - 核心处理逻辑"""
+        if event.mimeData().hasUrls():
+            urls = event.mimeData().urls()
+            local_files = [url.toLocalFile() for url in urls if url.isLocalFile()]
+
+            if local_files:
+                logger.info("==liuq debug== 接收到文件: %s", local_files)
+                # 过滤图片文件
+                image_files = [f for f in local_files
+                             if f.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp'))]
+
+                if image_files:
+                    # 调用现有的文件处理逻辑
+                    self._on_native_files(image_files)
+                    event.acceptProposedAction()
+                else:
+                    logger.info("==liuq debug== 没有找到支持的图片文件")
+                    event.ignore()
+            else:
+                event.ignore()
 
     def _start_drag_zone_monitor(self):
         """创建并监控桌面的“FastMap_拖拽区域”文件夹，作为拖拽兜底。
@@ -755,69 +769,9 @@ class MainWindow(QMainWindow):
 
     # _show_ole_fallback_window方法已删除 - ole_drop.py COM接口实现无效
 
-    def _show_pywin_fallback_window(self):
-        """创建一个置顶小窗，使用 pywin32 注册 IDropTarget 作为兜底。"""
-        try:
-            from utils.pywin_drop import install_pywin_drop
-            win = QWidget(None)
-            win.setWindowTitle("拖到这里 (pywin)")
-            win.resize(260, 100)
-            try:
-                win.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint | Qt.Tool)
-            except Exception:
-                pass
-            try:
-                win.setAttribute(Qt.WA_NativeWindow, True)
-            except Exception:
-                pass
-            lay = QVBoxLayout(win)
-            lab = QLabel("将 .jpg/.jpeg 文件\n拖到这里")
-            lab.setAlignment(Qt.AlignCenter)
-            lay.addWidget(lab)
-            try:
-                g = self.geometry()
-                win.move(g.x() + g.width() - 300, g.y() + g.height() - 220)
-            except Exception:
-                pass
-            hwnd = int(win.winId())
-            dt = install_pywin_drop(hwnd, self._on_native_files)
-            if dt is not None:
-                self._pywin_fallback_win = win
-                self._pywin_fallback_dt = dt
-                win.show()
-                logger.info("==liuq debug== pywin 兜底小窗 注册成功 hwnd=%s", hwnd)
-            else:
-                logger.info("==liuq debug== pywin 兜底小窗 注册失败")
-        except Exception as e:
-            logger.error("==liuq debug== _show_pywin_fallback_window 异常: %s", e)
+    # _show_pywin_fallback_window方法已删除 - 使用极简拖拽系统
 
-    def dragEnterEvent(self, event):
-        try:
-            has_urls = event.mimeData().hasUrls()
-            urls = event.mimeData().urls() if has_urls else []
-            cnt = len(urls)
-            first = urls[0].toLocalFile() if cnt >= 1 else ""
-            logger.info("==liuq debug== DragEnter: hasUrls=%s count=%d first=%s", has_urls, cnt, first)
-            if has_urls and cnt >= 1:
-                # 放宽条件：先接受，drop 时再校验扩展名
-                event.acceptProposedAction()
-                return
-            event.ignore()
-        except Exception as e:
-            logger.debug("==liuq debug== dragEnterEvent 异常: %s", e)
-            event.ignore()
-
-    def dragMoveEvent(self, event):
-        try:
-            if event.mimeData().hasUrls():
-                urls = event.mimeData().urls()
-                if len(urls) == 1:
-                    p = urls[0].toLocalFile()
-                    if p.lower().endswith(('.jpg', '.jpeg')):
-                        event.acceptProposedAction(); return
-            event.ignore()
-        except Exception:
-            event.ignore()
+    # 旧的拖拽事件方法已删除 - 使用极简版本
 
     # Windows 原生拖拽回调
     def _on_native_files(self, files):
@@ -838,61 +792,6 @@ class MainWindow(QMainWindow):
 
     def showEvent(self, event):
         super().showEvent(event)
-        try:
-            logger.info("==liuq debug== SHOW 事件触发，开始 pywin 注册流程")
-            from utils.pywin_drop import install_pywin_drop
-            self._pywin_any_ok = False
-            for tag, w in [("main", self), ("central", getattr(self, "_central_widget", None)), ("tabs", getattr(self, "tab_widget", None))]:
-                if w is None:
-                    continue
-                try:
-                    hwnd = int(w.winId())
-                    dt = install_pywin_drop(hwnd, self._on_native_files)
-                    if dt is not None:
-                        self._pywin_any_ok = True
-                        logger.info("==liuq debug== pywin %s 注册成功 hwnd=%s", tag, hwnd)
-                except Exception as e:
-                    logger.info("==liuq debug== pywin %s 注册异常: %s", tag, e)
-            if not self._pywin_any_ok:
-                logger.info("==liuq debug== pywin 主窗与子控件均未成功，显示兜底小窗")
-                self._show_pywin_fallback_window()
-        except Exception as e:
-            logger.info("==liuq debug== SHOW 阶段 pywin 注册流程异常: %s", e)
+        logger.info("==liuq debug== 窗口显示事件 - 极简拖拽系统已就绪")
 
-    def eventFilter(self, obj, event):
-        try:
-            if event.type() == QEvent.DragEnter:
-                logger.info("==liuq debug== eventFilter捕获DragEnter事件，obj=%s", obj.__class__.__name__)
-                self.dragEnterEvent(event); return True
-            if event.type() == QEvent.DragMove:
-                logger.info("==liuq debug== eventFilter捕获DragMove事件，obj=%s", obj.__class__.__name__)
-                self.dragMoveEvent(event); return True
-            if event.type() == QEvent.Drop:
-                logger.info("==liuq debug== eventFilter捕获Drop事件，obj=%s", obj.__class__.__name__)
-                self.dropEvent(event); return True
-        except Exception as e:
-            logger.debug("==liuq debug== eventFilter 异常: %s", e)
-        return super().eventFilter(obj, event)
-
-    def dropEvent(self, event):
-        try:
-            urls = event.mimeData().urls()
-            if not urls:
-                logger.info("==liuq debug== Drop: no urls")
-                return
-            p = urls[0].toLocalFile()
-            logger.info("==liuq debug== Drop: %s", p)
-            if not p or not p.lower().endswith(('.jpg', '.jpeg')):
-                QMessageBox.warning(self, "提示", "仅支持 .jpg/.jpeg 文件")
-                return
-            from gui.dialogs.exif_quick_view_dialog import ExifQuickViewDialog
-            dlg = ExifQuickViewDialog(Path(p), self)
-            dlg.exec_()
-        except Exception as e:
-            logger.error("==liuq debug== dropEvent 异常: %s", e)
-            QMessageBox.critical(self, "错误", f"打开图片失败: {e}")
-        finally:
-            try:
-                event.acceptProposedAction()
-            except Exception:
-                pass
+    # 旧的eventFilter和dropEvent方法已删除 - 使用极简版本
