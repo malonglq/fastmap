@@ -755,7 +755,41 @@ class MainWindow(QMainWindow):
 
     # _show_ole_fallback_window方法已删除 - ole_drop.py COM接口实现无效
 
-    # _show_pywin_fallback_window方法已删除 - pywin_drop.py COM接口实现失败
+    def _show_pywin_fallback_window(self):
+        """创建一个置顶小窗，使用 pywin32 注册 IDropTarget 作为兜底。"""
+        try:
+            from utils.pywin_drop import install_pywin_drop
+            win = QWidget(None)
+            win.setWindowTitle("拖到这里 (pywin)")
+            win.resize(260, 100)
+            try:
+                win.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint | Qt.Tool)
+            except Exception:
+                pass
+            try:
+                win.setAttribute(Qt.WA_NativeWindow, True)
+            except Exception:
+                pass
+            lay = QVBoxLayout(win)
+            lab = QLabel("将 .jpg/.jpeg 文件\n拖到这里")
+            lab.setAlignment(Qt.AlignCenter)
+            lay.addWidget(lab)
+            try:
+                g = self.geometry()
+                win.move(g.x() + g.width() - 300, g.y() + g.height() - 220)
+            except Exception:
+                pass
+            hwnd = int(win.winId())
+            dt = install_pywin_drop(hwnd, self._on_native_files)
+            if dt is not None:
+                self._pywin_fallback_win = win
+                self._pywin_fallback_dt = dt
+                win.show()
+                logger.info("==liuq debug== pywin 兜底小窗 注册成功 hwnd=%s", hwnd)
+            else:
+                logger.info("==liuq debug== pywin 兜底小窗 注册失败")
+        except Exception as e:
+            logger.error("==liuq debug== _show_pywin_fallback_window 异常: %s", e)
 
     def dragEnterEvent(self, event):
         try:
@@ -805,20 +839,36 @@ class MainWindow(QMainWindow):
     def showEvent(self, event):
         super().showEvent(event)
         try:
-            logger.info("==liuq debug== SHOW 事件触发")
-            # pywin_drop.py已删除 - 该COM接口实现失败，不影响拖拽功能
-            # 拖拽功能由Qt拖拽系统 + win_drop.py (WM_DROPFILES) 提供
-            logger.info("==liuq debug== 跳过pywin_drop注册（已删除失败的COM实现）")
+            logger.info("==liuq debug== SHOW 事件触发，开始 pywin 注册流程")
+            from utils.pywin_drop import install_pywin_drop
+            self._pywin_any_ok = False
+            for tag, w in [("main", self), ("central", getattr(self, "_central_widget", None)), ("tabs", getattr(self, "tab_widget", None))]:
+                if w is None:
+                    continue
+                try:
+                    hwnd = int(w.winId())
+                    dt = install_pywin_drop(hwnd, self._on_native_files)
+                    if dt is not None:
+                        self._pywin_any_ok = True
+                        logger.info("==liuq debug== pywin %s 注册成功 hwnd=%s", tag, hwnd)
+                except Exception as e:
+                    logger.info("==liuq debug== pywin %s 注册异常: %s", tag, e)
+            if not self._pywin_any_ok:
+                logger.info("==liuq debug== pywin 主窗与子控件均未成功，显示兜底小窗")
+                self._show_pywin_fallback_window()
         except Exception as e:
-            logger.debug("==liuq debug== showEvent 异常: %s", e)
+            logger.info("==liuq debug== SHOW 阶段 pywin 注册流程异常: %s", e)
 
     def eventFilter(self, obj, event):
         try:
             if event.type() == QEvent.DragEnter:
+                logger.info("==liuq debug== eventFilter捕获DragEnter事件，obj=%s", obj.__class__.__name__)
                 self.dragEnterEvent(event); return True
             if event.type() == QEvent.DragMove:
+                logger.info("==liuq debug== eventFilter捕获DragMove事件，obj=%s", obj.__class__.__name__)
                 self.dragMoveEvent(event); return True
             if event.type() == QEvent.Drop:
+                logger.info("==liuq debug== eventFilter捕获Drop事件，obj=%s", obj.__class__.__name__)
                 self.dropEvent(event); return True
         except Exception as e:
             logger.debug("==liuq debug== eventFilter 异常: %s", e)

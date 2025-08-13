@@ -108,6 +108,7 @@ class _WinDropFilter(QAbstractNativeEventFilter):  # type: ignore
             # 读取 message (UINT)
             msg_id = C.c_uint.from_address(addr + SIZEOF_HWND).value
             if msg_id == WM_DROPFILES:
+                logger.info("==liuq debug== win_drop检测到WM_DROPFILES消息")
                 # 计算 wParam 偏移（对齐到指针大小）
                 offset_wparam = SIZEOF_HWND + SIZEOF_UINT
                 if PTR_SIZE == 8:
@@ -117,12 +118,14 @@ class _WinDropFilter(QAbstractNativeEventFilter):  # type: ignore
                 files: List[str] = []
                 # 先取数量
                 count = shell32.DragQueryFileW(hdrop, 0xFFFFFFFF, None, 0)
+                logger.info("==liuq debug== win_drop解析到%d个文件", count)
                 for i in range(count):
                     # 先取长度
                     length = shell32.DragQueryFileW(hdrop, i, None, 0)
                     buf = C.create_unicode_buffer(length + 1)
                     shell32.DragQueryFileW(hdrop, i, buf, length + 1)
                     files.append(buf.value)
+                logger.info("==liuq debug== win_drop文件列表: %s", files)
                 try:
                     self._on_files(files)
                 finally:
