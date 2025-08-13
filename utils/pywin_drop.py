@@ -189,7 +189,7 @@ else:
                 pass
             # 注册拖拽：必须传入 COM 包装对象
             dt = _DropTarget(on_files)
-            com_obj = wrap(dt, usePolicy=True)
+            com_obj = wrap(dt)
             pythoncom.RegisterDragDrop(hwnd, com_obj)
             _g_targets[hwnd] = com_obj
             logger.info("==liuq debug== pywin IDropTarget 注册成功 hwnd=%s", hex(hwnd))
