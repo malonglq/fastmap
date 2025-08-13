@@ -29,7 +29,6 @@ else:
     import os, tempfile
     import win32clipboard  # 修复：RegisterClipboardFormat 应来自 win32clipboard
 
-    DROPEFFECT_NONE = 0
     DROPEFFECT_COPY = 1
     # 修复：使用 win32clipboard.RegisterClipboardFormat 而非 pythoncom
     try:
@@ -50,23 +49,13 @@ else:
 
         def DragEnter(self, data_object, key_state, point, effect):
             try:
-                logger.info("==liuq debug== pywin.DragEnter 触发")
-                # COM接口要求通过引用修改effect值
-                effect[0] = DROPEFFECT_COPY
-                return 0  # S_OK
-            except Exception as e:
-                logger.error("==liuq debug== DragEnter异常: %s", e)
-                effect[0] = DROPEFFECT_NONE
-                return 0
+                logger.info("==liuq debug== pywin.DragEnter")
+            except Exception:
+                pass
+            return DROPEFFECT_COPY
 
         def DragOver(self, key_state, point, effect):
-            try:
-                # COM接口要求通过引用修改effect值
-                effect[0] = DROPEFFECT_COPY
-                return 0  # S_OK
-            except Exception:
-                effect[0] = DROPEFFECT_NONE
-                return 0
+            return DROPEFFECT_COPY
 
         def DragLeave(self):
             try:
@@ -170,7 +159,6 @@ else:
         def Drop(self, data_object, key_state, point, effect):
             files: List[str] = []
             try:
-                logger.info("==liuq debug== pywin.Drop 触发")
                 files = self._extract_cf_hdrop(data_object)
                 if not files:
                     files = self._extract_virtual_files(data_object)
@@ -178,16 +166,11 @@ else:
                 if files:
                     try:
                         self._on_files(files)
-                        effect[0] = DROPEFFECT_COPY
                     except Exception as e:
                         logger.error("==liuq debug== pywin.Drop 回调异常: %s", e)
-                        effect[0] = DROPEFFECT_NONE
-                else:
-                    effect[0] = DROPEFFECT_NONE
             except Exception as e:
                 logger.error("==liuq debug== pywin.Drop 异常: %s", e)
-                effect[0] = DROPEFFECT_NONE
-            return 0  # S_OK
+            return DROPEFFECT_COPY
 
     _g_targets = {}
 
@@ -206,7 +189,7 @@ else:
                 pass
             # 注册拖拽：必须传入 COM 包装对象
             dt = _DropTarget(on_files)
-            com_obj = wrap(dt)
+            com_obj = wrap(dt, usePolicy=True)
             pythoncom.RegisterDragDrop(hwnd, com_obj)
             _g_targets[hwnd] = com_obj
             logger.info("==liuq debug== pywin IDropTarget 注册成功 hwnd=%s", hex(hwnd))
