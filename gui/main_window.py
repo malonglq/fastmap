@@ -80,15 +80,7 @@ class MainWindow(QMainWindow):
 
 
 
-    def _ensure_native_drop_installed(self, phase: str = ""):
-        try:
-            from utils.win_drop import install_win_drop
-            hwnd = int(self.winId())
-            self._native_drop_filter = install_win_drop(hwnd, self._on_native_files)
-            if self._native_drop_filter:
-                logger.info("==liuq debug== 已安装 Windows 原生拖拽过滤器 (WM_DROPFILES) phase=%s hwnd=%s", phase, hwnd)
-        except Exception as e:
-            logger.debug("==liuq debug== _ensure_native_drop_installed 失败: %s", e)
+
 
 
     def setup_ui(self):
@@ -153,11 +145,7 @@ class MainWindow(QMainWindow):
         # 5. 报告标签页
         self.report_tab = self.create_report_tab()
         self.tab_widget.addTab(self.report_tab, "分析报告")
-        # Windows 原生拖拽兜底（WM_DROPFILES）
-        try:
-            self._ensure_native_drop_installed(phase="create_tabs")
-        except Exception as e:
-            logger.debug("==liuq debug== 安装原生拖拽过滤器失败: %s", e)
+
 
 
         # 设置默认选中第一个标签页
