@@ -27,18 +27,18 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QFont
 from pathlib import Path
 
-from core.services.map_multi_dimensional_report_generator import MapMultiDimensionalReportGenerator
+from core.services.reporting.map_multi_dimensional_report_generator import MapMultiDimensionalReportGenerator
 from core.models.map_data import MapConfiguration
 from core.models.scene_classification_config import SceneClassificationConfig
 
 logger = logging.getLogger(__name__)
 
 
-class AnalysisPreviewWorker(QThread):
+from gui.dialogs.base_analysis_dialog import BaseAnalysisDialog, BaseWorker
+
+
+class AnalysisPreviewWorker(BaseWorker):
     """分析预览工作线程"""
-    
-    finished = pyqtSignal(dict)
-    error = pyqtSignal(str)
     
     def __init__(self, generator: MapMultiDimensionalReportGenerator, 
                  map_configuration: MapConfiguration,
@@ -52,17 +52,19 @@ class AnalysisPreviewWorker(QThread):
     
     def run(self):
         try:
+            self.progress_updated.emit(50, "正在预览分析范围...")
             preview = self.generator.preview_analysis_scope(
                 self.map_configuration,
                 self.include_multi_dimensional,
                 self.classification_config
             )
-            self.finished.emit(preview)
+            self.progress_updated.emit(100, "预览完成")
+            self.analysis_completed.emit(preview)
         except Exception as e:
-            self.error.emit(str(e))
+            self.analysis_failed.emit(str(e))
 
 
-class MapMultiDimensionalDialog(QDialog):
+class MapMultiDimensionalDialog(BaseAnalysisDialog):
     """
     Map多维度分析配置对话框
     
@@ -70,21 +72,12 @@ class MapMultiDimensionalDialog(QDialog):
     """
     
     def __init__(self, map_configuration: MapConfiguration, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Map多维度分析配置")
-        self.setModal(True)
-        self.resize(800, 600)
-        
         # 初始化组件
         self.map_configuration = map_configuration
         self.generator = MapMultiDimensionalReportGenerator()
         self.classification_config = SceneClassificationConfig()
         
-        # 设置UI
-        self.setup_ui()
-        
-        # 连接信号
-        self.setup_signals()
+        super().__init__(parent, "Map多维度分析配置", (800, 600))
         
         # 加载Map数据概览
         self.load_map_overview()
@@ -93,10 +86,7 @@ class MapMultiDimensionalDialog(QDialog):
     
     def setup_ui(self):
         """设置用户界面"""
-        layout = QVBoxLayout(self)
-        
-        # 创建标签页
-        self.tab_widget = QTabWidget()
+        # 基础UI设置已由基类完成
         
         # Map数据概览标签页
         self.overview_tab = self.create_overview_tab()
@@ -114,26 +104,10 @@ class MapMultiDimensionalDialog(QDialog):
         self.preview_tab = self.create_preview_tab()
         self.tab_widget.addTab(self.preview_tab, "预览")
         
-        layout.addWidget(self.tab_widget)
-        
-        # 底部按钮
-        button_layout = QHBoxLayout()
-        
-        self.preview_btn = QPushButton("预览分析范围")
+        # 显示预览按钮
+        self.preview_btn.setVisible(True)
+        self.preview_btn.setText("预览分析范围")
         self.preview_btn.clicked.connect(self.preview_analysis)
-        button_layout.addWidget(self.preview_btn)
-        
-        button_layout.addStretch()
-        
-        self.cancel_btn = QPushButton("取消")
-        self.cancel_btn.clicked.connect(self.reject)
-        button_layout.addWidget(self.cancel_btn)
-        
-        self.ok_btn = QPushButton("生成报告")
-        self.ok_btn.clicked.connect(self.accept)
-        button_layout.addWidget(self.ok_btn)
-        
-        layout.addLayout(button_layout)
     
     def create_overview_tab(self) -> QWidget:
         """创建Map数据概览标签页"""
@@ -363,22 +337,20 @@ class MapMultiDimensionalDialog(QDialog):
             classification_config = self.get_classification_config() if include_multi_dimensional else None
             
             # 创建预览工作线程
-            self.preview_worker = AnalysisPreviewWorker(
+            worker = AnalysisPreviewWorker(
                 self.generator,
                 self.map_configuration,
                 include_multi_dimensional,
                 classification_config
             )
-            self.preview_worker.finished.connect(self.on_preview_finished)
-            self.preview_worker.error.connect(self.on_preview_error)
-            self.preview_worker.start()
+            self.start_worker(worker)
             
         except Exception as e:
             error_msg = f"预览分析范围失败: {e}"
             self.preview_text.setPlainText(error_msg)
             logger.error(f"==liuq debug== {error_msg}")
     
-    def on_preview_finished(self, preview: Dict[str, Any]):
+    def on_worker_completed(self, preview: Dict[str, Any]):
         """预览完成"""
         try:
             # 格式化预览信息
@@ -416,10 +388,10 @@ class MapMultiDimensionalDialog(QDialog):
             self.preview_text.setPlainText(error_msg)
             logger.error(f"==liuq debug== {error_msg}")
     
-    def on_preview_error(self, error_msg: str):
+    def on_worker_failed(self, error_msg: str):
         """预览错误"""
         self.preview_text.setPlainText(f"预览分析范围失败: {error_msg}")
-        QMessageBox.warning(self, "预览错误", f"预览分析范围失败:\n{error_msg}")
+        self.show_warning("预览错误", f"预览分析范围失败:\n{error_msg}")
     
     def get_classification_config(self) -> SceneClassificationConfig:
         """获取场景分类配置"""

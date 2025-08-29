@@ -14,7 +14,7 @@ import logging
 # 添加项目根目录到Python路径
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-from core.services.xml_writer_service import XMLWriterService
+from core.services.map_analysis.xml_writer_service import XMLWriterService
 
 logger = logging.getLogger(__name__)
 

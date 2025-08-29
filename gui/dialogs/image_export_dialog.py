@@ -23,7 +23,7 @@ from PyQt5.QtGui import QFont
 from core.interfaces.image_classification import (
     ClassificationOptions, ExportSelection, NamingOptions
 )
-from core.services.image_export_workflow_service import ImageExportWorkflowService
+from core.services.exif_processing.image_export_workflow_service import ImageExportWorkflowService
 
 logger = logging.getLogger(__name__)
 

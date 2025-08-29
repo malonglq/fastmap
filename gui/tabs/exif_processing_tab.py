@@ -20,8 +20,8 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
 
 from core.interfaces.exif_processing import IExifParserService, IExifCsvExporter, ExifParseOptions
-from core.services.exif_parser_service import ExifParserService
-from core.services.exif_csv_exporter import ExifCsvExporter
+from core.services.exif_processing.exif_parser_service import ExifParserService
+from core.services.exif_processing.exif_csv_exporter import ExifCsvExporter
 
 class _ExportWorker(QThread):
     progress = pyqtSignal(int, int, str)  # processed, total, current_file
@@ -467,7 +467,7 @@ class ExifProcessingTab(QWidget):
                 compute_available=False,
                 debug_log_keys=False,
             )
-            from core.services.exif_raw_exporter import ExifRawExporter
+            from core.services.exif_processing.exif_raw_exporter import ExifRawExporter
             self._raw_worker = _ExportRawWorker(self.parser, ExifRawExporter(), src_path, opts, out_path)
             self._raw_worker.progress.connect(self._on_export_progress)
             self._raw_worker.finished_ok.connect(self._on_export_done)

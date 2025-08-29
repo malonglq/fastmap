@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest tests/unit/test_temperature_span_analyzer.py -v)",
+      "Bash(python -m pytest tests/unit/test_temperature_span_analyzer.py::TestTemperatureSpanAnalyzer::test_analyzer_initialization -v)",
+      "Bash(python:*)",
+      "Bash(timeout:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

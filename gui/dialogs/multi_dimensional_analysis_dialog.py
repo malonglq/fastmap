@@ -18,21 +18,19 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QFont, QPixmap
 import json
 from pathlib import Path
+from typing import Dict, Any, Optional
 
 from core.models.map_data import MapConfiguration
 from core.models.scene_classification_config import SceneClassificationConfig, get_default_config_path
-from core.services.multi_dimensional_analyzer import MultiDimensionalAnalyzer
+from core.services.map_analysis.multi_dimensional_analyzer import MultiDimensionalAnalyzer
 from gui.dialogs.analysis_config_dialog import AnalysisConfigDialog
+from gui.dialogs.base_analysis_dialog import BaseAnalysisDialog, BaseWorker
 
 logger = logging.getLogger(__name__)
 
 
-class AnalysisWorker(QThread):
+class AnalysisWorker(BaseWorker):
     """分析工作线程"""
-    
-    progress_updated = pyqtSignal(int, str)
-    analysis_completed = pyqtSignal(dict)
-    analysis_failed = pyqtSignal(str)
     
     def __init__(self, configuration: MapConfiguration, 
                  classification_config: SceneClassificationConfig):
@@ -61,7 +59,7 @@ class AnalysisWorker(QThread):
             self.analysis_failed.emit(str(e))
 
 
-class MultiDimensionalAnalysisDialog(QDialog):
+class MultiDimensionalAnalysisDialog(BaseAnalysisDialog):
     """
     多维度分析对话框
     
@@ -76,42 +74,23 @@ class MultiDimensionalAnalysisDialog(QDialog):
             parent: 父窗口
             configuration: Map配置数据
         """
-        super().__init__(parent)
         self.configuration = configuration
         self.classification_config = SceneClassificationConfig.load_from_file(get_default_config_path())
         self.analysis_result = None
         
-        self.setup_ui()
-        self.setup_connections()
+        super().__init__(parent, "Map数据多维度分析报告")
         
         logger.info("==liuq debug== 多维度分析对话框初始化完成")
     
     def setup_ui(self):
         """设置用户界面"""
-        self.setWindowTitle("Map数据多维度分析报告")
-        self.setModal(True)
-        self.resize(1200, 800)
-        
-        # 主布局
-        main_layout = QVBoxLayout(self)
-        main_layout.setSpacing(10)
-        
-        # 标题区域
-        self.create_title_area(main_layout)
+        # 基础UI设置已由基类完成
         
         # 控制区域
-        self.create_control_area(main_layout)
-        
-        # 进度条
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setVisible(False)
-        main_layout.addWidget(self.progress_bar)
+        self.create_control_area(self.main_layout)
         
         # 主要内容区域
-        self.create_content_area(main_layout)
-        
-        # 底部按钮区域
-        self.create_button_area(main_layout)
+        self.create_content_area(self.main_layout)
         
         # 设置样式
         self.setStyleSheet("""
@@ -139,23 +118,13 @@ class MultiDimensionalAnalysisDialog(QDialog):
                 background-color: #e0e0e0;
             }
         """)
-    
-    def create_title_area(self, parent_layout):
-        """创建标题区域"""
-        title_label = QLabel("Map数据多维度分析报告")
-        title_font = QFont()
-        title_font.setPointSize(16)
-        title_font.setBold(True)
-        title_label.setFont(title_font)
-        title_label.setAlignment(Qt.AlignCenter)
-        parent_layout.addWidget(title_label)
         
-        # 分隔线
-        line = QFrame()
-        line.setFrameShape(QFrame.HLine)
-        line.setFrameShadow(QFrame.Sunken)
-        parent_layout.addWidget(line)
+        # 显示导出按钮
+        self.export_btn.setVisible(True)
+        self.export_btn.setText("导出报告")
+        self.export_btn.clicked.connect(self.export_report)
     
+        
     def create_control_area(self, parent_layout):
         """创建控制区域"""
         control_layout = QHBoxLayout()
@@ -180,9 +149,6 @@ class MultiDimensionalAnalysisDialog(QDialog):
     
     def create_content_area(self, parent_layout):
         """创建主要内容区域"""
-        # 创建标签页控件
-        self.tab_widget = QTabWidget()
-        
         # 1. 分析概览标签页
         self.overview_tab = self.create_overview_tab()
         self.tab_widget.addTab(self.overview_tab, "分析概览")
@@ -198,8 +164,6 @@ class MultiDimensionalAnalysisDialog(QDialog):
         # 4. 详细报告标签页
         self.report_tab = self.create_detailed_report_tab()
         self.tab_widget.addTab(self.report_tab, "详细报告")
-        
-        parent_layout.addWidget(self.tab_widget)
     
     def create_overview_tab(self) -> QWidget:
         """创建分析概览标签页"""
@@ -277,24 +241,7 @@ class MultiDimensionalAnalysisDialog(QDialog):
         
         return tab
     
-    def create_button_area(self, parent_layout):
-        """创建底部按钮区域"""
-        button_layout = QHBoxLayout()
         
-        # 导出报告按钮
-        export_btn = QPushButton("导出报告")
-        export_btn.clicked.connect(self.export_report)
-        button_layout.addWidget(export_btn)
-        
-        button_layout.addStretch()
-        
-        # 关闭按钮
-        close_btn = QPushButton("关闭")
-        close_btn.clicked.connect(self.close)
-        button_layout.addWidget(close_btn)
-        
-        parent_layout.addLayout(button_layout)
-    
     def setup_connections(self):
         """设置信号连接"""
         pass
@@ -318,39 +265,21 @@ class MultiDimensionalAnalysisDialog(QDialog):
                 QMessageBox.warning(self, "警告", "没有可分析的Map配置数据")
                 return
             
-            # 显示进度条
-            self.progress_bar.setVisible(True)
-            self.progress_bar.setValue(0)
-            self.analyze_btn.setEnabled(False)
-            
             # 创建并启动分析线程
-            self.analysis_worker = AnalysisWorker(self.configuration, self.classification_config)
-            self.analysis_worker.progress_updated.connect(self.update_progress)
-            self.analysis_worker.analysis_completed.connect(self.on_analysis_completed)
-            self.analysis_worker.analysis_failed.connect(self.on_analysis_failed)
-            self.analysis_worker.start()
+            worker = AnalysisWorker(self.configuration, self.classification_config)
+            self.start_worker(worker, self.analyze_btn)
             
             logger.info("==liuq debug== 多维度分析已启动")
             
         except Exception as e:
             logger.error(f"==liuq debug== 启动分析失败: {e}")
             QMessageBox.critical(self, "错误", f"启动分析失败: {e}")
-            self.analyze_btn.setEnabled(True)
-            self.progress_bar.setVisible(False)
-    
-    def update_progress(self, value: int, message: str):
-        """更新进度"""
-        self.progress_bar.setValue(value)
-        self.progress_bar.setFormat(f"{message} ({value}%)")
     
     def on_analysis_completed(self, result: dict):
         """分析完成处理"""
         try:
             self.analysis_result = result
             self.update_ui_with_results()
-            
-            self.progress_bar.setVisible(False)
-            self.analyze_btn.setEnabled(True)
             
             QMessageBox.information(self, "完成", "多维度分析已完成")
             logger.info("==liuq debug== 多维度分析完成")
@@ -361,8 +290,6 @@ class MultiDimensionalAnalysisDialog(QDialog):
     
     def on_analysis_failed(self, error_message: str):
         """分析失败处理"""
-        self.progress_bar.setVisible(False)
-        self.analyze_btn.setEnabled(True)
         QMessageBox.critical(self, "分析失败", f"分析过程中发生错误: {error_message}")
         logger.error(f"==liuq debug== 多维度分析失败: {error_message}")
     
@@ -579,18 +506,18 @@ class MultiDimensionalAnalysisDialog(QDialog):
             logger.error(f"==liuq debug== 生成详细报告文本失败: {e}")
             return f"生成报告失败: {e}"
     
-    def export_report(self):
+    def on_export_clicked(self):
         """导出报告"""
         try:
             if not self.analysis_result:
-                QMessageBox.warning(self, "警告", "没有可导出的分析结果")
+                self.show_warning("警告", "没有可导出的分析结果")
                 return
             
             # 选择导出文件
-            file_path, _ = QFileDialog.getSaveFileName(
-                self, "导出分析报告", 
-                f"多维度分析报告_{self.analysis_result.get('analysis_metadata', {}).get('timestamp', '').replace(':', '-').replace(' ', '_')}.json",
-                "JSON文件 (*.json);;文本文件 (*.txt);;所有文件 (*)"
+            file_path = self.browse_file(
+                "导出分析报告", 
+                "JSON文件 (*.json);;文本文件 (*.txt);;所有文件 (*)",
+                save_mode=True
             )
             
             if file_path:
@@ -604,9 +531,9 @@ class MultiDimensionalAnalysisDialog(QDialog):
                     with open(file_path, 'w', encoding='utf-8') as f:
                         f.write(report_text)
                 
-                QMessageBox.information(self, "成功", f"报告已导出到: {file_path}")
+                self.show_info("成功", f"报告已导出到: {file_path}")
                 logger.info(f"==liuq debug== 分析报告已导出: {file_path}")
                 
         except Exception as e:
             logger.error(f"==liuq debug== 导出报告失败: {e}")
-            QMessageBox.critical(self, "导出失败", f"导出报告失败: {e}")
+            self.show_error("导出失败", f"导出报告失败: {e}")

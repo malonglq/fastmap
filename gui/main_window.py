@@ -20,10 +20,15 @@ from PyQt5.QtWidgets import (
     QMainWindow, QTabWidget, QVBoxLayout, QHBoxLayout,
     QWidget, QMenuBar, QStatusBar, QAction, QMessageBox,
     QLabel, QPushButton, QTextEdit, QSplitter,
-    QFileDialog, QApplication
+    QFileDialog, QApplication, QAbstractScrollArea
 )
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QEvent
 from PyQt5.QtGui import QIcon, QFont
+import time
+
+# 导入ViewModel
+from gui.view_models.main_window_view_model import get_main_window_viewmodel
+from gui.managers.tab_communication_manager import get_tab_communication_manager
 
 logger = logging.getLogger(__name__)
 
@@ -48,11 +53,17 @@ class MainWindow(QMainWindow):
         super().__init__()
         logger.info("==liuq debug== 开始初始化主窗口")
 
-        # 初始化数据属性
-        self.current_xml_file = None
-        self.map_configuration = None
-        self.map_analyzer = None
-        self.analysis_result = None
+        # 初始化ViewModel
+        self.view_model = get_main_window_viewmodel()
+        
+        # 初始化Tab通信管理器
+        self.tab_communication_manager = get_tab_communication_manager()
+        
+        # 连接ViewModel信号
+        self._connect_viewmodel_signals()
+        
+        # 连接Tab通信管理器信号
+        self._connect_tab_communication_signals()
 
         # 先在顶层窗口启用拖拽（尽早）
         try:
@@ -67,7 +78,7 @@ class MainWindow(QMainWindow):
         self.setup_signals()
         self.setup_drag_and_drop()
         # 启动签名，便于确认运行最新拖拽实现
-        logger.info("==liuq debug== BOOT_SIGNATURE: DnD_v3_pywin32_enabled")
+        logger.info("==liuq debug== BOOT_SIGNATURE: DnD_v4_unified_manager_enabled")
 
         logger.info("==liuq debug== 主窗口初始化完成")
         # 启动“拖拽区域”兜底监控（桌面目录）
@@ -75,12 +86,51 @@ class MainWindow(QMainWindow):
             self._start_drag_zone_monitor()
         except Exception as e:
             logger.debug("==liuq debug== 启动拖拽区域监控失败: %s", e)
-        # 注意：pywin 注册改为在窗口显示后执行（showEvent 中），避免 HWND 未就绪
-        logger.info("==liuq debug== pywin 注册将于窗口显示后执行(SHOW)")
+        # 注意：统一拖拽注册改为在窗口显示后执行（showEvent 中），避免 HWND 未就绪
+        logger.info("==liuq debug== 统一拖拽注册将于窗口显示后执行(SHOW)")
+    
+    def _connect_viewmodel_signals(self):
+        """连接ViewModel信号"""
+        # 连接状态消息信号
+        self.view_model.status_message_changed.connect(self.status_message.emit)
+        
+        # 连接XML文件加载信号
+        self.view_model.xml_file_loaded.connect(self._on_xml_file_loaded)
+        
+        # 连接分析完成信号
+        self.view_model.map_analysis_completed.connect(self._on_map_analysis_completed)
+        
+        # 连接报告生成按钮状态信号
+        self.view_model.generate_report_enabled.connect(self._on_generate_report_enabled)
+    
+    def _connect_tab_communication_signals(self):
+        """连接Tab通信管理器信号"""
+        # 连接状态更新信号
+        self.tab_communication_manager.status_updated.connect(self.status_message.emit)
+        
+        # 连接XML文件加载信号
+        self.tab_communication_manager.xml_file_loaded.connect(self._on_tab_xml_file_loaded)
+        
+        # 连接Map分析完成信号
+        self.tab_communication_manager.map_analysis_completed.connect(self._on_tab_map_analysis_completed)
+        
+        # 连接EXIF处理完成信号
+        self.tab_communication_manager.exif_processing_completed.connect(self._on_tab_exif_processing_completed)
+        
+        # 连接报告生成完成信号
+        self.tab_communication_manager.report_generated.connect(self._on_tab_report_generated)
 
 
 
-    # _ensure_native_drop_installed方法已删除 - 使用极简拖拽系统
+    def _ensure_native_drop_installed(self, phase: str = ""):
+        try:
+            from utils.win_drop import install_win_drop
+            hwnd = int(self.winId())
+            self._native_drop_filter = install_win_drop(hwnd, self._on_native_files)
+            if self._native_drop_filter:
+                logger.info("==liuq debug== 已安装 Windows 原生拖拽过滤器 (WM_DROPFILES) phase=%s hwnd=%s", phase, hwnd)
+        except Exception as e:
+            logger.debug("==liuq debug== _ensure_native_drop_installed 失败: %s", e)
 
 
     def setup_ui(self):
@@ -175,7 +225,7 @@ class MainWindow(QMainWindow):
         # 已移除“选择XML文件/开始分析”按钮：通过菜单加载XML后自动分析
 
         self.generate_report_btn = QPushButton("生成HTML报告")
-        self.generate_report_btn.clicked.connect(self.generate_html_report)
+        self.generate_report_btn.clicked.connect(self._on_generate_report_clicked)
         self.generate_report_btn.setEnabled(False)
         control_layout.addWidget(self.generate_report_btn)
 
@@ -191,6 +241,7 @@ class MainWindow(QMainWindow):
         # 左侧：Map点列表表格 (70%宽度)
         from gui.widgets.map_table_widget import MapTableWidget
         self.map_table = MapTableWidget()
+        # 直接连接到展示方法，确保右侧即时显示图形
         self.map_table.map_point_selected.connect(self.on_map_point_selected)
         self.map_table.base_boundary_selected.connect(self.on_base_boundary_selected)
 
@@ -387,48 +438,60 @@ class MainWindow(QMainWindow):
         """标签页切换事件处理"""
         tab_names = ["Map分析", "EXIF处理", "仿写功能", "特征点功能", "分析报告"]
         if 0 <= index < len(tab_names):
-            self.status_message.emit(f"切换到 {tab_names[index]} 标签页")
-            logger.info(f"==liuq debug== 切换到标签页: {tab_names[index]}")
+            tab_name = tab_names[index]
+            self.status_message.emit(f"切换到 {tab_name} 标签页")
+            logger.info(f"==liuq debug== 切换到标签页: {tab_name}")
+            
+            # 通过ViewModel触发事件
+            from core.infrastructure.event_bus import EventType
+            self.view_model.event_bus.emit(EventType.TAB_CHANGED, {
+                'tab_index': index,
+                'tab_name': tab_name
+            })
+    
+    def _on_map_point_selected(self, point_index: int):
+        """处理Map点选择事件"""
+        try:
+            # 通过ViewModel处理Map点选择
+            self.view_model.select_map_point(point_index)
+            
+        except Exception as e:
+            logger.error(f"==liuq debug== 处理Map点选择事件失败: {e}")
+    
+    def _on_base_boundary_selected(self):
+        """处理基础边界选择事件"""
+        try:
+            # 通过ViewModel处理基础边界选择
+            self.view_model.select_base_boundary()
+            
+        except Exception as e:
+            logger.error(f"==liuq debug== 处理基础边界选择事件失败: {e}")
 
     def open_xml_file(self):
         """打开XML文件"""
-        self.select_xml_file()
+        self._select_xml_file()
 
     def save_xml_file(self):
         """保存XML文件"""
         try:
-            if not hasattr(self, 'current_xml_file') or not self.current_xml_file:
+            if not self.view_model.current_xml_file:
                 QMessageBox.warning(self, "警告", "没有打开的XML文件")
                 return
-
-            if not hasattr(self, 'map_configuration') or not self.map_configuration:
-                QMessageBox.warning(self, "警告", "没有可保存的配置数据")
-                return
-
-            self.status_message.emit("正在保存XML文件...")
-
-            # 使用XMLWriterService保存文件
-            from core.services.xml_writer_service import XMLWriterService
-            writer = XMLWriterService()
-
-            success = writer.write_xml(self.map_configuration, self.current_xml_file)
-
+            
+            success = self.view_model.save_xml_file()
             if success:
-                self.status_message.emit(f"XML文件已保存: {self.current_xml_file}")
                 QMessageBox.information(self, "成功", "XML文件保存成功")
-                logger.info(f"==liuq debug== XML文件保存成功: {self.current_xml_file}")
             else:
                 QMessageBox.warning(self, "警告", "XML文件保存失败")
-
+                
         except Exception as e:
             logger.error(f"==liuq debug== 保存XML文件失败: {e}")
             QMessageBox.critical(self, "错误", f"保存文件失败: {e}")
-            self.status_message.emit("保存失败")
 
     def save_xml_file_as(self):
         """另存为XML文件"""
         try:
-            if not hasattr(self, 'map_configuration') or not self.map_configuration:
+            if not self.view_model.map_configuration:
                 QMessageBox.warning(self, "警告", "没有可保存的配置数据")
                 return
 
@@ -439,27 +502,150 @@ class MainWindow(QMainWindow):
             )
 
             if filename:
-                self.status_message.emit("正在保存XML文件...")
-
-                # 使用XMLWriterService保存文件
-                from core.services.xml_writer_service import XMLWriterService
-                writer = XMLWriterService()
-
-                success = writer.write_xml(self.map_configuration, filename)
-
+                success = self.view_model.save_xml_file(filename)
                 if success:
-                    self.current_xml_file = filename
-                    self.xml_file_label.setText(f"文件: {filename}")
-                    self.status_message.emit(f"XML文件已保存: {filename}")
                     QMessageBox.information(self, "成功", "XML文件保存成功")
-                    logger.info(f"==liuq debug== XML文件另存为成功: {filename}")
                 else:
                     QMessageBox.warning(self, "警告", "XML文件保存失败")
 
         except Exception as e:
             logger.error(f"==liuq debug== 另存为XML文件失败: {e}")
             QMessageBox.critical(self, "错误", f"另存为文件失败: {e}")
-            self.status_message.emit("保存失败")
+    
+    def _select_xml_file(self):
+        """选择XML文件"""
+        try:
+            filename, _ = QFileDialog.getOpenFileName(
+                self, "选择Map配置XML文件", "",
+                "XML files (*.xml);;All files (*.*)"
+            )
+
+            if filename:
+                # 使用ViewModel加载XML文件
+                success = self.view_model.load_xml_file(filename)
+                if not success:
+                    QMessageBox.critical(self, "错误", "XML文件加载失败")
+
+        except Exception as e:
+            logger.error(f"==liuq debug== 选择XML文件失败: {e}")
+            QMessageBox.critical(self, "错误", f"选择文件失败: {e}")
+    
+    def _on_xml_file_loaded(self, file_path: str):
+        """处理XML文件加载完成事件"""
+        try:
+            # 更新UI显示
+            self.xml_file_label.setText(f"文件: {self.view_model.get_xml_file_display_name()}")
+            
+            # 启用相关菜单项
+            self.save_xml_action.setEnabled(True)
+            self.save_as_xml_action.setEnabled(True)
+            
+            # 更新组件
+            if hasattr(self, 'map_shape_viewer') and self.map_shape_viewer:
+                self.map_shape_viewer.set_xml_white_points(file_path)
+                
+        except Exception as e:
+            logger.error(f"==liuq debug== 处理XML文件加载事件失败: {e}")
+    
+    def _on_map_analysis_completed(self, analysis_result):
+        """处理Map分析完成事件"""
+        try:
+            # 更新表格数据
+            if hasattr(self, 'map_table') and self.map_table:
+                try:
+                    # 使用ViewModel中已解析好的 MapConfiguration 刷新左侧表格
+                    if self.view_model.map_configuration:
+                        self.map_table.set_configuration(self.view_model.map_configuration)
+                        # 传递XML路径，支持自动保存等功能
+                        if self.view_model.current_xml_file:
+                            self.map_table.set_xml_file_path(str(self.view_model.current_xml_file))
+                        logger.info("==liuq debug== 通过ViewModel分析完成回调刷新Map表格")
+                    else:
+                        logger.warning("==liuq debug== 分析完成但无map_configuration，跳过表格刷新")
+                except Exception as _e:
+                    logger.error(f"==liuq debug== 刷新Map表格失败: {_e}")
+
+            # 更新形状查看器
+            if hasattr(self, 'map_shape_viewer') and self.map_shape_viewer:
+                # 传入 MapPoint 形态的 base_boundary_point（若存在）
+                try:
+                    bbp = getattr(self.view_model.map_configuration, 'base_boundary_point', None)
+                except Exception:
+                    bbp = None
+                if bbp:
+                    self.map_shape_viewer.show_base_boundary(bbp)
+
+        except Exception as e:
+            logger.error(f"==liuq debug== 处理Map分析完成事件失败: {e}")
+    
+    def _on_generate_report_enabled(self, enabled: bool):
+        """处理报告生成按钮状态事件"""
+        try:
+            if hasattr(self, 'generate_report_btn'):
+                self.generate_report_btn.setEnabled(enabled)
+                
+        except Exception as e:
+            logger.error(f"==liuq debug== 处理报告生成按钮状态事件失败: {e}")
+    
+    def _on_generate_report_clicked(self):
+        """处理生成报告按钮点击事件"""
+        try:
+            # 使用新的MVVM架构：调用ViewModel的方法
+            success = self.view_model.generate_html_report()
+            if not success:
+                QMessageBox.warning(self, "警告", "生成报告失败")
+
+        except Exception as e:
+            logger.error(f"==liuq debug== 生成HTML报告失败: {e}")
+            QMessageBox.critical(self, "错误", f"生成报告失败: {e}")
+    
+    # Tab通信事件处理方法
+    def _on_tab_xml_file_loaded(self, file_path: str, metadata: dict):
+        """处理Tab通信的XML文件加载事件"""
+        try:
+            logger.info(f"==liuq debug== Tab通信: XML文件已加载 - {file_path}")
+            # 可以在这里添加额外的UI更新逻辑
+            
+        except Exception as e:
+            logger.error(f"==liuq debug== 处理Tab通信XML文件加载事件失败: {e}")
+    
+    def _on_tab_map_analysis_completed(self, analysis_result: dict):
+        """处理Tab通信的Map分析完成事件"""
+        try:
+            logger.info("==liuq debug== Tab通信: Map分析已完成")
+            # 可以在这里添加额外的UI更新逻辑
+            
+        except Exception as e:
+            logger.error(f"==liuq debug== 处理Tab通信Map分析完成事件失败: {e}")
+    
+    def _on_tab_exif_processing_completed(self, processing_path: str, result: dict):
+        """处理Tab通信的EXIF处理完成事件"""
+        try:
+            logger.info(f"==liuq debug== Tab通信: EXIF处理已完成 - {processing_path}")
+            # 可以在这里添加额外的UI更新逻辑
+            
+        except Exception as e:
+            logger.error(f"==liuq debug== 处理Tab通信EXIF处理完成事件失败: {e}")
+    
+    def _on_tab_report_generated(self, report_type: str, file_path: str):
+        """处理Tab通信的报告生成完成事件（新MVVM架构）"""
+        try:
+            logger.info(f"==liuq debug== Tab通信: {report_type}报告已生成 - {file_path}")
+
+            # 显示报告生成完成弹窗（从旧逻辑迁移）
+            reply = QMessageBox.question(
+                self, '报告生成完成',
+                f'HTML报告已生成: {file_path}\n\n是否立即打开？',
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.Yes
+            )
+
+            if reply == QMessageBox.Yes:
+                from utils.browser_utils import open_html_report
+                open_html_report(file_path)
+
+        except Exception as e:
+            logger.error(f"==liuq debug== 处理Tab通信报告生成事件失败: {e}")
 
     def select_xml_file(self):
         """选择XML文件"""
@@ -472,6 +658,12 @@ class MainWindow(QMainWindow):
             if filename:
                 self.xml_file_label.setText(f"文件: {filename}")
                 self.current_xml_file = filename
+                # 将白点XML路径设置到形状查看器（用于从XML加载白点参考点）
+                try:
+                    if hasattr(self, 'map_shape_viewer') and self.map_shape_viewer:
+                        self.map_shape_viewer.set_xml_white_points(filename)
+                except Exception as _e:
+                    logger.warning(f"==liuq debug== 传递XML白点路径失败: {_e}")
                 # 直接开始分析
                 self.status_message.emit(f"已选择XML文件: {filename}，开始分析…")
                 logger.info(f"==liuq debug== 选择XML并自动分析: {filename}")
@@ -491,113 +683,129 @@ class MainWindow(QMainWindow):
             self.status_message.emit("正在分析Map配置...")
 
             # 导入必要的类
-            from core.services.xml_parser_service import XMLParserService
-            from core.services.map_analyzer import MapAnalyzer
-            from core.services.multi_dimensional_analyzer import MultiDimensionalAnalyzer
+            from core.services.map_analysis.xml_parser_service import XMLParserService
+            from core.services.map_analysis.map_analyzer import MapAnalyzer
+            from core.services.map_analysis.multi_dimensional_analyzer import MultiDimensionalAnalyzer
             from core.models.scene_classification_config import SceneClassificationConfig, get_default_config_path
 
             # 解析XML文件
             parser = XMLParserService()
+            t0 = time.time()
             self.map_configuration = parser.parse_xml(self.current_xml_file, "analysis")
+            logger.info("==liuq debug== XML解析完成，用时 %.3fs", time.time() - t0)
 
-            # 创建传统分析器并分析
-            self.map_analyzer = MapAnalyzer(self.map_configuration)
-            self.analysis_result = self.map_analyzer.analyze()
+            # 立即更新右侧 MapShapeViewer（在任何重负载操作之前），避免延迟
+            try:
+                if hasattr(self, 'map_shape_viewer') and self.map_shape_viewer:
+                    self.map_shape_viewer.clear_current_selections()
+                    if getattr(self.map_configuration, 'base_boundary_point', None):
+                        self.map_shape_viewer.show_base_boundary(self.map_configuration.base_boundary_point)
+                        # 立刻刷新Qt事件，确保即刻渲染
+                        from PyQt5.QtWidgets import QApplication
+                        QApplication.processEvents()
+                        logger.info("==liuq debug== ⏱ 已即时刷新右侧Base Boundary显示（在表格/分析前）")
+                    else:
+                        logger.info("==liuq debug== 新配置不包含 base_boundary_point，右侧视图显示为空状态")
+            except Exception as _e:
+                logger.warning(f"==liuq debug== 预刷新MapShapeViewer失败: {_e}")
 
-            # 创建多维度分析器并分析（使用相同的MapConfiguration数据源）
-            classification_config = SceneClassificationConfig.load_from_file(get_default_config_path())
-            self.multi_dimensional_analyzer = MultiDimensionalAnalyzer(self.map_configuration, classification_config)
-            self.multi_dimensional_result = self.multi_dimensional_analyzer.analyze()
+            # 将后续重负载任务安排到事件循环中，避免阻塞刚刚完成的即时重绘
+            try:
+                QTimer.singleShot(0, self._continue_map_analysis)
+                logger.info("==liuq debug== 已安排延后执行_continue_map_analysis，立刻返回事件循环以展示即时重绘")
+                return
+            except Exception as _e:
+                logger.warning(f"==liuq debug== 安排延后执行失败，回退为同步流程: {_e}")
+                # fallback: 若singleShot异常，则继续执行同步流程
 
-            # 更新Map点表格，同时传递XML文件路径以支持自动保存
-            self.map_table.set_configuration(self.map_configuration)
-            self.map_table.set_xml_file_path(self.current_xml_file)
+                # 创建传统分析器并分析
+                t1 = time.time()
+                self.map_analyzer = MapAnalyzer(self.map_configuration)
+                self.analysis_result = self.map_analyzer.analyze()
 
-            # 启用报告生成按钮和保存按钮（首页已移除多维度分析按钮）
-            self.generate_report_btn.setEnabled(True)
-            self.save_xml_action.setEnabled(True)
-            self.save_as_xml_action.setEnabled(True)
+                # 同时设置ViewModel的数据（新MVVM架构）
+                self.view_model.set_map_analyzer(self.map_analyzer)
+                self.view_model.set_map_configuration(self.map_configuration)
 
-            self.status_message.emit(f"分析完成，共 {len(self.map_configuration.map_points)} 个Map点")
-            logger.info(f"==liuq debug== Map分析完成")
+                logger.info("==liuq debug== MapAnalyzer分析完成，用时 %.3fs", time.time() - t1)
 
+                # 创建多维度分析器并分析（使用相同的MapConfiguration数据源）
+                t2 = time.time()
+                classification_config = SceneClassificationConfig.load_from_file(get_default_config_path())
+                self.multi_dimensional_analyzer = MultiDimensionalAnalyzer(self.map_configuration, classification_config)
+                self.multi_dimensional_result = self.multi_dimensional_analyzer.analyze()
+                logger.info("==liuq debug== MultiDimensional分析完成，用时 %.3fs", time.time() - t2)
+
+                # 更新Map点表格，同时传递XML文件路径以支持自动保存
+                t3 = time.time()
+                self.map_table.set_configuration(self.map_configuration)
+                self.map_table.set_xml_file_path(self.current_xml_file)
+                logger.info("==liuq debug== 表格填充完成，用时 %.3fs", time.time() - t3)
+
+                # 再次确保右侧显示保持最新（避免表格重绘覆盖）
+                try:
+                    if hasattr(self, 'map_shape_viewer') and self.map_shape_viewer and getattr(self.map_configuration, 'base_boundary_point', None):
+                        self.map_shape_viewer.show_base_boundary(self.map_configuration.base_boundary_point)
+                except Exception as _e2:
+                    logger.warning(f"==liuq debug== 最终确认刷新MapShapeViewer失败: {_e2}")
+
+                # 启用报告生成按钮和保存按钮（首页已移除多维度分析按钮）
+                self.generate_report_btn.setEnabled(True)
+                self.save_xml_action.setEnabled(True)
+                self.save_as_xml_action.setEnabled(True)
+
+                self.status_message.emit(f"分析完成，共 {len(self.map_configuration.map_points)} 个Map点")
+                logger.info(f"==liuq debug== Map分析完成")
         except Exception as e:
             logger.error(f"==liuq debug== Map分析失败: {e}")
             QMessageBox.critical(self, "分析错误", f"Map分析失败: {e}")
             self.status_message.emit("分析失败")
 
-    def generate_html_report(self):
-        """生成HTML报告"""
+
+    def _continue_map_analysis(self):
+        """延后执行的重负载步骤，避免阻塞即时重绘。"""
         try:
-            if not hasattr(self, 'map_analyzer'):
-                QMessageBox.warning(self, "警告", "请先进行Map分析")
-                return
+            from core.services.map_analysis.map_analyzer import MapAnalyzer
+            from core.services.map_analysis.multi_dimensional_analyzer import MultiDimensionalAnalyzer
+            from core.models.scene_classification_config import SceneClassificationConfig, get_default_config_path
 
-            # 询问用户是否包含多维度分析
-            reply = QMessageBox.question(
-                self, '报告选项',
-                '是否在HTML报告中包含多维度场景分析内容？\n\n'
-                '包含多维度分析将提供更详细的场景分类统计和参数分布信息。',
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.Yes
-            )
+            t1 = time.time()
+            self.map_analyzer = MapAnalyzer(self.map_configuration)
+            self.analysis_result = self.map_analyzer.analyze()
 
-            include_multi_dimensional = (reply == QMessageBox.Yes)
+            # 同时设置ViewModel的数据（新MVVM架构）
+            self.view_model.set_map_analyzer(self.map_analyzer)
+            self.view_model.set_map_configuration(self.map_configuration)
 
-            self.status_message.emit("正在生成HTML报告...")
+            logger.info("==liuq debug== (延后)MapAnalyzer分析完成，用时 %.3fs", time.time() - t1)
 
-            # 导入必要的类
-            from core.services.html_generator import UniversalHTMLGenerator
-            from core.services.combined_report_data_provider import CombinedReportDataProvider
+            t2 = time.time()
+            classification_config = SceneClassificationConfig.load_from_file(get_default_config_path())
+            self.multi_dimensional_analyzer = MultiDimensionalAnalyzer(self.map_configuration, classification_config)
+            self.multi_dimensional_result = self.multi_dimensional_analyzer.analyze()
+            logger.info("==liuq debug== (延后)MultiDimensional分析完成，用时 %.3fs", time.time() - t2)
 
-            # 创建组合数据提供者
-            multi_dimensional_analyzer = None
-            if include_multi_dimensional and hasattr(self, 'multi_dimensional_analyzer'):
-                multi_dimensional_analyzer = self.multi_dimensional_analyzer
-            elif include_multi_dimensional:
-                # 如果用户选择包含多维度分析但还没有执行过，现在执行
-                from core.services.multi_dimensional_analyzer import MultiDimensionalAnalyzer
-                from core.models.scene_classification_config import SceneClassificationConfig, get_default_config_path
+            t3 = time.time()
+            self.map_table.set_configuration(self.map_configuration)
+            self.map_table.set_xml_file_path(self.current_xml_file)
+            logger.info("==liuq debug== (延后)表格填充完成，用时 %.3fs", time.time() - t3)
 
-                classification_config = SceneClassificationConfig.load_from_file(get_default_config_path())
-                multi_dimensional_analyzer = MultiDimensionalAnalyzer(self.map_configuration, classification_config)
-                multi_dimensional_analyzer.analyze()
-                self.multi_dimensional_analyzer = multi_dimensional_analyzer  # 保存以备后用
+            try:
+                if hasattr(self, 'map_shape_viewer') and self.map_shape_viewer and getattr(self.map_configuration, 'base_boundary_point', None):
+                    self.map_shape_viewer.show_base_boundary(self.map_configuration.base_boundary_point)
+            except Exception as _e2:
+                logger.warning(f"==liuq debug== (延后)最终确认刷新MapShapeViewer失败: {_e2}")
 
-            combined_data_provider = CombinedReportDataProvider(
-                self.map_analyzer,
-                multi_dimensional_analyzer,
-                include_multi_dimensional
-            )
+            self.generate_report_btn.setEnabled(True)
+            self.save_xml_action.setEnabled(True)
+            self.save_as_xml_action.setEnabled(True)
 
-            # 创建报告生成器
-            html_generator = UniversalHTMLGenerator()
-
-            # 生成报告
-            report_path = html_generator.generate_report(
-                combined_data_provider,
-                template_name="map_analysis"
-            )
-
-            # 询问是否打开报告
-            reply = QMessageBox.question(
-                self, '报告生成完成',
-                f'HTML报告已生成: {report_path}\n\n是否立即打开？',
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.Yes
-            )
-
-            if reply == QMessageBox.Yes:
-                from utils.browser_utils import open_html_report
-                open_html_report(report_path)
-
-            self.status_message.emit("HTML报告生成完成")
-            logger.info(f"==liuq debug== HTML报告生成完成: {report_path}")
-
+            self.status_message.emit(f"分析完成，共 {len(self.map_configuration.map_points)} 个Map点")
+            logger.info(f"==liuq debug== (延后)Map分析完成")
         except Exception as e:
-            logger.error(f"==liuq debug== HTML报告生成失败: {e}")
-            QMessageBox.critical(self, "报告错误", f"HTML报告生成失败: {e}")
-            self.status_message.emit("报告生成失败")
+            logger.error(f"==liuq debug== _continue_map_analysis失败: {e}")
+
+    # 旧的generate_html_report方法已迁移到MainWindowViewModel中（新MVVM架构）
 
     # 首页已移除多维度分析入口；保留报告页内的多维度分析
 
@@ -649,19 +857,90 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         """窗口关闭事件处理"""
-        reply = QMessageBox.question(
-            self, '确认退出',
-            '确定要退出FastMapV2吗？',
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
+        try:
+            # 在测试环境中直接关闭，避免QMessageBox阻塞
+            if hasattr(self, '_is_testing') and self._is_testing:
+                logger.info("==liuq debug== 测试环境直接关闭窗口")
+                self._safe_cleanup_for_testing()
+                event.accept()
+                return
 
-        if reply == QMessageBox.Yes:
-            # ole_drop清理代码已删除 - ole_drop.py已删除
-            logger.info("==liuq debug== 用户确认退出应用程序")
+            reply = QMessageBox.question(
+                self, '确认退出',
+                '确定要退出FastMapV2吗？',
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+
+            if reply == QMessageBox.Yes:
+                # 清理拖拽管理器资源
+                try:
+                    # 简化清理逻辑，移除不存在的函数调用
+                    logger.info("==liuq debug== 开始清理应用程序资源")
+                    self._safe_cleanup_resources()
+                except Exception as e:
+                    logger.debug("==liuq debug== 清理资源失败: %s", e)
+
+                logger.info("==liuq debug== 用户确认退出应用程序")
+                event.accept()
+            else:
+                logger.info("==liuq debug== 用户取消退出操作")
+                event.ignore()
+        except Exception as e:
+            logger.error(f"==liuq debug== closeEvent发生异常: {e}")
+            # 在异常情况下也要接受关闭事件，避免程序卡死
             event.accept()
-        else:
-            logger.info("==liuq debug== 用户取消退出操作")
+
+    def _safe_cleanup_for_testing(self):
+        """测试环境下的安全清理"""
+        try:
+            # 断开所有信号连接，避免在清理过程中触发事件
+            if hasattr(self, 'view_model') and self.view_model:
+                try:
+                    self.view_model.disconnect()
+                except:
+                    pass
+
+            if hasattr(self, 'tab_communication_manager') and self.tab_communication_manager:
+                try:
+                    self.tab_communication_manager.disconnect()
+                except:
+                    pass
+
+            # 清理标签页控件
+            if hasattr(self, 'tab_widget') and self.tab_widget:
+                try:
+                    self.tab_widget.clear()
+                except:
+                    pass
+
+            logger.info("==liuq debug== 测试环境清理完成")
+        except Exception as e:
+            logger.debug(f"==liuq debug== 测试环境清理异常: {e}")
+
+    def _safe_cleanup_resources(self):
+        """安全的资源清理"""
+        try:
+            # 清理各种资源，添加异常保护
+            logger.info("==liuq debug== 开始安全清理资源")
+
+            # 清理ViewModel
+            if hasattr(self, 'view_model') and self.view_model:
+                try:
+                    self.view_model.cleanup()
+                except:
+                    pass
+
+            # 清理Tab通信管理器
+            if hasattr(self, 'tab_communication_manager') and self.tab_communication_manager:
+                try:
+                    self.tab_communication_manager.cleanup()
+                except:
+                    pass
+
+            logger.info("==liuq debug== 资源清理完成")
+        except Exception as e:
+            logger.debug(f"==liuq debug== 资源清理异常: {e}")
     # === 拖拽单张图片，弹出EXIF快速查看对话框 ===
     def _install_drop_handlers(self, w):
         try:
@@ -673,55 +952,33 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logger.debug("==liuq debug== 启用拖拽失败: %s", e)
 
-    # _install_all_drop_handlers方法已删除 - 使用极简拖拽系统
+    def _install_all_drop_handlers(self, root: QWidget):
+        try:
+            if root is None:
+                return
+            self._install_drop_handlers(root)
+            for w in root.findChildren(QWidget):
+                self._install_drop_handlers(w)
+                try:
+                    # 针对 QAbstractScrollArea 的 viewport 也启用
+                    if isinstance(w, QAbstractScrollArea) and w.viewport() is not None:
+                        self._install_drop_handlers(w.viewport())
+                except Exception as _:
+                    pass
+        except Exception as e:
+            logger.debug("==liuq debug== _install_all_drop_handlers 异常: %s", e)
 
     def setup_drag_and_drop(self):
-        """设置极简拖拽功能 - 只处理文件管理器本地文件拖拽"""
         try:
-            logger.info("==liuq debug== 启用极简拖拽系统")
-            self.setAcceptDrops(True)
+            # 递归安装
+            self._install_all_drop_handlers(self)
+            # 在 QApplication 层安装全局事件过滤器
+            app = QApplication.instance()
+            if app:
+                app.installEventFilter(self)
+                logger.info("==liuq debug== 已在 QApplication 安装全局事件过滤器")
         except Exception as e:
-            logger.error("==liuq debug== 设置拖拽功能异常: %s", e)
-
-    def dragEnterEvent(self, event):
-        """拖拽进入事件 - 只接受本地文件"""
-        if event.mimeData().hasUrls():
-            urls = event.mimeData().urls()
-            local_files = [url.toLocalFile() for url in urls if url.isLocalFile()]
-            if local_files:
-                event.acceptProposedAction()
-                logger.info("==liuq debug== 检测到 %d 个本地文件拖拽", len(local_files))
-            else:
-                event.ignore()
-        else:
-            event.ignore()
-
-    def dragMoveEvent(self, event):
-        """拖拽移动事件"""
-        if event.mimeData().hasUrls():
-            event.acceptProposedAction()
-
-    def dropEvent(self, event):
-        """拖拽释放事件 - 核心处理逻辑"""
-        if event.mimeData().hasUrls():
-            urls = event.mimeData().urls()
-            local_files = [url.toLocalFile() for url in urls if url.isLocalFile()]
-
-            if local_files:
-                logger.info("==liuq debug== 接收到文件: %s", local_files)
-                # 过滤图片文件
-                image_files = [f for f in local_files
-                             if f.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp'))]
-
-                if image_files:
-                    # 调用现有的文件处理逻辑
-                    self._on_native_files(image_files)
-                    event.acceptProposedAction()
-                else:
-                    logger.info("==liuq debug== 没有找到支持的图片文件")
-                    event.ignore()
-            else:
-                event.ignore()
+            logger.debug("==liuq debug== setup_drag_and_drop 异常: %s", e)
 
     def _start_drag_zone_monitor(self):
         """创建并监控桌面的“FastMap_拖拽区域”文件夹，作为拖拽兜底。
@@ -769,9 +1026,69 @@ class MainWindow(QMainWindow):
 
     # _show_ole_fallback_window方法已删除 - ole_drop.py COM接口实现无效
 
-    # _show_pywin_fallback_window方法已删除 - 使用极简拖拽系统
+    def _show_pywin_fallback_window(self):
+        """创建一个置顶小窗，使用 pywin32 注册 IDropTarget 作为兜底。"""
+        try:
+            from utils.pywin_drop import install_pywin_drop
+            win = QWidget(None)
+            win.setWindowTitle("拖到这里 (pywin)")
+            win.resize(260, 100)
+            try:
+                win.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint | Qt.Tool)
+            except Exception:
+                pass
+            try:
+                win.setAttribute(Qt.WA_NativeWindow, True)
+            except Exception:
+                pass
+            lay = QVBoxLayout(win)
+            lab = QLabel("将 .jpg/.jpeg 文件\n拖到这里")
+            lab.setAlignment(Qt.AlignCenter)
+            lay.addWidget(lab)
+            try:
+                g = self.geometry()
+                win.move(g.x() + g.width() - 300, g.y() + g.height() - 220)
+            except Exception:
+                pass
+            hwnd = int(win.winId())
+            dt = install_pywin_drop(hwnd, self._on_native_files)
+            if dt is not None:
+                self._pywin_fallback_win = win
+                self._pywin_fallback_dt = dt
+                win.show()
+                logger.info("==liuq debug== pywin 兜底小窗 注册成功 hwnd=%s", hwnd)
+            else:
+                logger.info("==liuq debug== pywin 兜底小窗 注册失败")
+        except Exception as e:
+            logger.error("==liuq debug== _show_pywin_fallback_window 异常: %s", e)
 
-    # 旧的拖拽事件方法已删除 - 使用极简版本
+    def dragEnterEvent(self, event):
+        try:
+            has_urls = event.mimeData().hasUrls()
+            urls = event.mimeData().urls() if has_urls else []
+            cnt = len(urls)
+            first = urls[0].toLocalFile() if cnt >= 1 else ""
+            logger.info("==liuq debug== DragEnter: hasUrls=%s count=%d first=%s", has_urls, cnt, first)
+            if has_urls and cnt >= 1:
+                # 放宽条件：先接受，drop 时再校验扩展名
+                event.acceptProposedAction()
+                return
+            event.ignore()
+        except Exception as e:
+            logger.debug("==liuq debug== dragEnterEvent 异常: %s", e)
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        try:
+            if event.mimeData().hasUrls():
+                urls = event.mimeData().urls()
+                if len(urls) == 1:
+                    p = urls[0].toLocalFile()
+                    if p.lower().endswith(('.jpg', '.jpeg')):
+                        event.acceptProposedAction(); return
+            event.ignore()
+        except Exception:
+            event.ignore()
 
     # Windows 原生拖拽回调
     def _on_native_files(self, files):
@@ -792,6 +1109,61 @@ class MainWindow(QMainWindow):
 
     def showEvent(self, event):
         super().showEvent(event)
-        logger.info("==liuq debug== 窗口显示事件 - 极简拖拽系统已就绪")
+        try:
+            logger.info("==liuq debug== SHOW 事件触发，开始 pywin 注册流程")
+            from utils.pywin_drop import install_pywin_drop
+            self._pywin_any_ok = False
+            for tag, w in [("main", self), ("central", getattr(self, "_central_widget", None)), ("tabs", getattr(self, "tab_widget", None))]:
+                if w is None:
+                    continue
+                try:
+                    hwnd = int(w.winId())
+                    dt = install_pywin_drop(hwnd, self._on_native_files)
+                    if dt is not None:
+                        self._pywin_any_ok = True
+                        logger.info("==liuq debug== pywin %s 注册成功 hwnd=%s", tag, hwnd)
+                except Exception as e:
+                    logger.info("==liuq debug== pywin %s 注册异常: %s", tag, e)
+            if not self._pywin_any_ok:
+                logger.info("==liuq debug== pywin 主窗与子控件均未成功，显示兜底小窗")
+                self._show_pywin_fallback_window()
+        except Exception as e:
+            logger.info("==liuq debug== SHOW 阶段 pywin 注册流程异常: %s", e)
 
-    # 旧的eventFilter和dropEvent方法已删除 - 使用极简版本
+    def eventFilter(self, obj, event):
+        try:
+            if event.type() == QEvent.DragEnter:
+                logger.info("==liuq debug== eventFilter捕获DragEnter事件，obj=%s", obj.__class__.__name__)
+                self.dragEnterEvent(event); return True
+            if event.type() == QEvent.DragMove:
+                logger.info("==liuq debug== eventFilter捕获DragMove事件，obj=%s", obj.__class__.__name__)
+                self.dragMoveEvent(event); return True
+            if event.type() == QEvent.Drop:
+                logger.info("==liuq debug== eventFilter捕获Drop事件，obj=%s", obj.__class__.__name__)
+                self.dropEvent(event); return True
+        except Exception as e:
+            logger.debug("==liuq debug== eventFilter 异常: %s", e)
+        return super().eventFilter(obj, event)
+
+    def dropEvent(self, event):
+        try:
+            urls = event.mimeData().urls()
+            if not urls:
+                logger.info("==liuq debug== Drop: no urls")
+                return
+            p = urls[0].toLocalFile()
+            logger.info("==liuq debug== Drop: %s", p)
+            if not p or not p.lower().endswith(('.jpg', '.jpeg')):
+                QMessageBox.warning(self, "提示", "仅支持 .jpg/.jpeg 文件")
+                return
+            from gui.dialogs.exif_quick_view_dialog import ExifQuickViewDialog
+            dlg = ExifQuickViewDialog(Path(p), self)
+            dlg.exec_()
+        except Exception as e:
+            logger.error("==liuq debug== dropEvent 异常: %s", e)
+            QMessageBox.critical(self, "错误", f"打开图片失败: {e}")
+        finally:
+            try:
+                event.acceptProposedAction()
+            except Exception:
+                pass

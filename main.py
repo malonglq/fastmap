@@ -128,6 +128,16 @@ def main():
             QMessageBox.critical(None, "程序错误", f"主窗口模块导入失败: {e}")
             sys.exit(1)
         
+        # 配置依赖注入容器
+        try:
+            from core.infrastructure.di_container import configure_services
+            configure_services()
+            logger.info("==liuq debug== 依赖注入容器配置成功")
+        except Exception as e:
+            logger.error(f"==liuq debug== 配置依赖注入容器失败: {e}")
+            QMessageBox.critical(None, "程序错误", f"配置依赖注入容器失败: {e}")
+            sys.exit(1)
+        
         # 创建主窗口
         try:
             main_window = MainWindow()

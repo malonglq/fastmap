@@ -25,7 +25,7 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont, QIcon
 from datetime import datetime
 
-from core.services.unified_report_manager import UnifiedReportManager, ReportHistoryItem
+from core.services.reporting.unified_report_manager import UnifiedReportManager, ReportHistoryItem
 from core.interfaces.report_generator import ReportType
 from gui.styles.style_utils import (
     create_styled_button, create_title_label, create_card_group,
@@ -201,7 +201,7 @@ class AnalysisReportTab(QWidget):
         """打开EXIF对比分析对话框"""
         try:
             from gui.dialogs.exif_comparison_dialog import ExifComparisonDialog
-            from core.services.exif_comparison_report_generator import ExifComparisonReportGenerator
+            from core.services.reporting.exif_comparison_report_generator import ExifComparisonReportGenerator
 
             # 创建对话框
             dialog = ExifComparisonDialog(self)
@@ -229,7 +229,7 @@ class AnalysisReportTab(QWidget):
     def generate_exif_comparison_report(self, config: Dict[str, Any]):
         """生成EXIF对比分析报告"""
         try:
-            from core.services.exif_comparison_report_generator import ExifComparisonReportGenerator
+            from core.services.reporting.exif_comparison_report_generator import ExifComparisonReportGenerator
             from core.interfaces.report_generator import ReportType
 
             # 显示进度遮罩
@@ -307,7 +307,7 @@ class AnalysisReportTab(QWidget):
                 return
 
             from gui.dialogs.map_multi_dimensional_dialog import MapMultiDimensionalDialog
-            from core.services.map_multi_dimensional_report_generator import MapMultiDimensionalReportGenerator
+            from core.services.reporting.map_multi_dimensional_report_generator import MapMultiDimensionalReportGenerator
 
             # 创建对话框
             dialog = MapMultiDimensionalDialog(map_configuration, self)
@@ -335,7 +335,7 @@ class AnalysisReportTab(QWidget):
     def generate_map_multi_dimensional_report(self, config: Dict[str, Any]):
         """生成Map多维度分析报告"""
         try:
-            from core.services.map_multi_dimensional_report_generator import MapMultiDimensionalReportGenerator
+            from core.services.reporting.map_multi_dimensional_report_generator import MapMultiDimensionalReportGenerator
             from core.interfaces.report_generator import ReportType
 
             # 显示进度提示

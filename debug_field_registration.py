@@ -17,7 +17,7 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from core.services.field_registry_service import field_registry
+from core.services.shared.field_registry_service import field_registry
 
 
 def analyze_field_registration():

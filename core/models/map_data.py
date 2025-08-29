@@ -775,94 +775,120 @@ def set_map_point_field_value(map_point: 'MapPoint', field_name: str, value: Any
     Args:
         map_point: MapPoint对象
         field_name: 字段名称
-        value: 字段值
+        value: 字段值（可能是字符串，需按字段类型转换）
 
     Returns:
         bool: 是否设置成功
     """
     try:
-        # 直接属性设置
+        # 小工具：将字符串/任意输入转换为目标类型
+        def _to_float(v, default=0.0):
+            try:
+                return float(v)
+            except Exception:
+                return float(default)
+        def _to_int(v, default=0):
+            try:
+                return int(float(v))
+            except Exception:
+                return int(default)
+        def _to_bool(v, default=False):
+            try:
+                s = str(v).strip().lower()
+                return s in ('1','true','yes','是','y')
+            except Exception:
+                return bool(default)
+
+        # 直接属性设置：尽量按现有属性类型做转换，避免字符串污染
         if hasattr(map_point, field_name):
-            setattr(map_point, field_name, value)
+            cur = getattr(map_point, field_name)
+            if isinstance(cur, float):
+                setattr(map_point, field_name, _to_float(value, cur))
+            elif isinstance(cur, int):
+                setattr(map_point, field_name, _to_int(value, cur))
+            elif isinstance(cur, bool):
+                setattr(map_point, field_name, _to_bool(value, cur))
+            else:
+                setattr(map_point, field_name, value)
             return True
 
-        # 特殊字段映射
+        # 特殊字段映射（范围类，统一转为 float）
         if field_name == 'bv_min':
+            v = _to_float(value)
             if not map_point.bv_range:
-                map_point.bv_range = (value, 100.0)
+                map_point.bv_range = (v, 100.0)
             else:
-                map_point.bv_range = (value, map_point.bv_range[1])
+                map_point.bv_range = (v, float(map_point.bv_range[1]))
             return True
         elif field_name == 'bv_max':
+            v = _to_float(value)
             if not map_point.bv_range:
-                map_point.bv_range = (0.0, value)
+                map_point.bv_range = (0.0, v)
             else:
-                map_point.bv_range = (map_point.bv_range[0], value)
+                map_point.bv_range = (float(map_point.bv_range[0]), v)
             return True
         elif field_name == 'ir_min':
+            v = _to_float(value)
             if not map_point.ir_range:
-                map_point.ir_range = (value, 999.0)
+                map_point.ir_range = (v, 999.0)
             else:
-                map_point.ir_range = (value, map_point.ir_range[1])
+                map_point.ir_range = (v, float(map_point.ir_range[1]))
             return True
         elif field_name == 'ir_max':
+            v = _to_float(value)
             if not map_point.ir_range:
-                map_point.ir_range = (0.0, value)
+                map_point.ir_range = (0.0, v)
             else:
-                map_point.ir_range = (map_point.ir_range[0], value)
+                map_point.ir_range = (float(map_point.ir_range[0]), v)
             return True
         elif field_name == 'ctemp_min':
+            v = _to_int(value, 1500)
             if not map_point.ctemp_range:
-                map_point.ctemp_range = (value, 12000)
+                map_point.ctemp_range = (v, 12000)
             else:
-                map_point.ctemp_range = (value, map_point.ctemp_range[1])
+                map_point.ctemp_range = (v, int(map_point.ctemp_range[1]))
             return True
         elif field_name == 'ctemp_max':
+            v = _to_int(value, 12000)
             if not map_point.ctemp_range:
-                map_point.ctemp_range = (1500, value)
+                map_point.ctemp_range = (1500, v)
             else:
-                map_point.ctemp_range = (map_point.ctemp_range[0], value)
+                map_point.ctemp_range = (int(map_point.ctemp_range[0]), v)
             return True
-        # {{CHENGQI:
-        # Action: Added; Timestamp: 2025-08-02 16:50:00 +08:00; Reason: 添加e_ratio字段设置逻辑以修复GUI编辑后XML文件未更新的问题; Principle_Applied: 数据一致性和完整性;
-        # }}
+        # e_ratio
         elif field_name == 'e_ratio_min':
+            v = _to_float(value)
             if not map_point.e_ratio_range:
-                map_point.e_ratio_range = (value, 100.0)
+                map_point.e_ratio_range = (v, 100.0)
             else:
-                map_point.e_ratio_range = (value, map_point.e_ratio_range[1])
+                map_point.e_ratio_range = (v, float(map_point.e_ratio_range[1]))
             return True
         elif field_name == 'e_ratio_max':
+            v = _to_float(value)
             if not map_point.e_ratio_range:
-                map_point.e_ratio_range = (0.0, value)
+                map_point.e_ratio_range = (0.0, v)
             else:
-                map_point.e_ratio_range = (map_point.e_ratio_range[0], value)
+                map_point.e_ratio_range = (float(map_point.e_ratio_range[0]), v)
             return True
         elif field_name == 'ml':
             # ml字段的GUI输入值到内部值的反向转换
-            #
-            # {{CHENGQI:
-            # Action: Modified; Timestamp: 2025-08-01 16:10:00 +08:00; Reason: 在配置驱动函数中添加ml字段反向转换逻辑; Principle_Applied: 显示存储分离原则;
-            # }}
-            #
             if not hasattr(map_point, 'extra_attributes'):
                 map_point.extra_attributes = {}
-
-            # 将GUI输入值转换为内部存储值
-            input_value = float(value)
-
+            input_value = _to_float(value)
             # 反向转换：GUI友好值 → 内部值
             if input_value == 2:
                 internal_value = 65471
             elif input_value == 3:
                 internal_value = 65535
             else:
-                # 其他值直接使用
                 internal_value = input_value
-
-            map_point.extra_attributes['ml'] = internal_value
-
+            # 存储为整数（若可）
+            try:
+                map_point.extra_attributes['ml'] = int(internal_value)
+            except Exception:
+                map_point.extra_attributes['ml'] = internal_value
             return True
+
 
         # Tran字段设置
         elif field_name.startswith('tran_'):

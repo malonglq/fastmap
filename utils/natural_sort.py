@@ -18,7 +18,7 @@ from typing import List, Any, Callable, Optional, Union
 logger = logging.getLogger(__name__)
 
 
-def extract_natural_sort_key(text: str) -> List[Union[int, str]]:
+def extract_natural_sort_key(text: str) -> List[Union[int, str, tuple]]:
     """
     提取自然排序键
     
@@ -41,17 +41,20 @@ def extract_natural_sort_key(text: str) -> List[Union[int, str]]:
     try:
         # 使用正则表达式分割数字和非数字部分
         parts = re.split(r'(\d+)', str(text))
-        
-        # 转换数字部分为整数，保持字符串部分不变
+
+        # 统一成 (tag, value) 二元组，确保各元素可比较
+        # tag: 0=字符串, 1=数字
         result = []
         for part in parts:
+            if not part:
+                continue
             if part.isdigit():
-                result.append(int(part))
-            elif part:  # 忽略空字符串
-                result.append(part)
-        
+                result.append((1, int(part)))
+            else:
+                result.append((0, part.lower()))
+
         return result
-        
+
     except Exception as e:
         logger.warning(f"==liuq debug== 提取自然排序键失败: {text} - {e}")
         # 出错时返回原字符串
@@ -81,9 +84,9 @@ def natural_sort_key(item: Any, key_func: Optional[Callable[[Any], str]] = None)
             sort_string = key_func(item)
         else:
             sort_string = str(item)
-        
+
         return extract_natural_sort_key(sort_string)
-        
+
     except Exception as e:
         logger.warning(f"==liuq debug== 生成自然排序键失败: {item} - {e}")
         # 出错时返回原字符串
@@ -111,18 +114,22 @@ def natural_sort(items: List[Any], key_func: Optional[Callable[[Any], str]] = No
         ['offset_map1', 'offset_map2', 'offset_map11']
     """
     try:
-
-        
+        # 如果不是列表，尽量转换
+        if not isinstance(items, list):
+            try:
+                items = list(items)
+            except Exception:
+                return [items]
         # 使用自然排序键进行排序
         sorted_items = sorted(items, key=lambda x: natural_sort_key(x, key_func), reverse=reverse)
-        
-
         return sorted_items
-        
     except Exception as e:
         logger.error(f"==liuq debug== 自然排序失败: {e}")
-        # 出错时返回原列表
-        return items.copy()
+        # 出错时返回安全副本
+        try:
+            return list(items)
+        except Exception:
+            return [items]
 
 
 def compare_natural(a: str, b: str) -> int:
@@ -149,14 +156,10 @@ def compare_natural(a: str, b: str) -> int:
     try:
         key_a = extract_natural_sort_key(a)
         key_b = extract_natural_sort_key(b)
-        
-        if key_a < key_b:
-            return -1
-        elif key_a > key_b:
-            return 1
-        else:
+        if key_a == key_b:
             return 0
-            
+        return -1 if key_a < key_b else 1
+
     except Exception as e:
         logger.warning(f"==liuq debug== 自然排序比较失败: {a} vs {b} - {e}")
         # 出错时使用普通字符串比较

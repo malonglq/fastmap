@@ -183,6 +183,7 @@ class TemperatureSpanAnalyzer:
                     'interval_names': interval_names,
                     'coords': (cx, cy),
                 }
+                logger.info("==liuq debug== 预计算: %s coords=(%.6f,%.6f) intervals=%s", mp.alias_name, cx, cy, ','.join(interval_names))
 
             # 生成Top20
             sortable = [

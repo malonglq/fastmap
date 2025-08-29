@@ -31,6 +31,7 @@ from core.services.map_analysis.xml_validation_service import get_xml_validation
 from core.services.map_analysis.xml_backup_service import get_xml_backup_service
 from core.services.map_analysis.xml_formatting_service import get_xml_formatting_service
 from core.services.map_analysis.xml_performance_service import get_xml_performance_service
+from core.services.map_analysis.xml_writer_core import XMLWriterCore
 
 logger = logging.getLogger(__name__)
 
@@ -46,14 +47,14 @@ def format_number_for_xml(value) -> str:
 class XMLWriterService(XMLDataProcessor):
     """
     XML写入服务实现（简化版本）
-    
+
     基于XMLDataProcessor接口的XML写入服务，核心功能委托给专门的服务：
     - 验证功能：委托给XMLValidationService
     - 备份功能：委托给XMLBackupService
     - 格式化功能：委托给XMLFormattingService
     - 性能优化：委托给XMLPerformanceService
     """
-    
+
     def __init__(self):
         """初始化XML写入服务"""
         self.supported_versions = ["1.0", "1.1", "2.0"]
@@ -73,6 +74,9 @@ class XMLWriterService(XMLDataProcessor):
         self.current_tree = None            # 当前XML树对象
         self.is_data_modified = False       # 数据是否已修改
         self.modification_count = 0         # 修改计数器
+        # 写入核心算法组件（与性能无关）
+        self.core = XMLWriterCore()
+
 
         logger.info("==liuq debug== XML写入服务初始化完成（模块化架构）")
 
@@ -153,7 +157,7 @@ class XMLWriterService(XMLDataProcessor):
 
             logger.info(f"==liuq debug== 开始保存XML数据到: {self.current_xml_path}")
 
-            # 使用性能优化服务
+            # 优先使用性能优化服务
             success = self.performance_service.write_xml_optimized(
                 self.current_config,
                 self.current_xml_path,
@@ -161,12 +165,16 @@ class XMLWriterService(XMLDataProcessor):
                 tree=self.current_tree
             )
 
+            if not success:
+                logger.warning("==liuq debug== 高性能写入失败，启动回退：ElementTree 全量写回")
+                success = self._write_xml_fallback(self.current_config, self.current_xml_path, self.current_tree, backup=backup)
+
             if success:
                 self.is_data_modified = False
                 self.modification_count = 0
                 logger.info("==liuq debug== XML数据保存成功")
             else:
-                logger.error("==liuq debug== XML数据保存失败")
+                logger.error("==liuq debug== XML数据保存失败（回退亦失败）")
 
             return success
 
@@ -191,14 +199,14 @@ class XMLWriterService(XMLDataProcessor):
     def parse_xml(self, xml_path: Union[str, Path], device_type: str = "unknown") -> MapConfiguration:
         """
         解析XML文件为MapConfiguration对象
-        
+
         注意：XMLWriterService主要负责写入功能，解析功能委托给XMLParserService
         """
         logger.warning("==liuq debug== XMLWriterService.parse_xml 委托给XMLParserService实现")
         from core.services.map_analysis.xml_parser_service import XMLParserService
         parser = XMLParserService()
         return parser.parse_xml(xml_path, device_type)
-    
+
     def write_xml(self, config: MapConfiguration, xml_path: Union[str, Path],
                   backup: bool = True, preserve_format: bool = True) -> bool:
         """
@@ -222,6 +230,10 @@ class XMLWriterService(XMLDataProcessor):
             # 使用性能优化服务
             success = self.performance_service.write_xml_optimized(config, Path(xml_path), backup, tree)
 
+            if not success:
+                logger.warning("==liuq debug== write_xml: 高性能写入失败，启动回退：ElementTree 全量写回")
+                success = self._write_xml_fallback(config, Path(xml_path), tree, backup=backup)
+
             return success
 
         except Exception as e:
@@ -233,24 +245,78 @@ class XMLWriterService(XMLDataProcessor):
             self.current_config = original_config
             self.current_xml_path = original_path
 
-    def validate_xml(self, xml_path: Union[str, Path], 
+    def validate_xml(self, xml_path: Union[str, Path],
                      level: ValidationLevel = ValidationLevel.FULL) -> ValidationResult:
         """
         验证XML文件的结构和内容 - 委托给验证服务
         """
         return self.validation_service.validate_xml_file(xml_path, level)
-    
+
     def get_supported_versions(self) -> List[str]:
         """
         获取支持的XML版本列表
         """
         return self.supported_versions.copy()
-    
+
     def get_xml_metadata(self, xml_path: Union[str, Path]) -> Dict[str, Any]:
         """
         获取XML文件的元数据信息 - 委托给验证服务
         """
-        return self.validation_service.get_xml_metadata(xml_path)
+    # ==================== 回退写入实现 ====================
+    def _write_xml_fallback(self, config: MapConfiguration, xml_path: Union[str, Path], tree: ET.ElementTree, backup: bool = True) -> bool:
+        """
+        回退：使用 ElementTree 全量写回。
+        特点：
+        - 保证数据落盘正确
+        - 可能改变原始排版/缩进
+        """
+        try:
+            root = tree.getroot()
+
+            # 动态别名映射（单节点结构）
+            alias_mapping = self._build_dynamic_alias_mapping(root)
+            if not alias_mapping:
+                logger.warning("==liuq debug== 回退写入：未构建到别名映射，尝试直接按位置匹配可能失败")
+
+            # 更新每个 MapPoint 对应节点
+            for mp in config.map_points:
+                node_name = alias_mapping.get(mp.alias_name)
+                if not node_name:
+                    # 找不到对应别名，跳过并记录
+                    logger.warning(f"==liuq debug== 回退写入：未找到别名对应节点: {mp.alias_name}")
+                    continue
+
+                node = root.find(f'.//{node_name}')
+                if node is None:
+                    logger.warning(f"==liuq debug== 回退写入：节点缺失: {node_name}")
+                    continue
+
+                # 针对字段定义进行写入
+                for field_def in self.field_definitions:
+                    try:
+                        value = self._get_map_point_field_value(mp, field_def.field_id)
+                        if value is None:
+                            continue
+                        self._update_field_in_element(node, field_def, value)
+                    except Exception as fe:
+                        logger.warning(f"==liuq debug== 回退写入：字段写入失败 {field_def.field_id}: {fe}")
+
+            # 备份
+            if backup:
+                try:
+                    self.backup_service.backup_xml(xml_path)
+                except Exception as be:
+                    logger.warning(f"==liuq debug== 回退写入：备份失败（继续写入）: {be}")
+
+            # 写文件
+            tree.write(xml_path, encoding=self.default_encoding, xml_declaration=True)
+            logger.info("==liuq debug== 回退写入：ElementTree 写回完成")
+            return True
+        except Exception as e:
+            logger.error(f"==liuq debug== 回退写入失败: {e}")
+            return False
+
+
 
     def backup_xml(self, xml_path: Union[str, Path], backup_dir: Optional[Union[str, Path]] = None) -> str:
         """
@@ -269,31 +335,62 @@ class XMLWriterService(XMLDataProcessor):
 
     def _build_dynamic_alias_mapping(self, root: ET.Element) -> dict:
         """
-        动态构建别名到XML节点的映射关系
+        动态构建别名到XML节点的映射关系（兼容单节点结构）
         """
         alias_mapping = {}
 
         try:
-            # 遍历所有可能的offset_map节点
-            for i in range(1, 120):  # 扩大范围以适应更多Map点
+            # 遍历所有可能的offset_map节点（01..199），遇到第一个不存在的编号后再连续缺失3次则结束
+            missing_streak = 0
+            for i in range(1, 200):
                 formatted_i = f"0{i}" if i < 10 else str(i)
                 element_name = f"offset_map{formatted_i}"
 
-                # 查找该offset_map的所有节点
-                offset_map_nodes = root.findall(f'.//{element_name}')
+                # 查找该offset_map节点（单节点结构）
+                node = root.find(f'.//{element_name}')
+                if node is None:
+                    missing_streak += 1
+                    if missing_streak >= 3:
+                        break
+                    continue
+                missing_streak = 0
 
-                if len(offset_map_nodes) >= 2:
-                    # 从第二个节点提取别名（第二个节点包含AliasName）
-                    second_node = offset_map_nodes[1]
-                    alias_node = second_node.find('AliasName')
+                # 优先在该节点下查找别名（有些XML把AliasName放在第二组detect_map/WO_NO.xx下）
+                alias_node = node.find('AliasName')
+                if alias_node is None:
+                    # 在 detect_map/WO_NO.xx 中查找匹配 map 序号的组，再取其 AliasName
+                    wo_nodes = root.findall('.//detect_map/*')
+                    for wo in wo_nodes:
+                        alias_in_wo = wo.find('AliasName')
+                        if alias_in_wo is not None and alias_in_wo.text and alias_in_wo.text.strip():
+                            # 检测该 WO 组是否对应当前 offset_mapXX：多数情况下 WO_NO.xx 的编号与 offset_mapXX 对齐
+                            # 简单规则：提取 wo 标签名的序号部分，与 formatted_i 相等即认为对应
+                            try:
+                                tag = wo.tag  # e.g., 'WO_NO.01'
+                                if tag.startswith('WO_NO.'):
+                                    seq = tag.split('.')[-1]
+                                    if seq == formatted_i:
+                                        alias_node = alias_in_wo
+                                        break
+                            except Exception:
+                                pass
 
-                    if alias_node is not None and alias_node.text:
-                        alias_name = alias_node.text.strip()
+                if alias_node is not None and alias_node.text:
+                    alias_name = alias_node.text.strip()
+                    if alias_name:
                         alias_mapping[alias_name] = element_name
 
-                else:
-                    # 如果找不到节点，可能已经到达末尾
+            # 同时加入 base_boundary0..N 的映射（作为特殊Map）
+            for j in range(0, 50):
+                bb = root.find(f'.//base_boundary{j}')
+                if bb is None:
                     break
+                alias_node = bb.find('AliasName')
+                if alias_node is not None and alias_node.text and alias_node.text.strip():
+                    alias_mapping[alias_node.text.strip()] = f'base_boundary{j}'
+                else:
+                    # 退化为用标签名作为“别名”
+                    alias_mapping[f'base_boundary{j}'] = f'base_boundary{j}'
 
             logger.info(f"==liuq debug== 动态构建别名映射完成，共 {len(alias_mapping)} 个映射关系")
             return alias_mapping

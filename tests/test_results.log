@@ -1,0 +1,598 @@
+2025-08-28 10:47:27,131 - INFO - ==liuq debug== FastMapV2 测试用例批量运行器启动
+2025-08-28 10:47:27,131 - INFO - ==liuq debug== 开始批量运行测试用例
+2025-08-28 10:47:27,135 - INFO - ==liuq debug== 找到20个测试用例文件
+2025-08-28 10:47:27,135 - INFO - ==liuq debug== 进度: 1/20 - TC-EXIF-001_EXIF解析测试.py
+2025-08-28 10:47:27,136 - INFO - ==liuq debug== 运行测试: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 10:47:32,261 - ERROR - ==liuq debug== ✗ 失败: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 10:47:32,261 - INFO - ==liuq debug== 进度: 2/20 - TC-EXIF-002_特定字段显示测试.py
+2025-08-28 10:47:32,262 - INFO - ==liuq debug== 运行测试: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 10:47:38,135 - ERROR - ==liuq debug== ✗ 失败: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 10:47:38,136 - INFO - ==liuq debug== 进度: 3/20 - TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 10:47:38,136 - INFO - ==liuq debug== 运行测试: TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 10:47:42,707 - ERROR - ==liuq debug== ✗ 失败: TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 10:47:42,708 - INFO - ==liuq debug== 进度: 4/20 - TC-GUI-001_主窗口初始化测试.py
+2025-08-28 10:47:42,708 - INFO - ==liuq debug== 运行测试: TC-GUI-001_主窗口初始化测试.py
+2025-08-28 10:47:47,961 - ERROR - ==liuq debug== ✗ 失败: TC-GUI-001_主窗口初始化测试.py
+2025-08-28 10:47:47,962 - INFO - ==liuq debug== 进度: 5/20 - TC-GUI-002_标签页切换测试.py
+2025-08-28 10:47:47,962 - INFO - ==liuq debug== 运行测试: TC-GUI-002_标签页切换测试.py
+2025-08-28 10:47:53,070 - ERROR - ==liuq debug== ✗ 失败: TC-GUI-002_标签页切换测试.py
+2025-08-28 10:47:53,070 - INFO - ==liuq debug== 进度: 6/20 - TC-GUI-003_界面响应测试.py
+2025-08-28 10:47:53,070 - INFO - ==liuq debug== 运行测试: TC-GUI-003_界面响应测试.py
+2025-08-28 10:47:58,612 - ERROR - ==liuq debug== ✗ 失败: TC-GUI-003_界面响应测试.py
+2025-08-28 10:47:58,613 - INFO - ==liuq debug== 进度: 7/20 - TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 10:47:58,613 - INFO - ==liuq debug== 运行测试: TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 10:48:04,219 - ERROR - ==liuq debug== ✗ 失败: TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 10:48:04,220 - INFO - ==liuq debug== 进度: 8/20 - TC-MAIN-002_依赖包检查测试.py
+2025-08-28 10:48:04,220 - INFO - ==liuq debug== 运行测试: TC-MAIN-002_依赖包检查测试.py
+2025-08-28 10:48:10,022 - INFO - ==liuq debug== ✓ 通过: TC-MAIN-002_依赖包检查测试.py
+2025-08-28 10:48:10,023 - INFO - ==liuq debug== 进度: 9/20 - TC-MAIN-003_日志系统测试.py
+2025-08-28 10:48:10,023 - INFO - ==liuq debug== 运行测试: TC-MAIN-003_日志系统测试.py
+2025-08-28 10:48:16,472 - ERROR - ==liuq debug== ✗ 失败: TC-MAIN-003_日志系统测试.py
+2025-08-28 10:48:16,473 - INFO - ==liuq debug== 进度: 10/20 - TC-MAP-001_XML文件加载测试.py
+2025-08-28 10:48:16,473 - INFO - ==liuq debug== 运行测试: TC-MAP-001_XML文件加载测试.py
+2025-08-28 10:48:23,526 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-001_XML文件加载测试.py
+2025-08-28 10:48:23,527 - INFO - ==liuq debug== 进度: 11/20 - TC-MAP-004_XML写入功能测试.py
+2025-08-28 10:48:23,527 - INFO - ==liuq debug== 运行测试: TC-MAP-004_XML写入功能测试.py
+2025-08-28 10:48:29,895 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-004_XML写入功能测试.py
+2025-08-28 10:48:29,896 - INFO - ==liuq debug== 进度: 12/20 - TC-MAP-005_筛选功能测试.py
+2025-08-28 10:48:29,896 - INFO - ==liuq debug== 运行测试: TC-MAP-005_筛选功能测试.py
+2025-08-28 10:48:35,885 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-005_筛选功能测试.py
+2025-08-28 10:48:35,886 - INFO - ==liuq debug== 进度: 13/20 - TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 10:48:35,886 - INFO - ==liuq debug== 运行测试: TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 10:48:41,644 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 10:48:41,645 - INFO - ==liuq debug== 进度: 14/20 - TC-MAP-007_HTML报告生成测试.py
+2025-08-28 10:48:41,645 - INFO - ==liuq debug== 运行测试: TC-MAP-007_HTML报告生成测试.py
+2025-08-28 10:48:46,520 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-007_HTML报告生成测试.py
+2025-08-28 10:48:46,521 - INFO - ==liuq debug== 进度: 15/20 - TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 10:48:46,521 - INFO - ==liuq debug== 运行测试: TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 10:48:52,462 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 10:48:52,462 - INFO - ==liuq debug== 进度: 16/20 - TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 10:48:52,463 - INFO - ==liuq debug== 运行测试: TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 10:48:58,352 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 10:48:58,352 - INFO - ==liuq debug== 进度: 17/20 - TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 10:48:58,352 - INFO - ==liuq debug== 运行测试: TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 10:49:03,657 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 10:49:03,658 - INFO - ==liuq debug== 进度: 18/20 - TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 10:49:03,658 - INFO - ==liuq debug== 运行测试: TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 10:49:08,951 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 10:49:08,951 - INFO - ==liuq debug== 进度: 19/20 - TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 10:49:08,952 - INFO - ==liuq debug== 运行测试: TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 10:49:13,803 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 10:49:13,803 - INFO - ==liuq debug== 进度: 20/20 - TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 10:49:13,803 - INFO - ==liuq debug== 运行测试: TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 10:49:18,203 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 10:49:18,203 - INFO - ==liuq debug== ==================================================
+2025-08-28 10:49:18,203 - INFO - ==liuq debug== 测试总结:
+2025-08-28 10:49:18,204 - INFO - ==liuq debug== 总计: 20
+2025-08-28 10:49:18,204 - INFO - ==liuq debug== 通过: 1
+2025-08-28 10:49:18,204 - INFO - ==liuq debug== 失败: 19
+2025-08-28 10:49:18,204 - INFO - ==liuq debug== 成功率: 5.0%
+2025-08-28 10:49:18,205 - INFO - ==liuq debug== ==================================================
+2025-08-28 10:49:18,209 - INFO - ==liuq debug== 测试报告已保存: E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\tests\test_execution_report.md
+2025-08-28 10:49:18,209 - WARNING - ==liuq debug== ⚠️ 有19个测试用例失败
+2025-08-28 11:08:37,768 - INFO - ==liuq debug== FastMapV2 测试用例批量运行器启动
+2025-08-28 11:08:37,787 - INFO - ==liuq debug== 开始批量运行测试用例
+2025-08-28 11:08:37,799 - INFO - ==liuq debug== 找到20个测试用例文件
+2025-08-28 11:08:37,805 - INFO - ==liuq debug== 进度: 1/20 - TC-EXIF-001_EXIF解析测试.py
+2025-08-28 11:08:37,808 - INFO - ==liuq debug== 运行测试: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 11:08:44,102 - ERROR - ==liuq debug== ✗ 失败: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 11:08:44,102 - INFO - ==liuq debug== 进度: 2/20 - TC-EXIF-002_特定字段显示测试.py
+2025-08-28 11:08:44,103 - INFO - ==liuq debug== 运行测试: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 11:13:45,451 - ERROR - ==liuq debug== 测试超时: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 11:13:45,452 - ERROR - ==liuq debug== ✗ 失败: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 11:13:45,452 - ERROR - ==liuq debug== 错误信息: 测试执行超时...
+2025-08-28 11:13:45,452 - INFO - ==liuq debug== 进度: 3/20 - TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 11:13:45,452 - INFO - ==liuq debug== 运行测试: TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 11:13:52,019 - ERROR - ==liuq debug== ✗ 失败: TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 11:13:52,019 - INFO - ==liuq debug== 进度: 4/20 - TC-GUI-001_主窗口初始化测试.py
+2025-08-28 11:13:52,019 - INFO - ==liuq debug== 运行测试: TC-GUI-001_主窗口初始化测试.py
+2025-08-28 11:14:00,510 - INFO - ==liuq debug== ✓ 通过: TC-GUI-001_主窗口初始化测试.py
+2025-08-28 11:14:00,511 - INFO - ==liuq debug== 进度: 5/20 - TC-GUI-002_标签页切换测试.py
+2025-08-28 11:14:00,511 - INFO - ==liuq debug== 运行测试: TC-GUI-002_标签页切换测试.py
+2025-08-28 11:14:11,768 - INFO - ==liuq debug== ✓ 通过: TC-GUI-002_标签页切换测试.py
+2025-08-28 11:14:11,768 - INFO - ==liuq debug== 进度: 6/20 - TC-GUI-003_界面响应测试.py
+2025-08-28 11:14:11,769 - INFO - ==liuq debug== 运行测试: TC-GUI-003_界面响应测试.py
+2025-08-28 11:14:21,783 - INFO - ==liuq debug== ✓ 通过: TC-GUI-003_界面响应测试.py
+2025-08-28 11:14:21,783 - INFO - ==liuq debug== 进度: 7/20 - TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 11:14:21,784 - INFO - ==liuq debug== 运行测试: TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 11:14:31,075 - INFO - ==liuq debug== ✓ 通过: TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 11:14:31,075 - INFO - ==liuq debug== 进度: 8/20 - TC-MAIN-002_依赖包检查测试.py
+2025-08-28 11:14:31,075 - INFO - ==liuq debug== 运行测试: TC-MAIN-002_依赖包检查测试.py
+2025-08-28 11:14:36,892 - INFO - ==liuq debug== ✓ 通过: TC-MAIN-002_依赖包检查测试.py
+2025-08-28 11:14:36,893 - INFO - ==liuq debug== 进度: 9/20 - TC-MAIN-003_日志系统测试.py
+2025-08-28 11:14:36,893 - INFO - ==liuq debug== 运行测试: TC-MAIN-003_日志系统测试.py
+2025-08-28 11:14:42,117 - INFO - ==liuq debug== ✓ 通过: TC-MAIN-003_日志系统测试.py
+2025-08-28 11:14:42,117 - INFO - ==liuq debug== 进度: 10/20 - TC-MAP-001_XML文件加载测试.py
+2025-08-28 11:14:42,118 - INFO - ==liuq debug== 运行测试: TC-MAP-001_XML文件加载测试.py
+2025-08-28 11:14:46,371 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-001_XML文件加载测试.py
+2025-08-28 11:14:46,372 - INFO - ==liuq debug== 进度: 11/20 - TC-MAP-004_XML写入功能测试.py
+2025-08-28 11:14:46,372 - INFO - ==liuq debug== 运行测试: TC-MAP-004_XML写入功能测试.py
+2025-08-28 11:14:50,724 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-004_XML写入功能测试.py
+2025-08-28 11:14:50,724 - INFO - ==liuq debug== 进度: 12/20 - TC-MAP-005_筛选功能测试.py
+2025-08-28 11:14:50,725 - INFO - ==liuq debug== 运行测试: TC-MAP-005_筛选功能测试.py
+2025-08-28 11:14:56,012 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-005_筛选功能测试.py
+2025-08-28 11:14:56,013 - INFO - ==liuq debug== 进度: 13/20 - TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 11:14:56,013 - INFO - ==liuq debug== 运行测试: TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 11:15:06,415 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 11:15:06,416 - INFO - ==liuq debug== 进度: 14/20 - TC-MAP-007_HTML报告生成测试.py
+2025-08-28 11:15:06,416 - INFO - ==liuq debug== 运行测试: TC-MAP-007_HTML报告生成测试.py
+2025-08-28 11:15:10,398 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-007_HTML报告生成测试.py
+2025-08-28 11:15:10,399 - INFO - ==liuq debug== 进度: 15/20 - TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 11:15:10,399 - INFO - ==liuq debug== 运行测试: TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 11:15:17,357 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 11:15:17,357 - INFO - ==liuq debug== 进度: 16/20 - TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 11:15:17,358 - INFO - ==liuq debug== 运行测试: TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 11:15:25,304 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 11:15:25,304 - INFO - ==liuq debug== 进度: 17/20 - TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 11:15:25,304 - INFO - ==liuq debug== 运行测试: TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 11:15:34,029 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 11:15:34,029 - INFO - ==liuq debug== 进度: 18/20 - TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 11:15:34,030 - INFO - ==liuq debug== 运行测试: TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 11:15:47,509 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 11:15:47,518 - INFO - ==liuq debug== 进度: 19/20 - TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 11:15:47,528 - INFO - ==liuq debug== 运行测试: TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 11:16:04,661 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 11:16:04,662 - INFO - ==liuq debug== 进度: 20/20 - TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 11:16:04,662 - INFO - ==liuq debug== 运行测试: TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 11:16:11,670 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 11:16:11,671 - INFO - ==liuq debug== ==================================================
+2025-08-28 11:16:11,671 - INFO - ==liuq debug== 测试总结:
+2025-08-28 11:16:11,671 - INFO - ==liuq debug== 总计: 20
+2025-08-28 11:16:11,672 - INFO - ==liuq debug== 通过: 6
+2025-08-28 11:16:11,672 - INFO - ==liuq debug== 失败: 14
+2025-08-28 11:16:11,672 - INFO - ==liuq debug== 成功率: 30.0%
+2025-08-28 11:16:11,673 - INFO - ==liuq debug== ==================================================
+2025-08-28 11:16:11,677 - INFO - ==liuq debug== 测试报告已保存: E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\tests\test_execution_report.md
+2025-08-28 11:16:11,677 - WARNING - ==liuq debug== ⚠️ 有14个测试用例失败
+2025-08-28 11:37:58,790 - INFO - ==liuq debug== FastMapV2 测试用例批量运行器启动
+2025-08-28 11:37:58,792 - INFO - ==liuq debug== 开始批量运行测试用例
+2025-08-28 11:37:58,796 - INFO - ==liuq debug== 找到20个测试用例文件
+2025-08-28 11:37:58,796 - INFO - ==liuq debug== 进度: 1/20 - TC-EXIF-001_EXIF解析测试.py
+2025-08-28 11:37:58,796 - INFO - ==liuq debug== 运行测试: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 11:38:10,648 - ERROR - ==liuq debug== ✗ 失败: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 11:38:10,649 - INFO - ==liuq debug== 进度: 2/20 - TC-EXIF-002_特定字段显示测试.py
+2025-08-28 11:38:10,649 - INFO - ==liuq debug== 运行测试: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 11:38:17,864 - ERROR - ==liuq debug== ✗ 失败: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 11:38:17,864 - INFO - ==liuq debug== 进度: 3/20 - TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 11:38:17,864 - INFO - ==liuq debug== 运行测试: TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 11:38:23,039 - ERROR - ==liuq debug== ✗ 失败: TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 11:38:23,040 - INFO - ==liuq debug== 进度: 4/20 - TC-GUI-001_主窗口初始化测试.py
+2025-08-28 11:38:23,040 - INFO - ==liuq debug== 运行测试: TC-GUI-001_主窗口初始化测试.py
+2025-08-28 11:38:28,728 - ERROR - ==liuq debug== ✗ 失败: TC-GUI-001_主窗口初始化测试.py
+2025-08-28 11:38:28,728 - INFO - ==liuq debug== 进度: 5/20 - TC-GUI-002_标签页切换测试.py
+2025-08-28 11:38:28,729 - INFO - ==liuq debug== 运行测试: TC-GUI-002_标签页切换测试.py
+2025-08-28 11:38:34,425 - ERROR - ==liuq debug== ✗ 失败: TC-GUI-002_标签页切换测试.py
+2025-08-28 11:38:34,425 - INFO - ==liuq debug== 进度: 6/20 - TC-GUI-003_界面响应测试.py
+2025-08-28 11:38:34,425 - INFO - ==liuq debug== 运行测试: TC-GUI-003_界面响应测试.py
+2025-08-28 11:38:39,643 - ERROR - ==liuq debug== ✗ 失败: TC-GUI-003_界面响应测试.py
+2025-08-28 11:38:39,643 - INFO - ==liuq debug== 进度: 7/20 - TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 11:38:39,644 - INFO - ==liuq debug== 运行测试: TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 11:38:44,932 - ERROR - ==liuq debug== ✗ 失败: TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 11:38:44,933 - INFO - ==liuq debug== 进度: 8/20 - TC-MAIN-002_依赖包检查测试.py
+2025-08-28 11:38:44,933 - INFO - ==liuq debug== 运行测试: TC-MAIN-002_依赖包检查测试.py
+2025-08-28 11:38:52,504 - INFO - ==liuq debug== ✓ 通过: TC-MAIN-002_依赖包检查测试.py
+2025-08-28 11:38:52,504 - INFO - ==liuq debug== 进度: 9/20 - TC-MAIN-003_日志系统测试.py
+2025-08-28 11:38:52,504 - INFO - ==liuq debug== 运行测试: TC-MAIN-003_日志系统测试.py
+2025-08-28 11:38:58,450 - ERROR - ==liuq debug== ✗ 失败: TC-MAIN-003_日志系统测试.py
+2025-08-28 11:38:58,451 - INFO - ==liuq debug== 进度: 10/20 - TC-MAP-001_XML文件加载测试.py
+2025-08-28 11:38:58,451 - INFO - ==liuq debug== 运行测试: TC-MAP-001_XML文件加载测试.py
+2025-08-28 11:39:03,808 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-001_XML文件加载测试.py
+2025-08-28 11:39:03,809 - INFO - ==liuq debug== 进度: 11/20 - TC-MAP-004_XML写入功能测试.py
+2025-08-28 11:39:03,809 - INFO - ==liuq debug== 运行测试: TC-MAP-004_XML写入功能测试.py
+2025-08-28 11:39:08,516 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-004_XML写入功能测试.py
+2025-08-28 11:39:08,517 - INFO - ==liuq debug== 进度: 12/20 - TC-MAP-005_筛选功能测试.py
+2025-08-28 11:39:08,517 - INFO - ==liuq debug== 运行测试: TC-MAP-005_筛选功能测试.py
+2025-08-28 11:39:14,003 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-005_筛选功能测试.py
+2025-08-28 11:39:14,004 - INFO - ==liuq debug== 进度: 13/20 - TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 11:39:14,004 - INFO - ==liuq debug== 运行测试: TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 11:39:20,379 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 11:39:20,379 - INFO - ==liuq debug== 进度: 14/20 - TC-MAP-007_HTML报告生成测试.py
+2025-08-28 11:39:20,379 - INFO - ==liuq debug== 运行测试: TC-MAP-007_HTML报告生成测试.py
+2025-08-28 11:39:25,165 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-007_HTML报告生成测试.py
+2025-08-28 11:39:25,166 - INFO - ==liuq debug== 进度: 15/20 - TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 11:39:25,166 - INFO - ==liuq debug== 运行测试: TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 11:39:29,825 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 11:39:29,826 - INFO - ==liuq debug== 进度: 16/20 - TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 11:39:29,826 - INFO - ==liuq debug== 运行测试: TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 11:39:34,577 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 11:39:34,578 - INFO - ==liuq debug== 进度: 17/20 - TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 11:39:34,578 - INFO - ==liuq debug== 运行测试: TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 11:39:40,858 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 11:39:40,859 - INFO - ==liuq debug== 进度: 18/20 - TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 11:39:40,859 - INFO - ==liuq debug== 运行测试: TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 11:39:46,161 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 11:39:46,162 - INFO - ==liuq debug== 进度: 19/20 - TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 11:39:46,162 - INFO - ==liuq debug== 运行测试: TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 11:39:51,408 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 11:39:51,409 - INFO - ==liuq debug== 进度: 20/20 - TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 11:39:51,409 - INFO - ==liuq debug== 运行测试: TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 11:50:03,625 - INFO - ==liuq debug== FastMapV2 测试用例批量运行器启动
+2025-08-28 11:50:03,626 - INFO - ==liuq debug== 开始批量运行测试用例
+2025-08-28 11:50:03,630 - INFO - ==liuq debug== 找到20个测试用例文件
+2025-08-28 11:50:03,631 - INFO - ==liuq debug== 进度: 1/20 - TC-EXIF-001_EXIF解析测试.py
+2025-08-28 11:50:03,631 - INFO - ==liuq debug== 运行测试: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 11:50:13,852 - ERROR - ==liuq debug== ✗ 失败: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 11:50:13,852 - INFO - ==liuq debug== 进度: 2/20 - TC-EXIF-002_特定字段显示测试.py
+2025-08-28 11:50:13,852 - INFO - ==liuq debug== 运行测试: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 11:52:31,496 - INFO - ==liuq debug== FastMapV2 测试用例批量运行器启动
+2025-08-28 11:52:31,497 - INFO - ==liuq debug== 开始批量运行测试用例
+2025-08-28 11:52:31,499 - INFO - ==liuq debug== 找到20个测试用例文件
+2025-08-28 11:52:31,500 - INFO - ==liuq debug== 进度: 1/20 - TC-EXIF-001_EXIF解析测试.py
+2025-08-28 11:52:31,500 - INFO - ==liuq debug== 运行测试: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 11:52:36,161 - ERROR - ==liuq debug== ✗ 失败: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 11:52:36,161 - INFO - ==liuq debug== 进度: 2/20 - TC-EXIF-002_特定字段显示测试.py
+2025-08-28 11:52:36,161 - INFO - ==liuq debug== 运行测试: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 11:57:28,403 - ERROR - ==liuq debug== ✗ 失败: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 11:57:28,404 - INFO - ==liuq debug== 进度: 3/20 - TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 11:57:28,404 - INFO - ==liuq debug== 运行测试: TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 12:21:25,436 - INFO - ==liuq debug== FastMapV2 测试用例批量运行器启动
+2025-08-28 12:21:25,438 - INFO - ==liuq debug== 开始批量运行测试用例
+2025-08-28 12:21:25,440 - INFO - ==liuq debug== 找到20个测试用例文件
+2025-08-28 12:21:25,441 - INFO - ==liuq debug== 进度: 1/20 - TC-EXIF-001_EXIF解析测试.py
+2025-08-28 12:21:25,441 - INFO - ==liuq debug== 运行测试: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 12:26:26,387 - ERROR - ==liuq debug== 测试超时: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 12:26:26,388 - ERROR - ==liuq debug== ✗ 失败: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 12:26:26,388 - ERROR - ==liuq debug== 错误信息: 测试执行超时...
+2025-08-28 12:26:26,388 - INFO - ==liuq debug== 进度: 2/20 - TC-EXIF-002_特定字段显示测试.py
+2025-08-28 12:26:26,388 - INFO - ==liuq debug== 运行测试: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 12:31:27,725 - ERROR - ==liuq debug== 测试超时: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 12:31:27,726 - ERROR - ==liuq debug== ✗ 失败: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 12:31:27,727 - ERROR - ==liuq debug== 错误信息: 测试执行超时...
+2025-08-28 12:31:27,727 - INFO - ==liuq debug== 进度: 3/20 - TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 12:31:27,727 - INFO - ==liuq debug== 运行测试: TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 12:31:40,757 - ERROR - ==liuq debug== ✗ 失败: TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 12:31:40,759 - ERROR - ==liuq debug== 错误信息: Windows fatal exception: access violation
+
+Current thread 0x0000ad34 (most recent call first):
+  File "E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\gui\main_window.py", line 860 in closeEvent
+  ...
+2025-08-28 12:31:40,760 - INFO - ==liuq debug== 进度: 4/20 - TC-GUI-001_主窗口初始化测试.py
+2025-08-28 12:31:40,762 - INFO - ==liuq debug== 运行测试: TC-GUI-001_主窗口初始化测试.py
+2025-08-28 12:31:48,161 - INFO - ==liuq debug== ✓ 通过: TC-GUI-001_主窗口初始化测试.py
+2025-08-28 12:31:48,161 - INFO - ==liuq debug== 进度: 5/20 - TC-GUI-002_标签页切换测试.py
+2025-08-28 12:31:48,161 - INFO - ==liuq debug== 运行测试: TC-GUI-002_标签页切换测试.py
+2025-08-28 12:31:59,116 - ERROR - ==liuq debug== ✗ 失败: TC-GUI-002_标签页切换测试.py
+2025-08-28 12:31:59,116 - ERROR - ==liuq debug== 错误信息: Windows fatal exception: access violation
+
+Current thread 0x0000bfb4 (most recent call first):
+  File "E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\gui\main_window.py", line 860 in closeEvent
+  ...
+2025-08-28 12:31:59,117 - INFO - ==liuq debug== 进度: 6/20 - TC-GUI-003_界面响应测试.py
+2025-08-28 12:31:59,117 - INFO - ==liuq debug== 运行测试: TC-GUI-003_界面响应测试.py
+2025-08-28 12:32:10,561 - ERROR - ==liuq debug== ✗ 失败: TC-GUI-003_界面响应测试.py
+2025-08-28 12:32:10,562 - ERROR - ==liuq debug== 错误信息: Windows fatal exception: access violation
+
+Current thread 0x0000acd0 (most recent call first):
+  File "E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\gui\main_window.py", line 860 in closeEvent
+  ...
+2025-08-28 12:32:10,562 - INFO - ==liuq debug== 进度: 7/20 - TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 12:32:10,563 - INFO - ==liuq debug== 运行测试: TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 12:32:22,625 - ERROR - ==liuq debug== ✗ 失败: TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 12:32:22,626 - ERROR - ==liuq debug== 错误信息: Windows fatal exception: access violation
+
+Current thread 0x0000c6c0 (most recent call first):
+  File "E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\gui\main_window.py", line 860 in closeEvent
+  ...
+2025-08-28 12:32:22,626 - INFO - ==liuq debug== 进度: 8/20 - TC-MAIN-002_依赖包检查测试.py
+2025-08-28 12:32:22,627 - INFO - ==liuq debug== 运行测试: TC-MAIN-002_依赖包检查测试.py
+2025-08-28 12:32:30,687 - INFO - ==liuq debug== ✓ 通过: TC-MAIN-002_依赖包检查测试.py
+2025-08-28 12:32:30,687 - INFO - ==liuq debug== 进度: 9/20 - TC-MAIN-003_日志系统测试.py
+2025-08-28 12:32:30,687 - INFO - ==liuq debug== 运行测试: TC-MAIN-003_日志系统测试.py
+2025-08-28 12:32:40,279 - ERROR - ==liuq debug== ✗ 失败: TC-MAIN-003_日志系统测试.py
+2025-08-28 12:32:40,279 - ERROR - ==liuq debug== 错误信息: Windows fatal exception: access violation
+
+Current thread 0x0000b5a8 (most recent call first):
+  File "E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\gui\main_window.py", line 860 in closeEvent
+  ...
+2025-08-28 12:32:40,280 - INFO - ==liuq debug== 进度: 10/20 - TC-MAP-001_XML文件加载测试.py
+2025-08-28 12:32:40,280 - INFO - ==liuq debug== 运行测试: TC-MAP-001_XML文件加载测试.py
+2025-08-28 12:32:44,951 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-001_XML文件加载测试.py
+2025-08-28 12:32:44,952 - INFO - ==liuq debug== 进度: 11/20 - TC-MAP-004_XML写入功能测试.py
+2025-08-28 12:32:44,952 - INFO - ==liuq debug== 运行测试: TC-MAP-004_XML写入功能测试.py
+2025-08-28 12:32:51,792 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-004_XML写入功能测试.py
+2025-08-28 12:32:51,792 - INFO - ==liuq debug== 进度: 12/20 - TC-MAP-005_筛选功能测试.py
+2025-08-28 12:32:51,793 - INFO - ==liuq debug== 运行测试: TC-MAP-005_筛选功能测试.py
+2025-08-28 12:32:56,949 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-005_筛选功能测试.py
+2025-08-28 12:32:56,950 - INFO - ==liuq debug== 进度: 13/20 - TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 12:32:56,950 - INFO - ==liuq debug== 运行测试: TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 12:33:08,457 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 12:33:08,458 - ERROR - ==liuq debug== 错误信息: Windows fatal exception: access violation
+
+Current thread 0x00005fa4 (most recent call first):
+  File "E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\gui\main_window.py", line 860 in closeEvent
+  ...
+2025-08-28 12:33:08,458 - INFO - ==liuq debug== 进度: 14/20 - TC-MAP-007_HTML报告生成测试.py
+2025-08-28 12:33:08,459 - INFO - ==liuq debug== 运行测试: TC-MAP-007_HTML报告生成测试.py
+2025-08-28 12:33:14,839 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-007_HTML报告生成测试.py
+2025-08-28 12:33:14,839 - INFO - ==liuq debug== 进度: 15/20 - TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 12:33:14,839 - INFO - ==liuq debug== 运行测试: TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 12:33:24,248 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 12:33:24,248 - ERROR - ==liuq debug== 错误信息: Windows fatal exception: access violation
+
+Current thread 0x0000aee4 (most recent call first):
+  File "E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\gui\main_window.py", line 860 in closeEvent
+  ...
+2025-08-28 12:33:24,249 - INFO - ==liuq debug== 进度: 16/20 - TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 12:33:24,249 - INFO - ==liuq debug== 运行测试: TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 12:33:35,182 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 12:33:35,182 - ERROR - ==liuq debug== 错误信息: Windows fatal exception: access violation
+
+Current thread 0x0000855c (most recent call first):
+  File "E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\gui\main_window.py", line 860 in closeEvent
+  ...
+2025-08-28 12:33:35,185 - INFO - ==liuq debug== 进度: 17/20 - TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 12:33:35,187 - INFO - ==liuq debug== 运行测试: TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 12:34:12,012 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 12:34:12,013 - ERROR - ==liuq debug== 错误信息: Windows fatal exception: access violation
+
+Current thread 0x00001940 (most recent call first):
+  File "E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\gui\main_window.py", line 860 in closeEvent
+  ...
+2025-08-28 12:34:12,013 - INFO - ==liuq debug== 进度: 18/20 - TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 12:34:12,013 - INFO - ==liuq debug== 运行测试: TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 12:34:21,042 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 12:34:21,043 - ERROR - ==liuq debug== 错误信息: Windows fatal exception: access violation
+
+Current thread 0x00006be0 (most recent call first):
+  File "E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\gui\main_window.py", line 860 in closeEvent
+  ...
+2025-08-28 12:34:21,043 - INFO - ==liuq debug== 进度: 19/20 - TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 12:34:21,043 - INFO - ==liuq debug== 运行测试: TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 12:34:30,318 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 12:34:30,318 - ERROR - ==liuq debug== 错误信息: Windows fatal exception: access violation
+
+Current thread 0x000011d0 (most recent call first):
+  File "E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\gui\main_window.py", line 860 in closeEvent
+  ...
+2025-08-28 12:34:30,321 - INFO - ==liuq debug== 进度: 20/20 - TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 12:34:30,322 - INFO - ==liuq debug== 运行测试: TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 12:34:39,425 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 12:34:39,425 - ERROR - ==liuq debug== 错误信息: Windows fatal exception: access violation
+
+Current thread 0x00001f00 (most recent call first):
+  File "E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\gui\main_window.py", line 860 in closeEvent
+  ...
+2025-08-28 12:34:39,425 - INFO - ==liuq debug== ==================================================
+2025-08-28 12:34:39,426 - INFO - ==liuq debug== 测试总结:
+2025-08-28 12:34:39,426 - INFO - ==liuq debug== 总计: 20
+2025-08-28 12:34:39,427 - INFO - ==liuq debug== 通过: 2
+2025-08-28 12:34:39,427 - INFO - ==liuq debug== 失败: 18
+2025-08-28 12:34:39,427 - INFO - ==liuq debug== 成功率: 10.0%
+2025-08-28 12:34:39,427 - INFO - ==liuq debug== ==================================================
+2025-08-28 12:34:39,432 - INFO - ==liuq debug== 测试报告已保存: E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\tests\test_execution_report.md
+2025-08-28 12:34:39,433 - WARNING - ==liuq debug== ⚠️ 有18个测试用例失败
+2025-08-28 14:08:05,947 - INFO - ==liuq debug== FastMapV2 测试用例批量运行器启动
+2025-08-28 14:08:05,948 - INFO - ==liuq debug== 开始批量运行测试用例
+2025-08-28 14:08:05,951 - INFO - ==liuq debug== 找到20个测试用例文件
+2025-08-28 14:08:05,951 - INFO - ==liuq debug== 进度: 1/20 - TC-EXIF-001_EXIF解析测试.py
+2025-08-28 14:08:05,952 - INFO - ==liuq debug== 运行测试: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 14:13:07,639 - ERROR - ==liuq debug== 测试超时: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 14:13:07,640 - ERROR - ==liuq debug== ✗ 失败: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 14:13:07,640 - ERROR - ==liuq debug== 错误信息: 测试执行超时...
+2025-08-28 14:13:07,640 - INFO - ==liuq debug== 进度: 2/20 - TC-EXIF-002_特定字段显示测试.py
+2025-08-28 14:13:07,641 - INFO - ==liuq debug== 运行测试: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 14:24:18,365 - INFO - ==liuq debug== FastMapV2 测试用例批量运行器启动
+2025-08-28 14:24:18,365 - INFO - ==liuq debug== 开始批量运行测试用例
+2025-08-28 14:24:18,368 - INFO - ==liuq debug== 找到20个测试用例文件
+2025-08-28 14:24:18,369 - INFO - ==liuq debug== 进度: 1/20 - TC-EXIF-001_EXIF解析测试.py
+2025-08-28 14:24:18,369 - INFO - ==liuq debug== 运行测试: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 14:24:25,145 - ERROR - ==liuq debug== ✗ 失败: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 14:24:25,146 - INFO - ==liuq debug== 进度: 2/20 - TC-EXIF-002_特定字段显示测试.py
+2025-08-28 14:24:25,146 - INFO - ==liuq debug== 运行测试: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 14:24:31,133 - ERROR - ==liuq debug== ✗ 失败: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 14:24:31,134 - INFO - ==liuq debug== 进度: 3/20 - TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 14:24:31,134 - INFO - ==liuq debug== 运行测试: TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 14:24:35,773 - ERROR - ==liuq debug== ✗ 失败: TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 14:24:35,773 - INFO - ==liuq debug== 进度: 4/20 - TC-GUI-001_主窗口初始化测试.py
+2025-08-28 14:24:35,773 - INFO - ==liuq debug== 运行测试: TC-GUI-001_主窗口初始化测试.py
+2025-08-28 14:24:42,069 - ERROR - ==liuq debug== ✗ 失败: TC-GUI-001_主窗口初始化测试.py
+2025-08-28 14:24:42,069 - INFO - ==liuq debug== 进度: 5/20 - TC-GUI-002_标签页切换测试.py
+2025-08-28 14:24:42,069 - INFO - ==liuq debug== 运行测试: TC-GUI-002_标签页切换测试.py
+2025-08-28 14:24:49,747 - ERROR - ==liuq debug== ✗ 失败: TC-GUI-002_标签页切换测试.py
+2025-08-28 14:24:49,747 - INFO - ==liuq debug== 进度: 6/20 - TC-GUI-003_界面响应测试.py
+2025-08-28 14:24:49,747 - INFO - ==liuq debug== 运行测试: TC-GUI-003_界面响应测试.py
+2025-08-28 14:24:59,002 - ERROR - ==liuq debug== ✗ 失败: TC-GUI-003_界面响应测试.py
+2025-08-28 14:24:59,003 - INFO - ==liuq debug== 进度: 7/20 - TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 14:24:59,004 - INFO - ==liuq debug== 运行测试: TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 14:25:12,143 - ERROR - ==liuq debug== ✗ 失败: TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 14:25:12,145 - INFO - ==liuq debug== 进度: 8/20 - TC-MAIN-002_依赖包检查测试.py
+2025-08-28 14:25:12,147 - INFO - ==liuq debug== 运行测试: TC-MAIN-002_依赖包检查测试.py
+2025-08-28 14:25:21,146 - INFO - ==liuq debug== ✓ 通过: TC-MAIN-002_依赖包检查测试.py
+2025-08-28 14:25:21,147 - INFO - ==liuq debug== 进度: 9/20 - TC-MAIN-003_日志系统测试.py
+2025-08-28 14:25:21,147 - INFO - ==liuq debug== 运行测试: TC-MAIN-003_日志系统测试.py
+2025-08-28 14:25:31,254 - ERROR - ==liuq debug== ✗ 失败: TC-MAIN-003_日志系统测试.py
+2025-08-28 14:25:31,255 - INFO - ==liuq debug== 进度: 10/20 - TC-MAP-001_XML文件加载测试.py
+2025-08-28 14:25:31,256 - INFO - ==liuq debug== 运行测试: TC-MAP-001_XML文件加载测试.py
+2025-08-28 14:25:36,953 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-001_XML文件加载测试.py
+2025-08-28 14:25:36,954 - INFO - ==liuq debug== 进度: 11/20 - TC-MAP-004_XML写入功能测试.py
+2025-08-28 14:25:36,954 - INFO - ==liuq debug== 运行测试: TC-MAP-004_XML写入功能测试.py
+2025-08-28 14:25:41,956 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-004_XML写入功能测试.py
+2025-08-28 14:25:41,956 - INFO - ==liuq debug== 进度: 12/20 - TC-MAP-005_筛选功能测试.py
+2025-08-28 14:25:41,956 - INFO - ==liuq debug== 运行测试: TC-MAP-005_筛选功能测试.py
+2025-08-28 14:25:46,087 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-005_筛选功能测试.py
+2025-08-28 14:25:46,087 - INFO - ==liuq debug== 进度: 13/20 - TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 14:25:46,087 - INFO - ==liuq debug== 运行测试: TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 14:25:51,439 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 14:25:51,440 - INFO - ==liuq debug== 进度: 14/20 - TC-MAP-007_HTML报告生成测试.py
+2025-08-28 14:25:51,440 - INFO - ==liuq debug== 运行测试: TC-MAP-007_HTML报告生成测试.py
+2025-08-28 14:25:58,534 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-007_HTML报告生成测试.py
+2025-08-28 14:25:58,534 - INFO - ==liuq debug== 进度: 15/20 - TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 14:25:58,535 - INFO - ==liuq debug== 运行测试: TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 14:26:04,995 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 14:26:04,996 - INFO - ==liuq debug== 进度: 16/20 - TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 14:26:04,996 - INFO - ==liuq debug== 运行测试: TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 14:26:10,657 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 14:26:10,657 - INFO - ==liuq debug== 进度: 17/20 - TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 14:26:10,658 - INFO - ==liuq debug== 运行测试: TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 14:26:16,810 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 14:26:16,811 - INFO - ==liuq debug== 进度: 18/20 - TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 14:26:16,811 - INFO - ==liuq debug== 运行测试: TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 14:26:22,988 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 14:26:22,989 - INFO - ==liuq debug== 进度: 19/20 - TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 14:26:22,989 - INFO - ==liuq debug== 运行测试: TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 14:26:29,228 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 14:26:29,229 - INFO - ==liuq debug== 进度: 20/20 - TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 14:26:29,229 - INFO - ==liuq debug== 运行测试: TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 14:26:35,134 - ERROR - ==liuq debug== ✗ 失败: TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 14:26:35,134 - INFO - ==liuq debug== ==================================================
+2025-08-28 14:26:35,135 - INFO - ==liuq debug== 测试总结:
+2025-08-28 14:26:35,135 - INFO - ==liuq debug== 总计: 20
+2025-08-28 14:26:35,135 - INFO - ==liuq debug== 通过: 1
+2025-08-28 14:26:35,135 - INFO - ==liuq debug== 失败: 19
+2025-08-28 14:26:35,136 - INFO - ==liuq debug== 成功率: 5.0%
+2025-08-28 14:26:35,136 - INFO - ==liuq debug== ==================================================
+2025-08-28 14:26:35,141 - INFO - ==liuq debug== 测试报告已保存: E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\tests\test_execution_report.md
+2025-08-28 14:26:35,142 - WARNING - ==liuq debug== ⚠️ 有19个测试用例失败
+2025-08-28 14:31:45,960 - INFO - ==liuq debug== FastMapV2 测试用例批量运行器启动
+2025-08-28 14:31:45,961 - INFO - ==liuq debug== 开始批量运行测试用例
+2025-08-28 14:31:45,964 - INFO - ==liuq debug== 找到20个测试用例文件
+2025-08-28 14:31:45,964 - INFO - ==liuq debug== 进度: 1/20 - TC-EXIF-001_EXIF解析测试.py
+2025-08-28 14:31:45,964 - INFO - ==liuq debug== 运行测试: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 17:50:31,296 - INFO - ==liuq debug== FastMapV2 测试用例批量运行器启动
+2025-08-28 17:50:31,296 - INFO - ==liuq debug== 开始批量运行测试用例
+2025-08-28 17:50:31,298 - INFO - ==liuq debug== 找到20个测试用例文件
+2025-08-28 17:50:31,299 - INFO - ==liuq debug== 进度: 1/20 - TC-EXIF-001_EXIF解析测试.py
+2025-08-28 17:50:31,299 - INFO - ==liuq debug== 运行测试: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 17:50:34,649 - INFO - ==liuq debug== ✓ 通过: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 17:50:34,650 - INFO - ==liuq debug== 进度: 2/20 - TC-EXIF-002_特定字段显示测试.py
+2025-08-28 17:50:34,650 - INFO - ==liuq debug== 运行测试: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 17:50:37,992 - INFO - ==liuq debug== ✓ 通过: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 17:50:37,993 - INFO - ==liuq debug== 进度: 3/20 - TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 17:50:37,993 - INFO - ==liuq debug== 运行测试: TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 17:50:41,103 - INFO - ==liuq debug== ✓ 通过: TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 17:50:41,104 - INFO - ==liuq debug== 进度: 4/20 - TC-GUI-001_主窗口初始化测试.py
+2025-08-28 17:50:41,104 - INFO - ==liuq debug== 运行测试: TC-GUI-001_主窗口初始化测试.py
+2025-08-28 17:50:45,669 - INFO - ==liuq debug== ✓ 通过: TC-GUI-001_主窗口初始化测试.py
+2025-08-28 17:50:45,670 - INFO - ==liuq debug== 进度: 5/20 - TC-GUI-002_标签页切换测试.py
+2025-08-28 17:50:45,670 - INFO - ==liuq debug== 运行测试: TC-GUI-002_标签页切换测试.py
+2025-08-28 17:50:52,997 - INFO - ==liuq debug== ✓ 通过: TC-GUI-002_标签页切换测试.py
+2025-08-28 17:50:52,997 - INFO - ==liuq debug== 进度: 6/20 - TC-GUI-003_界面响应测试.py
+2025-08-28 17:50:52,998 - INFO - ==liuq debug== 运行测试: TC-GUI-003_界面响应测试.py
+2025-08-28 17:51:03,421 - INFO - ==liuq debug== ✓ 通过: TC-GUI-003_界面响应测试.py
+2025-08-28 17:51:03,422 - INFO - ==liuq debug== 进度: 7/20 - TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 17:51:03,422 - INFO - ==liuq debug== 运行测试: TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 17:51:08,688 - INFO - ==liuq debug== ✓ 通过: TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 17:51:08,689 - INFO - ==liuq debug== 进度: 8/20 - TC-MAIN-002_依赖包检查测试.py
+2025-08-28 17:51:08,689 - INFO - ==liuq debug== 运行测试: TC-MAIN-002_依赖包检查测试.py
+2025-08-28 17:51:13,543 - INFO - ==liuq debug== ✓ 通过: TC-MAIN-002_依赖包检查测试.py
+2025-08-28 17:51:13,544 - INFO - ==liuq debug== 进度: 9/20 - TC-MAIN-003_日志系统测试.py
+2025-08-28 17:51:13,544 - INFO - ==liuq debug== 运行测试: TC-MAIN-003_日志系统测试.py
+2025-08-28 17:51:17,707 - INFO - ==liuq debug== ✓ 通过: TC-MAIN-003_日志系统测试.py
+2025-08-28 17:51:17,708 - INFO - ==liuq debug== 进度: 10/20 - TC-MAP-001_XML文件加载测试.py
+2025-08-28 17:51:17,708 - INFO - ==liuq debug== 运行测试: TC-MAP-001_XML文件加载测试.py
+2025-08-28 17:51:25,745 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-001_XML文件加载测试.py
+2025-08-28 17:51:25,746 - INFO - ==liuq debug== 进度: 11/20 - TC-MAP-004_XML写入功能测试.py
+2025-08-28 17:51:25,746 - INFO - ==liuq debug== 运行测试: TC-MAP-004_XML写入功能测试.py
+2025-08-28 17:51:55,179 - ERROR - ==liuq debug== ✗ 失败: TC-MAP-004_XML写入功能测试.py
+2025-08-28 17:51:55,179 - ERROR - ==liuq debug== 错误信息: Windows fatal exception: access violation
+
+Current thread 0x0000c0e4 (most recent call first):
+  File "d:\users\w9065706\appdata\local\programs\python\Python39\lib\site-packages\pytestqt\plugin.py", l...
+2025-08-28 17:51:55,180 - INFO - ==liuq debug== 进度: 12/20 - TC-MAP-005_筛选功能测试.py
+2025-08-28 17:51:55,180 - INFO - ==liuq debug== 运行测试: TC-MAP-005_筛选功能测试.py
+2025-08-28 17:52:17,458 - INFO - ==liuq debug== ✓ 通过: TC-MAP-005_筛选功能测试.py
+2025-08-28 17:52:17,459 - INFO - ==liuq debug== 进度: 13/20 - TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 17:52:17,459 - INFO - ==liuq debug== 运行测试: TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 17:52:23,407 - INFO - ==liuq debug== ✓ 通过: TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 17:52:23,407 - INFO - ==liuq debug== 进度: 14/20 - TC-MAP-007_HTML报告生成测试.py
+2025-08-28 17:52:23,407 - INFO - ==liuq debug== 运行测试: TC-MAP-007_HTML报告生成测试.py
+2025-08-28 17:52:31,615 - INFO - ==liuq debug== ✓ 通过: TC-MAP-007_HTML报告生成测试.py
+2025-08-28 17:52:31,615 - INFO - ==liuq debug== 进度: 15/20 - TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 17:52:31,615 - INFO - ==liuq debug== 运行测试: TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 17:52:41,507 - INFO - ==liuq debug== ✓ 通过: TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 17:52:41,508 - INFO - ==liuq debug== 进度: 16/20 - TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 17:52:41,508 - INFO - ==liuq debug== 运行测试: TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 17:52:55,426 - INFO - ==liuq debug== ✓ 通过: TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 17:52:55,427 - INFO - ==liuq debug== 进度: 17/20 - TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 17:52:55,427 - INFO - ==liuq debug== 运行测试: TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 17:53:06,737 - INFO - ==liuq debug== ✓ 通过: TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 17:53:06,737 - INFO - ==liuq debug== 进度: 18/20 - TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 17:53:06,738 - INFO - ==liuq debug== 运行测试: TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 17:53:14,588 - INFO - ==liuq debug== ✓ 通过: TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 17:53:14,588 - INFO - ==liuq debug== 进度: 19/20 - TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 17:53:14,588 - INFO - ==liuq debug== 运行测试: TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 17:53:19,170 - INFO - ==liuq debug== ✓ 通过: TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 17:53:19,171 - INFO - ==liuq debug== 进度: 20/20 - TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 17:53:19,171 - INFO - ==liuq debug== 运行测试: TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 17:53:23,462 - INFO - ==liuq debug== ✓ 通过: TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 17:53:23,463 - INFO - ==liuq debug== ==================================================
+2025-08-28 17:53:23,463 - INFO - ==liuq debug== 测试总结:
+2025-08-28 17:53:23,463 - INFO - ==liuq debug== 总计: 20
+2025-08-28 17:53:23,464 - INFO - ==liuq debug== 通过: 18
+2025-08-28 17:53:23,464 - INFO - ==liuq debug== 失败: 2
+2025-08-28 17:53:23,464 - INFO - ==liuq debug== 成功率: 90.0%
+2025-08-28 17:53:23,465 - INFO - ==liuq debug== ==================================================
+2025-08-28 17:53:23,471 - INFO - ==liuq debug== 测试报告已保存: E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\tests\test_execution_report.md
+2025-08-28 17:53:23,471 - WARNING - ==liuq debug== ⚠️ 有2个测试用例失败
+2025-08-28 18:32:29,922 - INFO - ==liuq debug== FastMapV2 测试用例批量运行器启动
+2025-08-28 18:32:29,923 - INFO - ==liuq debug== 开始批量运行测试用例
+2025-08-28 18:32:29,930 - INFO - ==liuq debug== 找到20个测试用例文件
+2025-08-28 18:32:29,930 - INFO - ==liuq debug== 进度: 1/20 - TC-EXIF-001_EXIF解析测试.py
+2025-08-28 18:32:29,931 - INFO - ==liuq debug== 运行测试: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 18:32:35,946 - INFO - ==liuq debug== ✓ 通过: TC-EXIF-001_EXIF解析测试.py
+2025-08-28 18:32:35,947 - INFO - ==liuq debug== 进度: 2/20 - TC-EXIF-002_特定字段显示测试.py
+2025-08-28 18:32:35,947 - INFO - ==liuq debug== 运行测试: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 18:32:41,165 - INFO - ==liuq debug== ✓ 通过: TC-EXIF-002_特定字段显示测试.py
+2025-08-28 18:32:41,165 - INFO - ==liuq debug== 进度: 3/20 - TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 18:32:41,166 - INFO - ==liuq debug== 运行测试: TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 18:32:45,650 - INFO - ==liuq debug== ✓ 通过: TC-EXIF-003_CSV导出与对比测试.py
+2025-08-28 18:32:45,650 - INFO - ==liuq debug== 进度: 4/20 - TC-GUI-001_主窗口初始化测试.py
+2025-08-28 18:32:45,650 - INFO - ==liuq debug== 运行测试: TC-GUI-001_主窗口初始化测试.py
+2025-08-28 18:32:51,135 - INFO - ==liuq debug== ✓ 通过: TC-GUI-001_主窗口初始化测试.py
+2025-08-28 18:32:51,135 - INFO - ==liuq debug== 进度: 5/20 - TC-GUI-002_标签页切换测试.py
+2025-08-28 18:32:51,136 - INFO - ==liuq debug== 运行测试: TC-GUI-002_标签页切换测试.py
+2025-08-28 18:32:59,053 - INFO - ==liuq debug== ✓ 通过: TC-GUI-002_标签页切换测试.py
+2025-08-28 18:32:59,053 - INFO - ==liuq debug== 进度: 6/20 - TC-GUI-003_界面响应测试.py
+2025-08-28 18:32:59,054 - INFO - ==liuq debug== 运行测试: TC-GUI-003_界面响应测试.py
+2025-08-28 18:33:12,163 - INFO - ==liuq debug== ✓ 通过: TC-GUI-003_界面响应测试.py
+2025-08-28 18:33:12,163 - INFO - ==liuq debug== 进度: 7/20 - TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 18:33:12,164 - INFO - ==liuq debug== 运行测试: TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 18:33:17,183 - INFO - ==liuq debug== ✓ 通过: TC-MAIN-001_主程序正常启动测试.py
+2025-08-28 18:33:17,184 - INFO - ==liuq debug== 进度: 8/20 - TC-MAIN-002_依赖包检查测试.py
+2025-08-28 18:33:17,184 - INFO - ==liuq debug== 运行测试: TC-MAIN-002_依赖包检查测试.py
+2025-08-28 18:33:24,765 - INFO - ==liuq debug== ✓ 通过: TC-MAIN-002_依赖包检查测试.py
+2025-08-28 18:33:24,766 - INFO - ==liuq debug== 进度: 9/20 - TC-MAIN-003_日志系统测试.py
+2025-08-28 18:33:24,766 - INFO - ==liuq debug== 运行测试: TC-MAIN-003_日志系统测试.py
+2025-08-28 18:33:29,820 - INFO - ==liuq debug== ✓ 通过: TC-MAIN-003_日志系统测试.py
+2025-08-28 18:33:29,820 - INFO - ==liuq debug== 进度: 10/20 - TC-MAP-001_XML文件加载测试.py
+2025-08-28 18:33:29,821 - INFO - ==liuq debug== 运行测试: TC-MAP-001_XML文件加载测试.py
+2025-08-28 18:33:39,813 - INFO - ==liuq debug== ✓ 通过: TC-MAP-001_XML文件加载测试.py
+2025-08-28 18:33:39,814 - INFO - ==liuq debug== 进度: 11/20 - TC-MAP-004_XML写入功能测试.py
+2025-08-28 18:33:39,815 - INFO - ==liuq debug== 运行测试: TC-MAP-004_XML写入功能测试.py
+2025-08-28 18:34:25,625 - INFO - ==liuq debug== ✓ 通过: TC-MAP-004_XML写入功能测试.py
+2025-08-28 18:34:25,626 - INFO - ==liuq debug== 进度: 12/20 - TC-MAP-005_筛选功能测试.py
+2025-08-28 18:34:25,626 - INFO - ==liuq debug== 运行测试: TC-MAP-005_筛选功能测试.py
+2025-08-28 18:34:43,223 - INFO - ==liuq debug== ✓ 通过: TC-MAP-005_筛选功能测试.py
+2025-08-28 18:34:43,224 - INFO - ==liuq debug== 进度: 13/20 - TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 18:34:43,224 - INFO - ==liuq debug== 运行测试: TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 18:34:49,896 - INFO - ==liuq debug== ✓ 通过: TC-MAP-006_拖拽图片显示EXIF功能测试.py
+2025-08-28 18:34:49,896 - INFO - ==liuq debug== 进度: 14/20 - TC-MAP-007_HTML报告生成测试.py
+2025-08-28 18:34:49,897 - INFO - ==liuq debug== 运行测试: TC-MAP-007_HTML报告生成测试.py
+2025-08-28 18:35:01,639 - INFO - ==liuq debug== ✓ 通过: TC-MAP-007_HTML报告生成测试.py
+2025-08-28 18:35:01,640 - INFO - ==liuq debug== 进度: 15/20 - TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 18:35:01,640 - INFO - ==liuq debug== 运行测试: TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 18:35:13,131 - INFO - ==liuq debug== ✓ 通过: TC-REPORT-001_分析报告页面加载CSV文件测试.py
+2025-08-28 18:35:13,132 - INFO - ==liuq debug== 进度: 16/20 - TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 18:35:13,132 - INFO - ==liuq debug== 运行测试: TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 18:35:27,348 - INFO - ==liuq debug== ✓ 通过: TC-REPORT-002_预览匹配功能测试.py
+2025-08-28 18:35:27,349 - INFO - ==liuq debug== 进度: 17/20 - TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 18:35:27,349 - INFO - ==liuq debug== 运行测试: TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 18:35:36,857 - INFO - ==liuq debug== ✓ 通过: TC-REPORT-003_图片分类导出功能测试.py
+2025-08-28 18:35:36,857 - INFO - ==liuq debug== 进度: 18/20 - TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 18:35:36,858 - INFO - ==liuq debug== 运行测试: TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 18:35:45,113 - INFO - ==liuq debug== ✓ 通过: TC-REPORT-004_字段趋势对比图测试.py
+2025-08-28 18:35:45,114 - INFO - ==liuq debug== 进度: 19/20 - TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 18:35:45,114 - INFO - ==liuq debug== 运行测试: TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 18:35:49,927 - INFO - ==liuq debug== ✓ 通过: TC-REPORT-005_RpG_BpG对比分析测试.py
+2025-08-28 18:35:49,927 - INFO - ==liuq debug== 进度: 20/20 - TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 18:35:49,928 - INFO - ==liuq debug== 运行测试: TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 18:35:54,635 - INFO - ==liuq debug== ✓ 通过: TC-REPORT-006_详细数据对比表统计排序测试.py
+2025-08-28 18:35:54,636 - INFO - ==liuq debug== ==================================================
+2025-08-28 18:35:54,636 - INFO - ==liuq debug== 测试总结:
+2025-08-28 18:35:54,637 - INFO - ==liuq debug== 总计: 20
+2025-08-28 18:35:54,637 - INFO - ==liuq debug== 通过: 20
+2025-08-28 18:35:54,638 - INFO - ==liuq debug== 失败: 0
+2025-08-28 18:35:54,638 - INFO - ==liuq debug== 成功率: 100.0%
+2025-08-28 18:35:54,639 - INFO - ==liuq debug== ==================================================
+2025-08-28 18:35:54,646 - INFO - ==liuq debug== 测试报告已保存: E:\code\3__My\22_tool_fastmapv2\0_fastmapv2_latest\tests\test_execution_report.md
+2025-08-28 18:35:54,646 - INFO - ==liuq debug== 🎉 所有测试用例都通过了！

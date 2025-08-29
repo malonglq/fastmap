@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastMapV2 Map分析报告 - 包含多维度场景分析</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .report-header { background: linear-gradient(45deg, #1e3c72 0%, #2a5298 100%); color: white; }
+        .chart-container { position: relative; height: 450px; margin: 25px 0; }
+        .summary-card { border-left: 5px solid #28a745; }
+        .analysis-card { border-left: 5px solid #17a2b8; }
+        .warning-card { border-left: 5px solid #ffc107; }
+        .danger-card { border-left: 5px solid #dc3545; }
+        .toc { position: sticky; top: 20px; }
+        .section-divider { border-top: 2px solid #e9ecef; margin: 40px 0 30px 0; }
+
+        /* Map分析专用样式优化 - 模仿原始报告效果 */
+        .map-stats-overview {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(79, 172, 254, 0.3);
+        }
+        .map-stats-item {
+            text-align: center;
+            padding: 15px;
+        }
+        .map-stats-item h6 {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+        .map-stats-item .stats-number {
+            font-size: 2rem;
+            font-weight: 300;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- 详细报告头部 -->
+        <div class="row report-header p-5 mb-4">
+            <div class="col-12 text-center">
+                <h1 class="display-3"><i class="fas fa-chart-line me-3"></i>FastMapV2 Map分析报告 - 包含多维度场景分析</h1>
+                <p class="lead fs-4">详细分析报告</p>
+                <p class="fs-5">生成时间: 2025-08-28 18:44:48</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- 目录 -->
+            <div class="col-md-3">
+                <div class="toc">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-list me-2"></i>目录</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled">
+                                <li><a href="#summary">分析概览</a></li>
+                                <li><a href="#charts">数据可视化</a></li>
+                                <li><a href="#detailed-analysis">详细分析</a></li>
+                                <li><a href="#conclusions">结论建议</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 主要内容 -->
+            <div class="col-md-9">
+                <!-- 概览信息 -->
+                
+                <section id="summary">
+                    <!-- Map分析专用统计展示 -->
+                    
+                    <div class="map-stats-overview mb-4">
+                        <div class="row">
+                            <div class="col-md-2 map-stats-item">
+                                <h6>总Map点数</h6>
+                                <p class="stats-number">115</p>
+                            </div>
+                            <div class="col-md-2 map-stats-item">
+                                <h6>室内场景</h6>
+                                <p class="stats-number">{'count': 51, 'percentage': 44.34782608695652}</p>
+                            </div>
+                            <div class="col-md-2 map-stats-item">
+                                <h6>室外场景</h6>
+                                <p class="stats-number">{'count': 27, 'percentage': 23.47826086956522}</p>
+                            </div>
+                            <div class="col-md-2 map-stats-item">
+                                <h6>夜景场景</h6>
+                                <p class="stats-number">{'count': 37, 'percentage': 32.17391304347826}</p>
+                            </div>
+                            <div class="col-md-2 map-stats-item">
+                                <h6>平均权重</h6>
+                                <p class="stats-number">0.000</p>
+                            </div>
+                            <div class="col-md-2 map-stats-item">
+                                <h6>处理时长</h6>
+                                <p class="stats-number">0.00s</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </section>
+                
+                
+                <!-- 图表内容 -->
+                
+                <div class="section-divider"></div>
+                <section id="charts">
+                    <div class="card analysis-card mb-4">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-bar me-2"></i>数据可视化</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container"><canvas id="scatterChart"></canvas></div>
+<div class="chart-container"><canvas id="heatmapChart"></canvas></div>
+<div class="chart-container"><canvas id="rangeChart"></canvas></div>
+                        </div>
+                    </div>
+                </section>
+                
+                
+                <!-- 详细分析 -->
+                
+                
+                <!-- 多维度分析 -->
+                
+                <div class="section-divider"></div>
+                
+            <div class="row mt-5">
+                <div class="col-12">
+                    <h2 class="text-primary border-bottom pb-2">
+                        <i class="fas fa-chart-pie me-2"></i>多维度场景分析
+                    </h2>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">分析概览</h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>总Map数量:</strong> 115</p>
+                            <p><strong>主导场景:</strong> indoor</p>
+                            <hr>
+                            <h6>场景分布:</h6>
+                            <ul class="list-unstyled">
+                                <li>🏞️ 室外场景: 27 个 (23.5%)</li>
+                                <li>🏠 室内场景: 51 个 (44.3%)</li>
+                                <li>🌙 夜景场景: 37 个 (32.2%)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0">分类规则</h5>
+                        </div>
+                        <div class="card-body">
+                            <h6>当前阈值设置:</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>BV室外阈值:</strong> 7.0</li>
+                                <li><strong>BV室内下限:</strong> 1.0</li>
+                                <li><strong>IR室外阈值:</strong> 0.5</li>
+                            </ul>
+                            <hr>
+                            <small class="text-muted">
+                                室外: BV_min > 7.0 或 IR_min > 0.5<br>
+                                室内: 1.0 ≤ BV_min ≤ 7.0 且 IR_min ≤ 0.5<br>
+                                夜景: BV_min < 1.0
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">场景分类详细统计</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>场景类型</th>
+                                            <th>Map数量</th>
+                                            <th>占比(%)</th>
+                                            <th>平均权重</th>
+                                            <th>代表性Map</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+            
+                                        <tr>
+                                            <td><strong>室外场景</strong></td>
+                                            <td>27</td>
+                                            <td>23.5%</td>
+                                            <td>0.37</td>
+                                            <td><small>1_BlueSky_HgihEV, 2_BlueSky_LowLight, 3_BrightOutdoor_D50HighBV</small></td>
+                                        </tr>
+                
+                                        <tr>
+                                            <td><strong>室内场景</strong></td>
+                                            <td>51</td>
+                                            <td>44.3%</td>
+                                            <td>0.45</td>
+                                            <td><small>5_BlueSky_GreySkyLowLight, 7_BlueSky_GreySkyHigh, 8_BlueSky_BlueStats</small></td>
+                                        </tr>
+                
+                                        <tr>
+                                            <td><strong>夜景场景</strong></td>
+                                            <td>37</td>
+                                            <td>32.2%</td>
+                                            <td>0.32</td>
+                                            <td><small>4_BlueSky_SnowLowLight, 21_GreenZone_YellowStatsHighIR, 28_GreenZone_GreenStatsLow_y</small></td>
+                                        </tr>
+                
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">参数分布分析</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>参数</th>
+                                            <th>最小值</th>
+                                            <th>最大值</th>
+                                            <th>平均值</th>
+                                            <th>标准差</th>
+                                            <th>中位数</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+            
+                                        <tr>
+                                            <td><strong>BV最小值</strong></td>
+                                            <td>-9.00</td>
+                                            <td>10.00</td>
+                                            <td>0.31</td>
+                                            <td>4.34</td>
+                                            <td>0.50</td>
+                                        </tr>
+                
+                                        <tr>
+                                            <td><strong>IR最小值</strong></td>
+                                            <td>0.00</td>
+                                            <td>2.00</td>
+                                            <td>0.23</td>
+                                            <td>0.33</td>
+                                            <td>0.04</td>
+                                        </tr>
+                
+                                        <tr>
+                                            <td><strong>权重</strong></td>
+                                            <td>0.01</td>
+                                            <td>2.20</td>
+                                            <td>0.39</td>
+                                            <td>0.35</td>
+                                            <td>0.30</td>
+                                        </tr>
+                
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">分类准确性分析</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <h3 class="text-success">78.3%</h3>
+                                    <p class="text-muted">准确率</p>
+                                </div>
+                                <div class="col-6">
+                                    <h3 class="text-info">115</h3>
+                                    <p class="text-muted">总Map数</p>
+                                </div>
+                            </div>
+                            <hr>
+                            <p><strong>一致分类:</strong> 90 个</p>
+                            <p><strong>不一致分类:</strong> 25 个</p>
+                            <small class="text-muted">注：准确率是指新分类规则与原始分类的一致性程度</small>
+                        </div>
+                    </div>
+                </div>
+            
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">不一致分类案例</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Map名称</th>
+                                            <th>原始</th>
+                                            <th>新分类</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                
+                                        <tr>
+                                            <td><small>1_BlueSky_HgihEV</small></td>
+                                            <td><small>night</small></td>
+                                            <td><small>outdoor</small></td>
+                                        </tr>
+                    
+                                        <tr>
+                                            <td><small>2_BlueSky_LowLight</small></td>
+                                            <td><small>night</small></td>
+                                            <td><small>outdoor</small></td>
+                                        </tr>
+                    
+                                        <tr>
+                                            <td><small>5_BlueSky_GreySky...</small></td>
+                                            <td><small>night</small></td>
+                                            <td><small>indoor</small></td>
+                                        </tr>
+                    
+                                        <tr>
+                                            <td><small>6_BlueSky_snowWit...</small></td>
+                                            <td><small>night</small></td>
+                                            <td><small>outdoor</small></td>
+                                        </tr>
+                    
+                                        <tr>
+                                            <td><small>7_BlueSky_GreySky...</small></td>
+                                            <td><small>night</small></td>
+                                            <td><small>indoor</small></td>
+                                        </tr>
+                    
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">色温段跨度统计（Top 20）</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>排名</th>
+                                            <th>Map点名称</th>
+                                            <th>跨越色温段</th>
+                                            <th>跨度数量</th>
+                                            <th>坐标(RpG, BpG)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+            <tr>
+                    <td>1</td>
+                    <td>116_Night_LowMixHigh_Face1</td>
+                    <td><small>High-D75, D75-D65, D65-D50, D50-F, F-A</small></td>
+                    <td>5</td>
+                    <td>(0.546, 0.608)</td>
+                </tr><tr>
+                    <td>2</td>
+                    <td>45_spatial_Outdoor_Pink_Face</td>
+                    <td><small>D65-D50, D50-F, F-A, A-H, H-1500</small></td>
+                    <td>5</td>
+                    <td>(1.095, 0.621)</td>
+                </tr><tr>
+                    <td>3</td>
+                    <td>91_33_MixLowMixHi_Face2</td>
+                    <td><small>High-D75, D75-D65, D65-D50, D50-F, F-A</small></td>
+                    <td>5</td>
+                    <td>(0.545, 0.616)</td>
+                </tr><tr>
+                    <td>4</td>
+                    <td>105_Night_greysky</td>
+                    <td><small>High-D75, D75-D65, D65-D50, D50-F</small></td>
+                    <td>4</td>
+                    <td>(0.482, 0.703)</td>
+                </tr><tr>
+                    <td>5</td>
+                    <td>115_Night_LowMixHigh_Face</td>
+                    <td><small>High-D75, D75-D65, D65-D50, D50-F</small></td>
+                    <td>4</td>
+                    <td>(0.454, 0.686)</td>
+                </tr><tr>
+                    <td>6</td>
+                    <td>18_GreenZone_MidStats_Face_Highlight</td>
+                    <td><small>D50-F, F-A, A-H, H-1500</small></td>
+                    <td>4</td>
+                    <td>(0.745, 0.453)</td>
+                </tr><tr>
+                    <td>7</td>
+                    <td>19_BrightOutdoor_Wood_y</td>
+                    <td><small>D50-F, F-A, A-H, H-1500</small></td>
+                    <td>4</td>
+                    <td>(0.776, 0.416)</td>
+                </tr><tr>
+                    <td>8</td>
+                    <td>23_GreenZone_25_MidStats_scene</td>
+                    <td><small>D50-F, F-A, A-H, H-1500</small></td>
+                    <td>4</td>
+                    <td>(0.749, 0.449)</td>
+                </tr><tr>
+                    <td>9</td>
+                    <td>25_GreenZone_MidStats_scene</td>
+                    <td><small>D50-F, F-A, A-H, H-1500</small></td>
+                    <td>4</td>
+                    <td>(0.752, 0.449)</td>
+                </tr><tr>
+                    <td>10</td>
+                    <td>27_GreenZone_HightEV_InGreyzone_y</td>
+                    <td><small>D65-D50, D50-F, F-A, A-H</small></td>
+                    <td>4</td>
+                    <td>(0.556, 0.454)</td>
+                </tr><tr>
+                    <td>11</td>
+                    <td>34_OutdoorScene_MixMidStats_scene</td>
+                    <td><small>D50-F, F-A, A-H, H-1500</small></td>
+                    <td>4</td>
+                    <td>(0.842, 0.535)</td>
+                </tr><tr>
+                    <td>12</td>
+                    <td>37_OutdoorScene_MixMidStats_Face</td>
+                    <td><small>D50-F, F-A, A-H, H-1500</small></td>
+                    <td>4</td>
+                    <td>(0.747, 0.510)</td>
+                </tr><tr>
+                    <td>13</td>
+                    <td>44_MixLight_indoor_bar</td>
+                    <td><small>Ultra-High, High-D75, D75-D65, D65-D50</small></td>
+                    <td>4</td>
+                    <td>(0.681, 1.152)</td>
+                </tr><tr>
+                    <td>14</td>
+                    <td>46_Indoor_LowMixHigh</td>
+                    <td><small>High-D75, D75-D65, D65-D50, D50-F</small></td>
+                    <td>4</td>
+                    <td>(0.457, 0.740)</td>
+                </tr><tr>
+                    <td>15</td>
+                    <td>48_Indoor_LowMixHigh</td>
+                    <td><small>High-D75, D75-D65, D65-D50, D50-F</small></td>
+                    <td>4</td>
+                    <td>(0.458, 0.740)</td>
+                </tr><tr>
+                    <td>16</td>
+                    <td>52_spatial_Indoor_ColorCCT5600mixLowstats</td>
+                    <td><small>D50-F, F-A, A-H, H-1500</small></td>
+                    <td>4</td>
+                    <td>(0.974, 0.594)</td>
+                </tr><tr>
+                    <td>17</td>
+                    <td>61_33_MixLowMixHi_Dmap13</td>
+                    <td><small>High-D75, D75-D65, D65-D50, D50-F</small></td>
+                    <td>4</td>
+                    <td>(0.506, 0.668)</td>
+                </tr><tr>
+                    <td>18</td>
+                    <td>64__Special_indoor_green</td>
+                    <td><small>D50-F, F-A, A-H, H-1500</small></td>
+                    <td>4</td>
+                    <td>(0.616, 0.288)</td>
+                </tr><tr>
+                    <td>19</td>
+                    <td>78_MixLowMixHi_Dmap13_Face1</td>
+                    <td><small>High-D75, D75-D65, D65-D50, D50-F</small></td>
+                    <td>4</td>
+                    <td>(0.439, 0.759)</td>
+                </tr><tr>
+                    <td>20</td>
+                    <td>84_43_MixLight_indoor_bar</td>
+                    <td><small>Ultra-High, High-D75, D75-D65, D65-D50</small></td>
+                    <td>4</td>
+                    <td>(0.681, 1.152)</td>
+                </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+                
+                
+                <!-- 结论建议 -->
+                
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    
+    <script>
+        // FastMapV2 图表脚本
+// 生成时间: 2025-08-28 18:44:48
+
+
+// 散点图 - Map坐标分布图
+const scatterChartConfig = {
+  "type": "scatter",
+  "data": {
+    "datasets": [
+      {
+        "label": "indoor\u573a\u666f",
+        "data": [
+          {
+            "x": 0.3851564285714285,
+            "y": 0.7974994285714284
+          },
+          {
+            "x": 0.6533813333333333,
+            "y": 0.5504991666666667
+          },
+          {
+            "x": 0.29029672829470776,
+            "y": 0.5906350583458755
+          },
+          {
+            "x": 0.33661025,
+            "y": 0.72723825
+          },
+          {
+            "x": 0.6810402500000001,
+            "y": 1.1517954166666664
+          },
+          {
+            "x": 0.457339625,
+            "y": 0.740004625
+          },
+          {
+            "x": 0.6466251666666667,
+            "y": 0.5290953333333334
+          },
+          {
+            "x": 0.457568875,
+            "y": 0.7403788750000001
+          },
+          {
+            "x": 1.5540028,
+            "y": 0.3533362
+          },
+          {
+            "x": 0.9741362499999999,
+            "y": 0.59350975
+          },
+          {
+            "x": 0.5366307142857143,
+            "y": 0.634413
+          },
+          {
+            "x": 0.8765567777777779,
+            "y": 0.36160877777777783
+          },
+          {
+            "x": 0.3451515,
+            "y": 0.4953068333333334
+          },
+          {
+            "x": 0.7060025000000001,
+            "y": 0.6940375999999999
+          },
+          {
+            "x": 0.618265,
+            "y": 0.5516121111111111
+          },
+          {
+            "x": 0.6163942446816439,
+            "y": 0.2877649780054933
+          },
+          {
+            "x": 0.834400125,
+            "y": 0.19679837499999997
+          },
+          {
+            "x": 0.3518301,
+            "y": 0.707517
+          },
+          {
+            "x": 0.5185008516254639,
+            "y": 0.8392376236552018
+          },
+          {
+            "x": 0.28457155624424096,
+            "y": 0.8894599974155426
+          },
+          {
+            "x": 1.9641454444444446,
+            "y": 0.4546652222222223
+          },
+          {
+            "x": 1.381850888888889,
+            "y": 0.3337225555555555
+          },
+          {
+            "x": 1.2327556581998649,
+            "y": 0.27203195107841466
+          },
+          {
+            "x": 1.178905888888889,
+            "y": 0.31031922222222214
+          },
+          {
+            "x": 0.842902923076923,
+            "y": 0.3726991538461538
+          },
+          {
+            "x": 0.842902923076923,
+            "y": 0.3726991538461538
+          },
+          {
+            "x": 1.864374,
+            "y": 0.436739
+          },
+          {
+            "x": 1.4890175714285714,
+            "y": 0.3114784285714286
+          },
+          {
+            "x": 1.44202775,
+            "y": 0.20104650000000002
+          },
+          {
+            "x": 0.24794799999999997,
+            "y": 1.1078163333333333
+          },
+          {
+            "x": 0.4998518166881689,
+            "y": 0.49941005197310284
+          },
+          {
+            "x": 0.6810402500000001,
+            "y": 1.1517954166666664
+          },
+          {
+            "x": 1.2274633340827898,
+            "y": 0.29992324418361066
+          },
+          {
+            "x": 0.7875077000000001,
+            "y": 0.33154990000000006
+          },
+          {
+            "x": 1.178905888888889,
+            "y": 0.31031922222222214
+          },
+          {
+            "x": 1.0793135,
+            "y": 0.272237625
+          },
+          {
+            "x": 0.9310748750000001,
+            "y": 0.34956050000000005
+          },
+          {
+            "x": 0.7573741111111112,
+            "y": 0.8867791111111109
+          }
+        ],
+        "backgroundColor": "#FF6384",
+        "borderColor": "#FF6384"
+      },
+      {
+        "label": "outdoor\u573a\u666f",
+        "data": [
+          {
+            "x": 0.41718950000000005,
+            "y": 0.6693066666666666
+          },
+          {
+            "x": 0.4528735,
+            "y": 0.7002
+          },
+          {
+            "x": 0.5780847499999999,
+            "y": 0.526644875
+          },
+          {
+            "x": 0.43517062500000003,
+            "y": 0.758000625
+          },
+          {
+            "x": 0.3894265555555555,
+            "y": 0.6756436666666668
+          },
+          {
+            "x": 0.4390412857142857,
+            "y": 0.7555780000000001
+          },
+          {
+            "x": 0.7757104300249604,
+            "y": 0.4161829560483814
+          },
+          {
+            "x": 0.6310731666666667,
+            "y": 0.5492358333333335
+          },
+          {
+            "x": 0.5368576,
+            "y": 0.6321874000000001
+          },
+          {
+            "x": 0.4968283796804725,
+            "y": 0.5048151720921195
+          },
+          {
+            "x": 0.8421535640462967,
+            "y": 0.5345629471073686
+          },
+          {
+            "x": 0.5643414285714285,
+            "y": 0.6776222857142857
+          },
+          {
+            "x": 0.7471634166666666,
+            "y": 0.5101200833333334
+          },
+          {
+            "x": 0.6992288571428571,
+            "y": 0.5110638571428572
+          },
+          {
+            "x": 0.6396158888888889,
+            "y": 0.7764146666666667
+          },
+          {
+            "x": 0.3566458571428571,
+            "y": 1.0803035714285714
+          },
+          {
+            "x": 0.3362092,
+            "y": 1.1871008
+          },
+          {
+            "x": 1.094916,
+            "y": 0.62130775
+          }
+        ],
+        "backgroundColor": "#36A2EB",
+        "borderColor": "#36A2EB"
+      },
+      {
+        "label": "night\u573a\u666f",
+        "data": [
+          {
+            "x": 0.373966,
+            "y": 0.9059892500000001
+          },
+          {
+            "x": 0.33081000000000005,
+            "y": 0.9660178571428572
+          },
+          {
+            "x": 0.38621883333333334,
+            "y": 0.9404148333333334
+          },
+          {
+            "x": 0.3635994,
+            "y": 0.8408472
+          },
+          {
+            "x": 0.46876159999999994,
+            "y": 0.772989
+          },
+          {
+            "x": 0.3464831666666666,
+            "y": 0.8274936666666668
+          },
+          {
+            "x": 0.28414,
+            "y": 0.8124639999999999
+          },
+          {
+            "x": 0.4580185,
+            "y": 0.9094384999999999
+          },
+          {
+            "x": 0.7447354615384614,
+            "y": 0.453187
+          },
+          {
+            "x": 0.427511838100147,
+            "y": 0.3548679819880686
+          },
+          {
+            "x": 0.7467035000000001,
+            "y": 0.49728516666666667
+          },
+          {
+            "x": 0.5305694188155937,
+            "y": 0.4625338788949508
+          },
+          {
+            "x": 0.749357923076923,
+            "y": 0.4487560769230769
+          },
+          {
+            "x": 0.27664767286615216,
+            "y": 0.5425954126318187
+          },
+          {
+            "x": 0.7524026923076923,
+            "y": 0.4490369230769231
+          },
+          {
+            "x": 0.5559004219738681,
+            "y": 0.45399129461833215
+          },
+          {
+            "x": 0.48406348670582516,
+            "y": 0.5109809361280881
+          },
+          {
+            "x": 0.5710421428571429,
+            "y": 0.5251332857142857
+          },
+          {
+            "x": 0.8681694578749217,
+            "y": 0.3833772840722014
+          },
+          {
+            "x": 0.7193155714285713,
+            "y": 0.4448001428571428
+          },
+          {
+            "x": 1.7037369999999998,
+            "y": 0.5204975555555555
+          },
+          {
+            "x": 0.51751675,
+            "y": 0.7036115
+          },
+          {
+            "x": 1.3599965492832093,
+            "y": 0.25632624942348176
+          },
+          {
+            "x": 0.8816608571428571,
+            "y": 0.49083142857142853
+          },
+          {
+            "x": 0.7555681250000001,
+            "y": 0.441933875
+          },
+          {
+            "x": 0.8918084285714285,
+            "y": 0.3565951428571429
+          },
+          {
+            "x": 0.5057213333333332,
+            "y": 0.6675745555555556
+          },
+          {
+            "x": 0.4373055714285714,
+            "y": 0.7533131428571428
+          },
+          {
+            "x": 0.5800645714285714,
+            "y": 0.6031310000000001
+          },
+          {
+            "x": 0.8051284999999999,
+            "y": 0.4391048333333334
+          },
+          {
+            "x": 0.8057535000000001,
+            "y": 0.4384525000000001
+          },
+          {
+            "x": 0.4563245807898392,
+            "y": 0.7644438822983725
+          },
+          {
+            "x": 0.43935626385727966,
+            "y": 0.7588987090933855
+          },
+          {
+            "x": 1.1469992,
+            "y": 0.3096472
+          },
+          {
+            "x": 0.9740202857142857,
+            "y": 0.3164172857142858
+          },
+          {
+            "x": 0.7572403750000001,
+            "y": 0.43567375
+          },
+          {
+            "x": 0.5446594444444444,
+            "y": 0.6157151111111111
+          },
+          {
+            "x": 0.51751675,
+            "y": 0.7036115
+          },
+          {
+            "x": 1.2000924999999998,
+            "y": 0.5020171250000001
+          },
+          {
+            "x": 1.2826392251815983,
+            "y": 0.30879765395894426
+          },
+          {
+            "x": 0.62019,
+            "y": 0.5012411666666666
+          },
+          {
+            "x": 0.654798125,
+            "y": 0.4801460000000001
+          },
+          {
+            "x": 0.5176833999999999,
+            "y": 0.5040723999999999
+          },
+          {
+            "x": 0.5291567500000001,
+            "y": 0.5896077500000001
+          },
+          {
+            "x": 2.0242985,
+            "y": 0.37226250000000005
+          },
+          {
+            "x": 0.89967975,
+            "y": 0.353806
+          },
+          {
+            "x": 0.94532675,
+            "y": 0.3229995
+          },
+          {
+            "x": 0.48237866666666673,
+            "y": 0.7030811666666668
+          },
+          {
+            "x": 0.6025058000000001,
+            "y": 0.5698004
+          },
+          {
+            "x": 1.5091136328810353,
+            "y": 0.21718038789862412
+          },
+          {
+            "x": 0.7907223333333334,
+            "y": 0.4242706666666667
+          },
+          {
+            "x": 0.32147130000000007,
+            "y": 0.5330814999999999
+          },
+          {
+            "x": 0.70918825,
+            "y": 0.44278225000000004
+          },
+          {
+            "x": 0.667457375,
+            "y": 0.45694775
+          },
+          {
+            "x": 0.6976646666666665,
+            "y": 0.45890383333333334
+          },
+          {
+            "x": 0.9899291428571428,
+            "y": 0.31133642857142857
+          },
+          {
+            "x": 0.7848636250000001,
+            "y": 0.40631412499999997
+          },
+          {
+            "x": 0.45413337499999995,
+            "y": 0.68640875
+          },
+          {
+            "x": 0.5460971854721548,
+            "y": 0.6079057615835778
+          }
+        ],
+        "backgroundColor": "#FFCE56",
+        "borderColor": "#FFCE56"
+      }
+    ]
+  },
+  "options": {
+    "responsive": true,
+    "maintainAspectRatio": false,
+    "plugins": {
+      "title": {
+        "display": true,
+        "text": "Map\u5750\u6807\u5206\u5e03\u56fe",
+        "font": {
+          "size": 16
+        }
+      },
+      "legend": {
+        "display": true,
+        "position": "top"
+      },
+      "tooltip": {
+        "callbacks": {
+          "label": "function(context) { return context.dataset.label + \": (\" + context.parsed.x + \", \" + context.parsed.y + \")\"; }"
+        }
+      }
+    },
+    "scales": {
+      "x": {
+        "display": true,
+        "title": {
+          "display": true,
+          "text": "X\u5750\u6807"
+        },
+        "type": "linear"
+      },
+      "y": {
+        "display": true,
+        "title": {
+          "display": true,
+          "text": "Y\u5750\u6807"
+        },
+        "type": "linear"
+      }
+    }
+  }
+};
+const scatterChartCtx = document.getElementById('scatterChart').getContext('2d');
+const scatterChart = new Chart(scatterChartCtx, scatterChartConfig);
+
+
+// 热力图 - 权重热力分布图
+const heatmapChartConfig = {
+  "type": "scatter",
+  "data": {
+    "datasets": [
+      {
+        "label": "\u6743\u91cd\u503c",
+        "data": [
+          {
+            "x": 0,
+            "y": 0,
+            "v": 0.5377871426869061
+          },
+          {
+            "x": 1,
+            "y": 0,
+            "v": 0.40248119481827493
+          },
+          {
+            "x": 2,
+            "y": 0,
+            "v": 0.30799382782605944
+          },
+          {
+            "x": 3,
+            "y": 0,
+            "v": 0.4514534261588735
+          },
+          {
+            "x": 4,
+            "y": 0,
+            "v": 0.3049455118154467
+          },
+          {
+            "x": 5,
+            "y": 0,
+            "v": 0.5672956078694302
+          },
+          {
+            "x": 6,
+            "y": 0,
+            "v": 0.3646740151524006
+          },
+          {
+            "x": 7,
+            "y": 0,
+            "v": 0.571054938960635
+          },
+          {
+            "x": 8,
+            "y": 0,
+            "v": 0.3976230850151925
+          },
+          {
+            "x": 9,
+            "y": 0,
+            "v": 0.3496694982751208
+          },
+          {
+            "x": 0,
+            "y": 1,
+            "v": 0.5610622401342675
+          },
+          {
+            "x": 1,
+            "y": 1,
+            "v": 0.21655382392586123
+          },
+          {
+            "x": 2,
+            "y": 1,
+            "v": 0.2785186973586073
+          },
+          {
+            "x": 3,
+            "y": 1,
+            "v": 0.44898203019048355
+          },
+          {
+            "x": 4,
+            "y": 1,
+            "v": 0.3936097054683498
+          },
+          {
+            "x": 5,
+            "y": 1,
+            "v": 0.2868967828846675
+          },
+          {
+            "x": 6,
+            "y": 1,
+            "v": 0.3218154688644693
+          },
+          {
+            "x": 7,
+            "y": 1,
+            "v": 0.5087740015318984
+          },
+          {
+            "x": 8,
+            "y": 1,
+            "v": 0.23953318578019805
+          },
+          {
+            "x": 9,
+            "y": 1,
+            "v": 0.25650861563007515
+          },
+          {
+            "x": 0,
+            "y": 2,
+            "v": 0.23660290908304257
+          },
+          {
+            "x": 1,
+            "y": 2,
+            "v": 0.31085070769188444
+          },
+          {
+            "x": 2,
+            "y": 2,
+            "v": 0.30075748860484014
+          },
+          {
+            "x": 3,
+            "y": 2,
+            "v": 0.3251695232461323
+          },
+          {
+            "x": 4,
+            "y": 2,
+            "v": 0.21761623553886414
+          },
+          {
+            "x": 5,
+            "y": 2,
+            "v": 0.29948854328390484
+          },
+          {
+            "x": 6,
+            "y": 2,
+            "v": 0.403955783519599
+          },
+          {
+            "x": 7,
+            "y": 2,
+            "v": 0.4539834551686232
+          },
+          {
+            "x": 8,
+            "y": 2,
+            "v": 0.34155370643833644
+          },
+          {
+            "x": 9,
+            "y": 2,
+            "v": 0.5240810817366074
+          },
+          {
+            "x": 0,
+            "y": 3,
+            "v": 0.5530933371417972
+          },
+          {
+            "x": 1,
+            "y": 3,
+            "v": 0.3665303994450376
+          },
+          {
+            "x": 2,
+            "y": 3,
+            "v": 0.3602531672748529
+          },
+          {
+            "x": 3,
+            "y": 3,
+            "v": 0.4835505348645781
+          },
+          {
+            "x": 4,
+            "y": 3,
+            "v": 0.5185458887771269
+          },
+          {
+            "x": 5,
+            "y": 3,
+            "v": 0.5788773742285742
+          },
+          {
+            "x": 6,
+            "y": 3,
+            "v": 0.2366964052640463
+          },
+          {
+            "x": 7,
+            "y": 3,
+            "v": 0.20070269639535862
+          },
+          {
+            "x": 8,
+            "y": 3,
+            "v": 0.563383215822214
+          },
+          {
+            "x": 9,
+            "y": 3,
+            "v": 0.44885036000744494
+          },
+          {
+            "x": 0,
+            "y": 4,
+            "v": 0.5315039698999265
+          },
+          {
+            "x": 1,
+            "y": 4,
+            "v": 0.4349769976557648
+          },
+          {
+            "x": 2,
+            "y": 4,
+            "v": 0.3288948635902521
+          },
+          {
+            "x": 3,
+            "y": 4,
+            "v": 0.3516321808710179
+          },
+          {
+            "x": 4,
+            "y": 4,
+            "v": 0.20291685989337566
+          },
+          {
+            "x": 5,
+            "y": 4,
+            "v": 0.2554580865778395
+          },
+          {
+            "x": 6,
+            "y": 4,
+            "v": 0.4950617887871439
+          },
+          {
+            "x": 7,
+            "y": 4,
+            "v": 0.487111942536563
+          },
+          {
+            "x": 8,
+            "y": 4,
+            "v": 0.5356596620364276
+          },
+          {
+            "x": 9,
+            "y": 4,
+            "v": 0.3511594874615016
+          },
+          {
+            "x": 0,
+            "y": 5,
+            "v": 0.43413503275390086
+          },
+          {
+            "x": 1,
+            "y": 5,
+            "v": 0.47002824456927506
+          },
+          {
+            "x": 2,
+            "y": 5,
+            "v": 0.2004817661081947
+          },
+          {
+            "x": 3,
+            "y": 5,
+            "v": 0.38210226593671975
+          },
+          {
+            "x": 4,
+            "y": 5,
+            "v": 0.2950398083851112
+          },
+          {
+            "x": 5,
+            "y": 5,
+            "v": 0.5291183381934811
+          },
+          {
+            "x": 6,
+            "y": 5,
+            "v": 0.5092202326001698
+          },
+          {
+            "x": 7,
+            "y": 5,
+            "v": 0.5362202125689313
+          },
+          {
+            "x": 8,
+            "y": 5,
+            "v": 0.234615009541368
+          },
+          {
+            "x": 9,
+            "y": 5,
+            "v": 0.32585068013225454
+          },
+          {
+            "x": 0,
+            "y": 6,
+            "v": 0.3675263248071603
+          },
+          {
+            "x": 1,
+            "y": 6,
+            "v": 0.24903263088591887
+          },
+          {
+            "x": 2,
+            "y": 6,
+            "v": 0.3794627075734392
+          },
+          {
+            "x": 3,
+            "y": 6,
+            "v": 0.5355680382003899
+          },
+          {
+            "x": 4,
+            "y": 6,
+            "v": 0.2919855888827085
+          },
+          {
+            "x": 5,
+            "y": 6,
+            "v": 0.4871924258421547
+          },
+          {
+            "x": 6,
+            "y": 6,
+            "v": 0.44806008107562273
+          },
+          {
+            "x": 7,
+            "y": 6,
+            "v": 0.375670874406602
+          },
+          {
+            "x": 8,
+            "y": 6,
+            "v": 0.244154444788381
+          },
+          {
+            "x": 9,
+            "y": 6,
+            "v": 0.5333311994043649
+          },
+          {
+            "x": 0,
+            "y": 7,
+            "v": 0.5186161062372594
+          },
+          {
+            "x": 1,
+            "y": 7,
+            "v": 0.41109836000942973
+          },
+          {
+            "x": 2,
+            "y": 7,
+            "v": 0.5576213203951186
+          },
+          {
+            "x": 3,
+            "y": 7,
+            "v": 0.5412617665394635
+          },
+          {
+            "x": 4,
+            "y": 7,
+            "v": 0.5472309801262032
+          },
+          {
+            "x": 5,
+            "y": 7,
+            "v": 0.2857961575217119
+          },
+          {
+            "x": 6,
+            "y": 7,
+            "v": 0.2459890457113457
+          },
+          {
+            "x": 7,
+            "y": 7,
+            "v": 0.47258118738993854
+          },
+          {
+            "x": 8,
+            "y": 7,
+            "v": 0.3727161432170529
+          },
+          {
+            "x": 9,
+            "y": 7,
+            "v": 0.3982945487458893
+          },
+          {
+            "x": 0,
+            "y": 8,
+            "v": 0.5165627690254201
+          },
+          {
+            "x": 1,
+            "y": 8,
+            "v": 0.5701115665645831
+          },
+          {
+            "x": 2,
+            "y": 8,
+            "v": 0.5048240604264824
+          },
+          {
+            "x": 3,
+            "y": 8,
+            "v": 0.5489339092750765
+          },
+          {
+            "x": 4,
+            "y": 8,
+            "v": 0.5239448449764281
+          },
+          {
+            "x": 5,
+            "y": 8,
+            "v": 0.5168876551503468
+          },
+          {
+            "x": 6,
+            "y": 8,
+            "v": 0.5091344300384522
+          },
+          {
+            "x": 7,
+            "y": 8,
+            "v": 0.32602285336244424
+          },
+          {
+            "x": 8,
+            "y": 8,
+            "v": 0.44427648441693396
+          },
+          {
+            "x": 9,
+            "y": 8,
+            "v": 0.5148479131601781
+          },
+          {
+            "x": 0,
+            "y": 9,
+            "v": 0.499178824511749
+          },
+          {
+            "x": 1,
+            "y": 9,
+            "v": 0.5509006085846176
+          },
+          {
+            "x": 2,
+            "y": 9,
+            "v": 0.2800741246410675
+          },
+          {
+            "x": 3,
+            "y": 9,
+            "v": 0.4118607995843842
+          },
+          {
+            "x": 4,
+            "y": 9,
+            "v": 0.4115833831934001
+          },
+          {
+            "x": 5,
+            "y": 9,
+            "v": 0.3984412830478967
+          },
+          {
+            "x": 6,
+            "y": 9,
+            "v": 0.38681491361242093
+          },
+          {
+            "x": 7,
+            "y": 9,
+            "v": 0.2725040755333088
+          },
+          {
+            "x": 8,
+            "y": 9,
+            "v": 0.4865572965577984
+          },
+          {
+            "x": 9,
+            "y": 9,
+            "v": 0.42935352134371674
+          }
+        ],
+        "backgroundColor": "function(context) { const value = context.parsed.v; return `rgba(255, ${255-Math.floor(value*255)}, ${255-Math.floor(value*255)}, 0.8)`; }",
+        "pointRadius": "function(context) { return Math.max(3, context.parsed.v * 20); }"
+      }
+    ]
+  },
+  "options": {
+    "responsive": true,
+    "maintainAspectRatio": false,
+    "plugins": {
+      "title": {
+        "display": true,
+        "text": "\u6743\u91cd\u70ed\u529b\u5206\u5e03\u56fe",
+        "font": {
+          "size": 16
+        }
+      },
+      "legend": {
+        "display": true,
+        "position": "top"
+      },
+      "tooltip": {
+        "callbacks": {
+          "label": "function(context) { return \"\u6743\u91cd: \" + context.parsed.v.toFixed(3); }"
+        }
+      }
+    },
+    "scales": {
+      "x": {
+        "display": true,
+        "title": {
+          "display": true,
+          "text": "X\u5750\u6807\u533a\u95f4"
+        },
+        "type": "linear"
+      },
+      "y": {
+        "display": true,
+        "title": {
+          "display": true,
+          "text": "Y\u5750\u6807\u533a\u95f4"
+        },
+        "type": "linear"
+      }
+    }
+  }
+};
+const heatmapChartCtx = document.getElementById('heatmapChart').getContext('2d');
+const heatmapChart = new Chart(heatmapChartCtx, heatmapChartConfig);
+
+
+// 范围图 - Map触发条件范围图
+const rangeChartConfig = {
+  "type": "bar",
+  "data": {
+    "labels": [
+      "BV\u8303\u56f4",
+      "IR\u8303\u56f4",
+      "CCT\u8303\u56f4"
+    ],
+    "datasets": [
+      {
+        "label": "\u6700\u5c0f\u503c",
+        "data": [
+          -9.0,
+          0.0,
+          0
+        ],
+        "backgroundColor": [
+          "#FF638480",
+          "#36A2EB80",
+          "#FFCE5680"
+        ],
+        "borderColor": [
+          "#FF6384",
+          "#36A2EB",
+          "#FFCE56"
+        ],
+        "borderWidth": 1
+      },
+      {
+        "label": "\u6700\u5927\u503c",
+        "data": [
+          18.0,
+          999.0,
+          12000
+        ],
+        "backgroundColor": [
+          "#FF638440",
+          "#36A2EB40",
+          "#FFCE5640"
+        ],
+        "borderColor": [
+          "#FF6384",
+          "#36A2EB",
+          "#FFCE56"
+        ],
+        "borderWidth": 1
+      }
+    ]
+  },
+  "options": {
+    "responsive": true,
+    "maintainAspectRatio": false,
+    "plugins": {
+      "title": {
+        "display": true,
+        "text": "Map\u89e6\u53d1\u6761\u4ef6\u8303\u56f4\u56fe",
+        "font": {
+          "size": 16
+        }
+      },
+      "legend": {
+        "display": true,
+        "position": "top"
+      }
+    },
+    "scales": {
+      "x": {
+        "display": true,
+        "title": {
+          "display": true,
+          "text": "\u53c2\u6570\u7c7b\u578b"
+        }
+      },
+      "y": {
+        "display": true,
+        "title": {
+          "display": true,
+          "text": "\u53c2\u6570\u503c"
+        }
+      }
+    }
+  }
+};
+const rangeChartCtx = document.getElementById('rangeChart').getContext('2d');
+const rangeChart = new Chart(rangeChartCtx, rangeChartConfig);
+
+    </script>
+    
+    
+    <!-- 平滑滚动 -->
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>

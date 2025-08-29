@@ -24,7 +24,7 @@ from core.interfaces.xml_field_definition import (
     XMLFieldDefinition, TableColumnDefinition, TableConfiguration
 )
 from core.interfaces.field_definition_provider import FieldGroup
-from core.services.field_registry_service import field_registry
+from core.services.shared.field_registry_service import field_registry
 
 logger = logging.getLogger(__name__)
 
