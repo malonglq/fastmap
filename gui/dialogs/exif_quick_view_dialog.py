@@ -34,6 +34,7 @@ from PyQt5.QtCore import Qt
 from core.services.exif_processing.exif_parser_service import ExifParserService
 from core.interfaces.exif_processing import ExifParseOptions
 from gui.tabs.exif_processing_tab import ExifProcessingTab
+from core.config.exif_display_config_manager import get_exif_display_config
 
 
 class ExifQuickViewDialog(QDialog):
@@ -248,6 +249,80 @@ class ExifQuickViewDialog(QDialog):
 
         return current_row
 
+    def _create_detect_map_display(self, detect_data, dummy1, dummy2, start_row):
+        """
+        创建detect_map字段的特殊两列显示
+
+        Args:
+            detect_data: detect_map字段的数据
+            dummy1: 占位参数（保持接口兼容）
+            dummy2: 占位参数（保持接口兼容）
+            start_row: 起始行号
+
+        Returns:
+            int: 下一个可用的行号
+        """
+        # 解析detect_map数据
+        detect_values = self._parse_detect_map_data(detect_data)
+
+        # 确定显示的行数（通常是30行，对应30个detect map点）
+        max_rows = max(len(detect_values), 30)
+
+        # 显示字段名标题行
+        title_name_lbl = QLabel("detect_map")
+        title_name_lbl.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        title_name_lbl.setStyleSheet("border: 1px solid #CCCCCC; padding: 4px; background-color: #F5F5F5;")
+
+        title_value_lbl = QLabel("Enable    PlotCount    PlotYCount    Weight")
+        title_value_lbl.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        title_value_lbl.setAlignment(Qt.AlignRight)
+        title_value_lbl.setStyleSheet("border: 1px solid #CCCCCC; padding: 4px; background-color: #F5F5F5; font-family: 'Courier New', monospace;")
+
+        current_row = start_row
+        self._grid.addWidget(title_name_lbl, current_row, 0)
+        self._grid.addWidget(title_value_lbl, current_row, 1)
+        current_row += 1
+
+        # 显示30行detect_map数据
+        for i in range(max_rows):
+            # 第一列：Map索引标识
+            map_index_text = f"detect_map{i+1}"
+
+            map_index_lbl = QLabel(map_index_text)
+            map_index_lbl.setTextInteractionFlags(Qt.TextSelectableByMouse)
+            map_index_lbl.setStyleSheet("border: 1px solid #CCCCCC; padding: 4px;")
+
+            # 第二列：Enable、PlotCount、PlotYCount和Weight值，优化格式
+            if i < len(detect_values):
+                detect_item = detect_values[i]
+                enable_val = detect_item.get('Enable', 0)
+                plot_count_val = detect_item.get('PlotCount', 0)
+                plot_y_count_val = detect_item.get('PlotYCount', 0)
+                weight_val = detect_item.get('Weight', 0.0)
+            else:
+                enable_val = 0
+                plot_count_val = 0
+                plot_y_count_val = 0
+                weight_val = 0.0
+
+            # 格式化四列数据：Enable(整数), PlotCount(整数), PlotYCount(整数), Weight(小数)
+            enable_str = f"{int(enable_val):<8}"           # 左对齐，宽度8
+            plot_count_str = f"{int(plot_count_val):<8}"   # 左对齐，宽度8
+            plot_y_count_str = f"{int(plot_y_count_val):<8}" # 左对齐，宽度8
+            weight_str = f"{weight_val:>10.1f}"            # 右对齐，宽度10，保留1位小数
+            value_text = f"{enable_str}  {plot_count_str}  {plot_y_count_str}  {weight_str}"  # 使用2个空格分隔
+
+            value_lbl = QLabel(value_text)
+            value_lbl.setTextInteractionFlags(Qt.TextSelectableByMouse)
+            value_lbl.setAlignment(Qt.AlignRight)  # 整个标签右对齐
+            value_lbl.setStyleSheet("border: 1px solid #CCCCCC; padding: 4px; font-family: 'Courier New', monospace;")
+
+            self._grid.addWidget(map_index_lbl, current_row, 0)
+            self._grid.addWidget(value_lbl, current_row, 1)
+            current_row += 1
+
+        return current_row
+
     def _parse_offset_map_combined_data(self, data):
         """
         解析包含offsetMapCount和offsetMapYCount的组合数据
@@ -395,6 +470,54 @@ class ExifQuickViewDialog(QDialog):
         except (ValueError, TypeError):
             return []
 
+    def _parse_detect_map_data(self, data):
+        """
+        解析detect_map数据，提取包含Enable、PlotCount、PlotYCount、Weight的字典列表
+
+        Args:
+            data: 原始数据（可能是字符串、列表、字典或其他格式）
+
+        Returns:
+            List[Dict]: 解析后的字典列表，每个字典包含Enable、PlotCount、PlotYCount、Weight
+        """
+        if data is None:
+            return []
+
+        # 如果是字符串，尝试解析为JSON
+        if isinstance(data, str):
+            try:
+                import json
+                data = json.loads(data)
+            except (ValueError, json.JSONDecodeError):
+                return []
+
+        # 如果是列表，每个元素应该是包含4个属性的字典
+        if isinstance(data, (list, tuple)):
+            result = []
+            for item in data:
+                if isinstance(item, dict):
+                    # 提取四个关键属性，如果不存在则使用默认值
+                    parsed_item = {
+                        'Enable': item.get('Enable', 0),
+                        'PlotCount': item.get('PlotCount', 0),
+                        'PlotYCount': item.get('PlotYCount', 0),
+                        'Weight': item.get('Weight', 0.0)
+                    }
+                    result.append(parsed_item)
+            return result
+
+        # 如果是单个字典，包装成列表
+        if isinstance(data, dict):
+            parsed_item = {
+                'Enable': data.get('Enable', 0),
+                'PlotCount': data.get('PlotCount', 0),
+                'PlotYCount': data.get('PlotYCount', 0),
+                'Weight': data.get('Weight', 0.0)
+            }
+            return [parsed_item]
+
+        return []
+
     def _parse_ctemp_data(self, data):
         """
         解析ctemp数据，提取数值列表
@@ -495,38 +618,51 @@ class ExifQuickViewDialog(QDialog):
             row = 0
             skip_fields = set()  # 用于跳过已经合并显示的字段
 
-            # 定义成对字段的映射关系
-            paired_fields = {
-                'ealgo_data_SGW_gray_RpG': ('ealgo_data_SGW_gray_BpG', 'ealgo_data_SGW_gray'),
-                'ealgo_data_AGW_gray_RpG': ('ealgo_data_AGW_gray_BpG', 'ealgo_data_AGW_gray'),
-                'ealgo_data_Mix_csalgo_RpG': ('ealgo_data_Mix_csalgo_BpG', 'ealgo_data_Mix_csalgo'),
-                'ealgo_data_After_face_RpG': ('ealgo_data_After_face_BpG', 'ealgo_data_After_face'),
-                'ealgo_data_cnvgEst_RpG': ('ealgo_data_cnvgEst_BpG', 'ealgo_data_cnvgEst'),
-                'meta_data_gslGain_rgain': ('meta_data_gslGain_bgain', 'meta_data_gslGain'),
-                'ctemp_weight_Ctemp_count': ('ctemp_weight_Ctemp_weight', 'ctemp_weight'),
-            }
+            # 完全依赖配置管理器获取成对字段的映射关系
+            try:
+                config_manager = get_exif_display_config()
+                paired_fields = config_manager.get_paired_fields()
+            except Exception as e:
+                # 如果配置加载失败，使用空字典，禁用成对字段功能
+                print(f"==liuq debug== 成对字段配置加载失败，禁用成对显示功能: {e}")
+                paired_fields = {}
 
-            # 定义三字段组合的映射关系（用于offset_map相关字段）
-            triple_fields = {
-                'offset_map': ('map_weight_offsetMapWeight', 'dummy', 'offset_map_data'),
-            }
+            # 完全依赖配置管理器获取三字段组合的映射关系
+            try:
+                config_manager = get_exif_display_config()
+                triple_fields = config_manager.get_triple_fields()
+            except Exception as e:
+                # 如果配置加载失败，使用空字典，禁用三字段组合功能
+                print(f"==liuq debug== 三字段组合配置加载失败，禁用三字段组合显示功能: {e}")
+                triple_fields = {}
 
             for key in self._fields:
                 # 跳过已经合并显示的字段
                 if key in skip_fields:
                     continue
 
-                # 处理三字段组合显示（offset_map相关）
+                # 处理三字段组合显示（offset_map和detect_map相关）
                 if key in triple_fields:
-                    second_field, third_field, display_name = triple_fields[key]
-                    first_val = self._values.get(key)  # offset_map字典数据
-                    second_val = self._values.get(second_field)  # map_weight_offsetMapWeight数据
-
-                    if first_val is not None and second_val is not None:
-                        # 为offset_map三字段创建特殊的两列显示
-                        row = self._create_offset_map_triple_display(first_val, second_val, None, row)
-                        skip_fields.add(second_field)  # 标记跳过第二个字段
+                    triple_config = triple_fields[key]
+                    if len(triple_config) >= 3:
+                        second_field, third_field, display_name = triple_config
+                    else:
+                        # 兼容性处理，如果配置不完整则跳过
                         continue
+
+                    first_val = self._values.get(key)
+
+                    if key == 'detect_map' and first_val is not None:
+                        # 为detect_map字段创建特殊的两列显示
+                        row = self._create_detect_map_display(first_val, None, None, row)
+                        continue
+                    elif key == 'offset_map':
+                        # 为offset_map三字段创建特殊的两列显示
+                        second_val = self._values.get(second_field)  # map_weight_offsetMapWeight数据
+                        if first_val is not None and second_val is not None:
+                            row = self._create_offset_map_triple_display(first_val, second_val, third_field, row)
+                            skip_fields.add(second_field)  # 标记跳过第二个字段
+                            continue
 
                 # 处理成对字段合并显示
                 if key in paired_fields:

@@ -39,8 +39,8 @@ from gui.dialogs.base_analysis_dialog import BaseAnalysisDialog, BaseWorker
 
 class AnalysisPreviewWorker(BaseWorker):
     """分析预览工作线程"""
-    
-    def __init__(self, generator: MapMultiDimensionalReportGenerator, 
+
+    def __init__(self, generator: MapMultiDimensionalReportGenerator,
                  map_configuration: MapConfiguration,
                  include_multi_dimensional: bool,
                  classification_config: Optional[SceneClassificationConfig]):
@@ -49,7 +49,7 @@ class AnalysisPreviewWorker(BaseWorker):
         self.map_configuration = map_configuration
         self.include_multi_dimensional = include_multi_dimensional
         self.classification_config = classification_config
-    
+
     def run(self):
         try:
             self.progress_updated.emit(50, "正在预览分析范围...")
@@ -67,254 +67,254 @@ class AnalysisPreviewWorker(BaseWorker):
 class MapMultiDimensionalDialog(BaseAnalysisDialog):
     """
     Map多维度分析配置对话框
-    
+
     提供Map数据概览、多维度分析配置、输出设置等功能
     """
-    
+
     def __init__(self, map_configuration: MapConfiguration, parent=None):
         # 初始化组件
         self.map_configuration = map_configuration
         self.generator = MapMultiDimensionalReportGenerator()
         self.classification_config = SceneClassificationConfig()
-        
+
         super().__init__(parent, "Map多维度分析配置", (800, 600))
-        
+
         # 加载Map数据概览
         self.load_map_overview()
-        
+
         logger.info("==liuq debug== Map多维度分析配置对话框初始化完成")
-    
+
     def setup_ui(self):
         """设置用户界面"""
         # 基础UI设置已由基类完成
-        
+
         # Map数据概览标签页
         self.overview_tab = self.create_overview_tab()
         self.tab_widget.addTab(self.overview_tab, "Map数据概览")
-        
+
         # 多维度分析配置标签页
         self.config_tab = self.create_config_tab()
         self.tab_widget.addTab(self.config_tab, "多维度分析配置")
-        
+
         # 输出设置标签页
         self.output_tab = self.create_output_tab()
         self.tab_widget.addTab(self.output_tab, "输出设置")
-        
+
         # 预览标签页
         self.preview_tab = self.create_preview_tab()
         self.tab_widget.addTab(self.preview_tab, "预览")
-        
+
         # 显示预览按钮
         self.preview_btn.setVisible(True)
         self.preview_btn.setText("预览分析范围")
         self.preview_btn.clicked.connect(self.preview_analysis)
-    
+
     def create_overview_tab(self) -> QWidget:
         """创建Map数据概览标签页"""
         tab = QWidget()
         layout = QVBoxLayout(tab)
-        
+
         # 基本信息
         basic_group = QGroupBox("基本信息")
         basic_layout = QFormLayout(basic_group)
-        
+
         self.device_type_label = QLabel("未知")
         basic_layout.addRow("设备类型:", self.device_type_label)
-        
+
         self.map_points_count_label = QLabel("0")
         basic_layout.addRow("Map点数量:", self.map_points_count_label)
-        
+
         self.has_base_boundary_label = QLabel("否")
         basic_layout.addRow("包含基础边界:", self.has_base_boundary_label)
-        
+
         self.reference_points_count_label = QLabel("0")
         basic_layout.addRow("参考点数量:", self.reference_points_count_label)
-        
+
         layout.addWidget(basic_group)
-        
+
         # 场景分布
         scene_group = QGroupBox("场景分布")
         scene_layout = QVBoxLayout(scene_group)
-        
+
         self.scene_table = QTableWidget()
         self.scene_table.setColumnCount(2)
         self.scene_table.setHorizontalHeaderLabels(["场景类型", "Map点数量"])
         self.scene_table.horizontalHeader().setStretchLastSection(True)
         scene_layout.addWidget(self.scene_table)
-        
+
         layout.addWidget(scene_group)
-        
+
         # 坐标和权重范围
         range_group = QGroupBox("数据范围")
         range_layout = QFormLayout(range_group)
-        
+
         self.coordinate_range_label = QLabel("未知")
         range_layout.addRow("坐标范围:", self.coordinate_range_label)
-        
+
         self.weight_range_label = QLabel("未知")
         range_layout.addRow("权重范围:", self.weight_range_label)
-        
+
         layout.addWidget(range_group)
-        
+
         layout.addStretch()
         return tab
-    
+
     def create_config_tab(self) -> QWidget:
         """创建多维度分析配置标签页"""
         tab = QWidget()
         layout = QVBoxLayout(tab)
-        
+
         # 分析选项
         analysis_group = QGroupBox("分析选项")
         analysis_layout = QVBoxLayout(analysis_group)
-        
+
         self.include_multi_dimensional_cb = QCheckBox("包含多维度场景分析")
         self.include_multi_dimensional_cb.setChecked(True)
         self.include_multi_dimensional_cb.stateChanged.connect(self.on_multi_dimensional_changed)
         analysis_layout.addWidget(self.include_multi_dimensional_cb)
-        
+
         info_label = QLabel("多维度分析将提供详细的场景分类统计和参数分布信息")
         info_label.setStyleSheet("color: gray; font-style: italic;")
         analysis_layout.addWidget(info_label)
-        
+
         layout.addWidget(analysis_group)
-        
+
         # 场景分类配置
         self.classification_group = QGroupBox("场景分类配置")
         classification_layout = QFormLayout(self.classification_group)
-        
+
         # BV阈值配置
         self.indoor_bv_threshold_spin = QDoubleSpinBox()
         self.indoor_bv_threshold_spin.setRange(-10.0, 20.0)
         self.indoor_bv_threshold_spin.setValue(4.0)
         self.indoor_bv_threshold_spin.setSingleStep(0.5)
         classification_layout.addRow("室内BV阈值:", self.indoor_bv_threshold_spin)
-        
+
         self.night_bv_threshold_spin = QDoubleSpinBox()
         self.night_bv_threshold_spin.setRange(-10.0, 20.0)
         self.night_bv_threshold_spin.setValue(-2.0)
         self.night_bv_threshold_spin.setSingleStep(0.5)
         classification_layout.addRow("夜景BV阈值:", self.night_bv_threshold_spin)
-        
+
         # IR阈值配置
         self.ir_threshold_spin = QDoubleSpinBox()
         self.ir_threshold_spin.setRange(0.0, 10.0)
         self.ir_threshold_spin.setValue(1.0)
         self.ir_threshold_spin.setSingleStep(0.1)
         classification_layout.addRow("IR比值阈值:", self.ir_threshold_spin)
-        
+
         layout.addWidget(self.classification_group)
-        
+
         # 高级选项
         advanced_group = QGroupBox("高级选项")
         advanced_layout = QFormLayout(advanced_group)
-        
+
         self.enable_accuracy_analysis_cb = QCheckBox("启用分类准确性分析")
         self.enable_accuracy_analysis_cb.setChecked(True)
         advanced_layout.addRow("", self.enable_accuracy_analysis_cb)
-        
+
         self.enable_parameter_distribution_cb = QCheckBox("启用参数分布分析")
         self.enable_parameter_distribution_cb.setChecked(True)
         advanced_layout.addRow("", self.enable_parameter_distribution_cb)
-        
+
         layout.addWidget(advanced_group)
-        
+
         layout.addStretch()
         return tab
-    
+
     def create_output_tab(self) -> QWidget:
         """创建输出设置标签页"""
         tab = QWidget()
         layout = QVBoxLayout(tab)
-        
+
         # 输出路径
         output_group = QGroupBox("输出设置")
         output_layout = QVBoxLayout(output_group)
-        
+
         path_layout = QHBoxLayout()
         self.output_path_edit = QLineEdit()
         self.output_path_edit.setPlaceholderText("选择报告输出路径（可选，留空使用默认路径）...")
         path_layout.addWidget(self.output_path_edit)
-        
+
         self.browse_output_btn = QPushButton("浏览")
         self.browse_output_btn.clicked.connect(self.browse_output_path)
         path_layout.addWidget(self.browse_output_btn)
-        
+
         output_layout.addLayout(path_layout)
         layout.addWidget(output_group)
-        
+
         # 报告模板
         template_group = QGroupBox("报告模板")
         template_layout = QFormLayout(template_group)
-        
+
         self.template_combo = QComboBox()
         self.template_combo.addItems(["map_analysis", "default"])
         self.template_combo.setCurrentText("map_analysis")
         template_layout.addRow("模板类型:", self.template_combo)
-        
+
         layout.addWidget(template_group)
-        
+
         layout.addStretch()
         return tab
-    
+
     def create_preview_tab(self) -> QWidget:
         """创建预览标签页"""
         tab = QWidget()
         layout = QVBoxLayout(tab)
-        
+
         # 预览信息
         self.preview_text = QTextEdit()
         self.preview_text.setReadOnly(True)
         self.preview_text.setPlainText("请点击'预览分析范围'按钮查看分析范围和预计处理时间。")
         layout.addWidget(self.preview_text)
-        
+
         return tab
-    
+
     def setup_signals(self):
         """设置信号连接"""
         pass
-    
+
     def load_map_overview(self):
         """加载Map数据概览"""
         try:
             summary = self.generator.get_map_configuration_summary(self.map_configuration)
-            
+
             # 更新基本信息
             self.device_type_label.setText(summary.get('device_type', '未知'))
             self.map_points_count_label.setText(str(summary.get('total_map_points', 0)))
             self.has_base_boundary_label.setText("是" if summary.get('has_base_boundary', False) else "否")
             self.reference_points_count_label.setText(str(len(self.map_configuration.reference_points)))
-            
+
             # 更新场景分布表格
             scene_distribution = summary.get('scene_distribution', {})
             self.scene_table.setRowCount(len(scene_distribution))
-            
+
             for row, (scene_type, count) in enumerate(scene_distribution.items()):
                 self.scene_table.setItem(row, 0, QTableWidgetItem(scene_type))
                 self.scene_table.setItem(row, 1, QTableWidgetItem(str(count)))
-            
+
             # 更新范围信息
             coord_range = summary.get('coordinate_range', {})
             if coord_range:
                 coord_text = f"X: [{coord_range.get('x_min', 0):.1f}, {coord_range.get('x_max', 0):.1f}], Y: [{coord_range.get('y_min', 0):.1f}, {coord_range.get('y_max', 0):.1f}]"
                 self.coordinate_range_label.setText(coord_text)
-            
+
             weight_range = summary.get('weight_range', {})
             if weight_range:
                 weight_text = f"[{weight_range.get('min', 0):.3f}, {weight_range.get('max', 0):.3f}], 平均: {weight_range.get('avg', 0):.3f}"
                 self.weight_range_label.setText(weight_text)
-            
+
             logger.info("==liuq debug== Map数据概览加载完成")
-            
+
         except Exception as e:
             logger.error(f"==liuq debug== 加载Map数据概览失败: {e}")
             QMessageBox.warning(self, "加载错误", f"加载Map数据概览失败:\n{e}")
-    
+
     def on_multi_dimensional_changed(self):
         """多维度分析选项变化"""
         enabled = self.include_multi_dimensional_cb.isChecked()
         self.classification_group.setEnabled(enabled)
-    
+
     def browse_output_path(self):
         """浏览输出路径"""
         file_path, _ = QFileDialog.getSaveFileName(
@@ -323,19 +323,19 @@ class MapMultiDimensionalDialog(BaseAnalysisDialog):
             "map_multi_dimensional_report.html",
             "HTML文件 (*.html);;所有文件 (*)"
         )
-        
+
         if file_path:
             self.output_path_edit.setText(file_path)
-    
+
     def preview_analysis(self):
         """预览分析范围"""
         try:
             self.preview_text.setPlainText("正在预览分析范围，请稍候...")
-            
+
             # 获取当前配置
             include_multi_dimensional = self.include_multi_dimensional_cb.isChecked()
             classification_config = self.get_classification_config() if include_multi_dimensional else None
-            
+
             # 创建预览工作线程
             worker = AnalysisPreviewWorker(
                 self.generator,
@@ -344,66 +344,66 @@ class MapMultiDimensionalDialog(BaseAnalysisDialog):
                 classification_config
             )
             self.start_worker(worker)
-            
+
         except Exception as e:
             error_msg = f"预览分析范围失败: {e}"
             self.preview_text.setPlainText(error_msg)
             logger.error(f"==liuq debug== {error_msg}")
-    
+
     def on_worker_completed(self, preview: Dict[str, Any]):
         """预览完成"""
         try:
             # 格式化预览信息
             preview_text = "分析范围预览:\n\n"
-            
+
             # Map摘要
             map_summary = preview.get('map_summary', {})
             preview_text += f"设备类型: {map_summary.get('device_type', '未知')}\n"
             preview_text += f"Map点数量: {map_summary.get('total_map_points', 0)}\n"
             preview_text += f"场景分布: {map_summary.get('scene_distribution', {})}\n\n"
-            
+
             # 分析范围
             analysis_scope = preview.get('analysis_scope', {})
             preview_text += "分析内容:\n"
             preview_text += f"• 传统Map分析: {'是' if analysis_scope.get('traditional_analysis', False) else '否'}\n"
             preview_text += f"• 多维度场景分析: {'是' if analysis_scope.get('multi_dimensional_analysis', False) else '否'}\n"
             preview_text += f"• 场景分类分析: {'是' if analysis_scope.get('scene_classification', False) else '否'}\n\n"
-            
+
             # 预计处理时间
             preview_text += f"预计处理时间: {preview.get('estimated_processing_time', '未知')}\n\n"
-            
+
             # 输出章节
             output_sections = preview.get('output_sections', [])
             preview_text += "报告章节:\n"
             for section in output_sections:
                 preview_text += f"• {section}\n"
-            
+
             self.preview_text.setPlainText(preview_text)
-            
+
             # 切换到预览标签页
             self.tab_widget.setCurrentWidget(self.preview_tab)
-            
+
         except Exception as e:
             error_msg = f"处理预览结果失败: {e}"
             self.preview_text.setPlainText(error_msg)
             logger.error(f"==liuq debug== {error_msg}")
-    
+
     def on_worker_failed(self, error_msg: str):
         """预览错误"""
         self.preview_text.setPlainText(f"预览分析范围失败: {error_msg}")
         self.show_warning("预览错误", f"预览分析范围失败:\n{error_msg}")
-    
+
     def get_classification_config(self) -> SceneClassificationConfig:
         """获取场景分类配置"""
         config = SceneClassificationConfig()
-        
+
         # 更新阈值配置
         config.indoor_bv_threshold = self.indoor_bv_threshold_spin.value()
         config.night_bv_threshold = self.night_bv_threshold_spin.value()
         config.ir_threshold = self.ir_threshold_spin.value()
-        
+
         return config
-    
+
     def get_configuration(self) -> Dict[str, Any]:
         """获取配置信息"""
         return {
@@ -413,3 +413,55 @@ class MapMultiDimensionalDialog(BaseAnalysisDialog):
             'output_path': self.output_path_edit.text().strip() or None,
             'template_name': self.template_combo.currentText()
         }
+
+
+    # 覆盖基类：点击“开始分析”时返回对话框接受状态，由外部生成报告
+    def start_analysis(self):
+        """开始分析 -> 接受对话框，让上游页面执行生成流程"""
+        try:
+            if not getattr(self, 'map_configuration', None):
+                QMessageBox.warning(self, "警告", "没有可分析的Map配置数据")
+                return
+            # 记录当前配置并结束对话框
+            logger.info("==liuq debug== Map多维度对话框 start_analysis -> 接受对话框，交由上游生成报告")
+            self.accept()
+        except Exception as e:
+            logger.error(f"==liuq debug== start_analysis失败: {e}")
+            QMessageBox.critical(self, "错误", f"开始分析失败: {e}")
+
+    # 覆盖基类：直接在对话框内导出报告（可选，即时生成）
+    def export_report(self):
+        """导出报告（在本对话框内直接生成HTML）"""
+        try:
+            if not getattr(self, 'map_configuration', None):
+                QMessageBox.warning(self, "警告", "没有可导出的Map配置数据")
+                return
+            config = self.get_configuration()
+            logger.info("==liuq debug== Map多维度对话框 export_report -> 开始生成报告")
+            # 直接生成
+            report_path = self.generator.generate(config)
+            QMessageBox.information(self, "完成", f"报告生成完成:\n{report_path}")
+            logger.info(f"==liuq debug== 报告生成完成: {report_path}")
+        except Exception as e:
+            logger.error(f"==liuq debug== 导出报告失败: {e}")
+            QMessageBox.critical(self, "错误", f"导出报告失败: {e}")
+
+    # 使预览工作线程结果写入到预览页
+    def on_analysis_completed(self, result: Dict[str, Any]):
+        try:
+            # 调用基类处理通用UI状态
+            super().on_analysis_completed(result)
+            # 将结果展示到预览页
+            self.on_worker_completed(result)
+        except Exception as e:
+            logger.error(f"==liuq debug== 处理预览结果时出错: {e}")
+
+    def on_analysis_failed(self, error_message: str):
+        try:
+            super().on_analysis_failed(error_message)
+            try:
+                self.preview_text.setPlainText(f"预览分析范围失败: {error_message}")
+            except Exception:
+                pass
+        except Exception:
+            pass

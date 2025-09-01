@@ -1,0 +1,130 @@
+{
+  "priority_fields": [
+    "meta_data_version",
+    "meta_data_currentFrame_ctemp",
+    "meta_data_after_face_Ctemp",
+    "meta_data_outputCtemp",
+    "meta_data_lastFrame_ctemp",
+    "stats_weight_triggerCtemp",
+    "color_cie_lux",
+    "face_info_lux_index",
+    "meta_data_resultCcmatrix",
+    "ealgo_data_SGW_gray_RpG",
+    "ealgo_data_SGW_gray_BpG",
+    "ealgo_data_AGW_noMap_RpG",
+    "ealgo_data_AGW_noMap_BpG",
+    "ealgo_data_AGW_gray_RpG",
+    "ealgo_data_AGW_gray_BpG",
+    "ealgo_data_Mix_csalgo_RpG",
+    "ealgo_data_Mix_csalgo_BpG",
+    "ealgo_data_After_face_RpG",
+    "ealgo_data_After_face_BpG",
+    "ealgo_data_cnvgEst_RpG",
+    "ealgo_data_cnvgEst_BpG",
+    "meta_data_gslGain_rgain",
+    "meta_data_gslGain_bgain",
+    "ealgo_data_eRatio",
+    "color_sensor_irRatio",
+    "color_sensor_acRatio",
+    "color_sensor_sensorCct",
+    "color_sensor_cs_rpg",
+    "color_sensor_cs_bpg",
+    "color_sensor_pureColorMainHueAvgL",
+    "color_sensor_pureColorMainHueAvgC",
+    "color_sensor_pureColorFilterInfo",
+    "ctemp_weight_Ctemp_weight",
+    "ctemp_weight_Ctemp_count",
+    "stats_weight_bitDepth",
+    "stats_weight_exposureType",
+    "face_info_light_skin_target_rg",
+    "face_info_light_skin_target_bg",
+    "face_info_dark_skin_target_rg",
+    "face_info_dark_skin_target_bg",
+    "face_info_light_skin_cct",
+    "face_info_dark_skin_cct",
+    "face_info_light_skin_weight",
+    "face_info_skin_target_dist_ratio",
+    "face_info_faceawb_weight",
+    "face_info_final_skin_cct",
+    "face_info_ffd_awb_enable",
+    "face_info_dist",
+    "face_info_frameLuma",
+    "face_info_faceLuma",
+    "face_info_compenADRCGain",
+    "face_cc_local_enable",
+    "face_cc_face_ccm",
+    "face_cc_orig_face_ccm",
+    "face_cc_face_awb_rGain",
+    "face_cc_face_awb_bGain",
+    "face_cc_global_awb_rGain",
+    "face_cc_global_awb_bGain",
+    "face_cc_face_awb_flag",
+    "face_cc_local_face_awb_weight",
+    "face_cc_local_ctemp_enable",
+    "face_cc_local_ctemp_pos",
+    "face_cc_local_gsl_enable",
+    "face_cc_local_gsl_r_gain",
+    "face_cc_local_gsl_b_gain",
+    "face_cc_local_gsl_pos",
+    "face_cc_outputCtemp",
+    "face_cc_face_c_avg",
+    "face_cc_face_h_avg",
+    "offset_map",
+    "detect_map",
+    "map_weight_offsetMapWeight"
+  ],
+  "paired_fields": {
+    "ealgo_data_SGW_gray_RpG": {
+      "pair_field": "ealgo_data_SGW_gray_BpG",
+      "display_name": "ealgo_data_SGW_gray"
+    },
+    "ealgo_data_AGW_noMap_RpG": {
+      "pair_field": "ealgo_data_AGW_noMap_BpG",
+      "display_name": "ealgo_data_AGW_noMap"
+    },
+    "ealgo_data_AGW_gray_RpG": {
+      "pair_field": "ealgo_data_AGW_gray_BpG",
+      "display_name": "ealgo_data_AGW_gray"
+    },
+    "ealgo_data_Mix_csalgo_RpG": {
+      "pair_field": "ealgo_data_Mix_csalgo_BpG",
+      "display_name": "ealgo_data_Mix_csalgo"
+    },
+    "ealgo_data_After_face_RpG": {
+      "pair_field": "ealgo_data_After_face_BpG",
+      "display_name": "ealgo_data_After_face"
+    },
+    "ealgo_data_cnvgEst_RpG": {
+      "pair_field": "ealgo_data_cnvgEst_BpG",
+      "display_name": "ealgo_data_cnvgEst"
+    },
+    "meta_data_gslGain_rgain": {
+      "pair_field": "meta_data_gslGain_bgain",
+      "display_name": "meta_data_gslGain"
+    },
+    "ctemp_weight_Ctemp_count": {
+      "pair_field": "ctemp_weight_Ctemp_weight",
+      "display_name": "ctemp_weight"
+    }
+  },
+  "triple_fields": {
+    "offset_map": {
+      "second_field": "map_weight_offsetMapWeight",
+      "third_field": "dummy",
+      "display_name": "offset_map_data"
+    },
+    "detect_map": {
+      "second_field": "dummy",
+      "third_field": "dummy",
+      "display_name": "detect_map_data"
+    }
+  },
+  "quick_select_groups": [
+    "meta_data",
+    "ealgo_data",
+    "color_sensor",
+    "stats_weight",
+    "face_info",
+    "face_cc"
+  ]
+}

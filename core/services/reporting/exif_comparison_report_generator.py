@@ -52,6 +52,7 @@ class ExifComparisonReportGenerator(IReportGenerator):
         self.color_gain_fields = [
             'ealgo_data_SGW_gray_RpG', 'ealgo_data_SGW_gray_BpG',
             'ealgo_data_AGW_gray_RpG', 'ealgo_data_AGW_gray_BpG',
+            'ealgo_data_AGW_noMap_RpG', 'ealgo_data_AGW_noMap_BpG',
             'ealgo_data_Mix_gray_edge_RpG', 'ealgo_data_Mix_gray_edge_BpG',
             'ealgo_data_Mix_csalgo_RpG', 'ealgo_data_Mix_csalgo_BpG',
             'ealgo_data_After_face_RpG', 'ealgo_data_After_face_BpG'
@@ -300,26 +301,31 @@ class ExifComparisonReportGenerator(IReportGenerator):
             available_required_fields = [field for field in self.required_fields if field in all_columns]
             missing_required_fields = [field for field in self.required_fields if field not in all_columns]
 
-            # 检查数值字段并收集详细信息
+            # 收集所有字段的详细信息，并区分数值/非数值
+            all_fields_detailed = []
             numeric_fields = []
             for col in all_columns:
                 try:
-                    # 尝试转换为数值
-                    numeric_series = pd.to_numeric(df[col], errors='coerce')
-                    # 如果转换后不全是NaN，则认为是数值字段
-                    if not numeric_series.isna().all():
-                        # 收集字段详细信息
-                        valid_values = numeric_series.dropna()
-                        field_info = {
-                            'name': col,
-                            'type': 'numeric',
-                            'dtype': str(df[col].dtype),
-                            'non_null_count': len(valid_values),
-                            'total_count': len(df[col]),
-                            'null_count': len(df[col]) - len(valid_values)
-                        }
+                    series = df[col]
+                    dtype_str = str(series.dtype)
+                    non_null_count = int(series.notna().sum())
+                    total_count = int(len(series))
 
-                        # 如果有有效数值，计算统计信息
+                    # 基础信息（所有字段都有）
+                    base_info = {
+                        'name': col,
+                        'dtype': dtype_str,
+                        'non_null_count': non_null_count,
+                        'total_count': total_count,
+                        'null_count': total_count - non_null_count,
+                    }
+
+                    # 数值性检测
+                    numeric_series = pd.to_numeric(series, errors='coerce')
+                    if not numeric_series.isna().all():
+                        valid_values = numeric_series.dropna()
+                        field_info = dict(base_info)
+                        field_info['type'] = 'numeric'
                         if len(valid_values) > 0:
                             field_info.update({
                                 'min_value': float(valid_values.min()),
@@ -327,11 +333,18 @@ class ExifComparisonReportGenerator(IReportGenerator):
                                 'mean_value': float(valid_values.mean()),
                                 'std_value': float(valid_values.std()) if len(valid_values) > 1 else 0.0
                             })
-
                         numeric_fields.append(field_info)
+                        all_fields_detailed.append(field_info)
+                    else:
+                        # 非数值字段
+                        field_info = dict(base_info)
+                        field_info['type'] = 'non_numeric'
+                        all_fields_detailed.append(field_info)
                 except Exception as e:
                     # 记录详细错误信息但不中断处理
-                    logger.debug(f"==liuq debug== 字段 {col} 不是数值字段: {e}")
+                    logger.debug(f"==liuq debug== 处理字段 {col} 详情失败: {e}")
+                    # 至少加入一个占位，避免前端缺字段
+                    all_fields_detailed.append({'name': col, 'dtype': 'unknown', 'type': 'unknown', 'non_null_count': 0, 'total_count': int(len(df)) , 'null_count': int(len(df))})
                     continue
 
             field_info = {
@@ -340,6 +353,7 @@ class ExifComparisonReportGenerator(IReportGenerator):
                 'available_required_fields': available_required_fields,
                 'missing_required_fields': missing_required_fields,
                 'numeric_fields': numeric_fields,  # 使用详细的字段信息
+                'all_fields_detailed': all_fields_detailed,  # 新增：全部字段详情
                 'core_fields_available': [field for field in self.core_fields if field in all_columns],
                 'color_gain_fields_available': [field for field in self.color_gain_fields if field in all_columns],
                 'total_fields': len(all_columns),  # GUI期望的字段名
@@ -516,22 +530,36 @@ class ExifComparisonReportGenerator(IReportGenerator):
             last_err = None
             for encoding in encodings:
                 try:
-                    df = pd.read_csv(csv_path, encoding=encoding)
+                    df = pd.read_csv(csv_path, encoding=encoding, engine='python', sep=None, low_memory=False)
                     # 规范化列名：去BOM、去首尾空白、统一小写
                     def _canonical(x: object) -> str:
                         s = str(x)
                         for bad in ('\ufeff', '\u200b', '\xa0'):
                             s = s.replace(bad, ' ')
                         s = s.strip().lower()
-                        # 将连续空白替换为下划线，并去除非字母数字和下划线
+                        # 将连续空白替换为下划线，并把非[a-z0-9_]的字符序列替换为单个下划线（避免过度合并）
                         s = re.sub(r'\s+', '_', s)
-                        s = re.sub(r'[^a-z0-9_]', '', s)
+                        s = re.sub(r'[^a-z0-9_]+', '_', s)
                         # 常见等价：imagename -> image_name
                         if s == 'imagename':
                             s = 'image_name'
                         return s
 
-                    df.columns = [_canonical(c) for c in df.columns]
+                    cols = [_canonical(c) for c in df.columns]
+                    # 确保列名唯一，避免规范化后被合并
+                    counts = {}
+                    uniq_cols = []
+                    for i, name in enumerate(cols):
+                        if not name:
+                            name = f'col_{i}'
+                        cnt = counts.get(name, 0)
+                        if cnt > 0:
+                            uniq_name = f"{name}_{cnt}"
+                        else:
+                            uniq_name = name
+                        counts[name] = cnt + 1
+                        uniq_cols.append(uniq_name)
+                    df.columns = uniq_cols
 
                     # 如果未发现 image_name，尝试自动识别“多行表头”
                     if 'image_name' not in df.columns:
@@ -548,7 +576,7 @@ class ExifComparisonReportGenerator(IReportGenerator):
                                 reader = csv.reader(f, delimiter=delimiter)
                                 header_row_idx = None
                                 for i, row in enumerate(reader):
-                                    if i >= 5:
+                                    if i >= 50:
                                         break
                                     row_vals = [_canonical(v) for v in row]
                                     if 'image_name' in row_vals:
@@ -567,7 +595,17 @@ class ExifComparisonReportGenerator(IReportGenerator):
                                     logger.info(f"==liuq debug== 表头自动识别(pandas探测)失败: {_e2}")
                             if header_row_idx is not None:
                                 df = pd.read_csv(csv_path, encoding=encoding, header=header_row_idx, sep=delimiter)
-                                df.columns = [_canonical(c) for c in df.columns]
+                                cols = [_canonical(c) for c in df.columns]
+                                counts = {}
+                                uniq_cols = []
+                                for i, name in enumerate(cols):
+                                    if not name:
+                                        name = f'col_{i}'
+                                    cnt = counts.get(name, 0)
+                                    uniq_name = f"{name}_{cnt}" if cnt > 0 else name
+                                    counts[name] = cnt + 1
+                                    uniq_cols.append(uniq_name)
+                                df.columns = uniq_cols
                                 logger.info(f"==liuq debug== 自动识别表头在第 {header_row_idx+1} 行(1-based), 分隔符: '{delimiter}'")
                             else:
                                 logger.info("==liuq debug== 未能在前50行定位到 'image_name'，保留原始第一行作为表头")
@@ -605,11 +643,21 @@ class ExifComparisonReportGenerator(IReportGenerator):
                     s = s.replace(bad, ' ')
                 s = s.strip().lower()
                 s = re.sub(r'\s+', '_', s)
-                s = re.sub(r'[^a-z0-9_]', '', s)
+                s = re.sub(r'[^a-z0-9_]+', '_', s)
                 if s == 'imagename':
                     s = 'image_name'
                 return s
-            df.columns = [_canonical(c) for c in df.columns]
+            cols = [_canonical(c) for c in df.columns]
+            counts = {}
+            uniq_cols = []
+            for i, name in enumerate(cols):
+                if not name:
+                    name = f'col_{i}'
+                cnt = counts.get(name, 0)
+                uniq_name = f"{name}_{cnt}" if cnt > 0 else name
+                counts[name] = cnt + 1
+                uniq_cols.append(uniq_name)
+            df.columns = uniq_cols
             if 'image_name' not in df.columns:
                 try:
                     with open(csv_path, 'r', encoding='utf-8', errors='replace') as f:

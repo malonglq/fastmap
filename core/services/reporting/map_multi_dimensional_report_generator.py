@@ -81,10 +81,17 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
                 if classification_config is None:
                     classification_config = SceneClassificationConfig()
                 multi_dimensional_analyzer = MultiDimensionalAnalyzer(
-                    map_configuration, 
+                    map_configuration,
                     classification_config
                 )
-            
+                try:
+                    # 关键：先执行多维度分析，确保数据提供者能获取完整结果
+                    t_md = datetime.now()
+                    multi_dimensional_analyzer.analyze()
+                    logger.info("==liuq debug== 多维度分析已在报告生成前完成，用时 %.2fs", (datetime.now()-t_md).total_seconds())
+                except Exception as _e:
+                    logger.warning("==liuq debug== 多维度分析预执行失败，将继续但报告可能缺少多维度章节: %s", _e)
+
             # 步骤3: 创建组合数据提供者
             logger.info("==liuq debug== 步骤3: 创建组合数据提供者")
             combined_data_provider = CombinedReportDataProvider(
@@ -92,17 +99,17 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
                 multi_dimensional_analyzer,
                 include_multi_dimensional
             )
-            
+
             # 步骤4: 生成HTML报告
             logger.info("==liuq debug== 步骤4: 生成HTML报告")
             html_generator = UniversalHTMLGenerator()
-            
+
             report_path = html_generator.generate_report(
                 combined_data_provider,
                 template_name=template_name,
                 output_path=output_path
             )
-            
+
             logger.info(f"==liuq debug== Map多维度分析报告生成完成: {report_path}")
             return report_path
             

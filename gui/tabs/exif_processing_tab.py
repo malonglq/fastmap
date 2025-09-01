@@ -22,6 +22,7 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from core.interfaces.exif_processing import IExifParserService, IExifCsvExporter, ExifParseOptions
 from core.services.exif_processing.exif_parser_service import ExifParserService
 from core.services.exif_processing.exif_csv_exporter import ExifCsvExporter
+from core.config.exif_display_config_manager import get_exif_display_config
 
 class _ExportWorker(QThread):
     progress = pyqtSignal(int, int, str)  # processed, total, current_file
@@ -141,7 +142,14 @@ class ExifProcessingTab(QWidget):
         btn_all = QPushButton("全选")
         btn_all.clicked.connect(self._check_all)
         quick.addWidget(btn_all)
-        for name in ["meta_data", "ealgo_data", "color_sensor", "stats_weight", "face_info", "face_cc"]:
+        # 使用配置管理器获取快速选择分组
+        try:
+            config_manager = get_exif_display_config()
+            quick_groups = config_manager.get_quick_select_groups()
+        except Exception:
+            quick_groups = ["meta_data", "ealgo_data", "color_sensor", "stats_weight", "face_info", "face_cc"]
+
+        for name in quick_groups:
             b = QPushButton(name)
             b.clicked.connect(lambda _, p=name: self._check_prefix(p))
             quick.addWidget(b)
@@ -190,79 +198,19 @@ class ExifProcessingTab(QWidget):
 
     @staticmethod
     def _priority_list() -> List[str]:
-        # 指定的精确顺序（逐行粘贴，保持一致）
-        return [
-            'meta_data_version',
-            'meta_data_currentFrame_ctemp',
-            'meta_data_after_face_Ctemp',
-            'meta_data_outputCtemp',
-            'meta_data_lastFrame_ctemp',
-            'stats_weight_triggerCtemp',
-            'color_cie_lux',
-            'face_info_lux_index',
-            'meta_data_resultCcmatrix',
-            'ealgo_data_SGW_gray_RpG',
-            'ealgo_data_SGW_gray_BpG',
-            'ealgo_data_AGW_gray_RpG',
-            'ealgo_data_AGW_gray_BpG',
-            'ealgo_data_Mix_csalgo_RpG',
-            'ealgo_data_Mix_csalgo_BpG',
-            'ealgo_data_After_face_RpG',
-            'ealgo_data_After_face_BpG',
-            'ealgo_data_cnvgEst_RpG',
-            'ealgo_data_cnvgEst_BpG',
-            'meta_data_gslGain_rgain',
-            'meta_data_gslGain_bgain',
-            'ealgo_data_eRatio',
-            'color_sensor_irRatio',
-            'color_sensor_acRatio',
-            'color_sensor_sensorCct',
-            'color_sensor_cs_rpg',
-            'color_sensor_cs_bpg',
-            'color_sensor_pureColorMainHueAvgL',
-            'color_sensor_pureColorMainHueAvgC',
-            'color_sensor_pureColorFilterInfo',
-            'ctemp_weight_Ctemp_weight',
-            'ctemp_weight_Ctemp_count',
-            'stats_weight_bitDepth',
-            'stats_weight_exposureType',
-            'face_info_light_skin_target_rg',
-            'face_info_light_skin_target_bg',
-            'face_info_dark_skin_target_rg',
-            'face_info_dark_skin_target_bg',
-            'face_info_light_skin_cct',
-            'face_info_dark_skin_cct',
-            'face_info_light_skin_weight',
-            'face_info_skin_target_dist_ratio',
-            'face_info_faceawb_weight',
-            'face_info_final_skin_cct',
-            'face_info_ffd_awb_enable',
-            'face_info_dist',
-            'face_info_frameLuma',
-            'face_info_faceLuma',
-            'face_info_compenADRCGain',
-            'face_cc_local_enable',
-            'face_cc_face_ccm',
-            'face_cc_orig_face_ccm',
-            'face_cc_face_awb_rGain',
-            'face_cc_face_awb_bGain',
-            'face_cc_global_awb_rGain',
-            'face_cc_global_awb_bGain',
-            'face_cc_face_awb_flag',
-            'face_cc_local_face_awb_weight',
-            'face_cc_local_ctemp_enable',
-            'face_cc_local_ctemp_pos',
-            'face_cc_local_gsl_enable',
-            'face_cc_local_gsl_r_gain',
-            'face_cc_local_gsl_b_gain',
-            'face_cc_local_gsl_pos',
-            'face_cc_outputCtemp',
-            'face_cc_face_c_avg',
-            'face_cc_face_h_avg',
-            'offset_map',
-            'detect_map',
-            'map_weight_offsetMapWeight',
-        ]
+        # 完全依赖统一配置管理器获取优先字段列表
+        try:
+            config_manager = get_exif_display_config()
+            priority_fields = config_manager.get_priority_fields()
+            if priority_fields:
+                return priority_fields
+            else:
+                # 配置为空时返回空列表，让程序使用所有可用字段
+                return []
+        except Exception as e:
+            # 配置加载失败时返回空列表，确保程序不会崩溃
+            print(f"==liuq debug== 配置加载失败，使用空优先级列表: {e}")
+            return []
 
     def _check_all(self):
         for i in range(self.list_fields.count()):

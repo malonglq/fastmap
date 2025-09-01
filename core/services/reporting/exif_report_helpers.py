@@ -581,12 +581,17 @@ def _reorganize_rpg_bpg_data_for_integrated_trend(trend_data):
         # 创建大小写不敏感的字段映射
         field_mapping = _create_case_insensitive_field_mapping(trend_data)
 
-        # 定义算法字段映射和颜色
+        # 定义算法字段映射和颜色（按图例顺序：SGW → AGW_noMap → AGW → Mix → After_face → cnvgEst）
         algorithm_config = {
             'SGW': {
                 'rpg_field': 'ealgo_data_SGW_gray_RpG',
                 'bpg_field': 'ealgo_data_SGW_gray_BpG',
                 'color': '#e91e63'  # 红色
+            },
+            'AGW_noMap': {
+                'rpg_field': 'ealgo_data_AGW_noMap_RpG',
+                'bpg_field': 'ealgo_data_AGW_noMap_BpG',
+                'color': '#00bcd4'  # 青色
             },
             'AGW': {
                 'rpg_field': 'ealgo_data_AGW_gray_RpG',
@@ -698,7 +703,7 @@ def _generate_integrated_trend_chart_html(integrated_data):
             return "<p class=\"muted\">没有可用的趋势数据</p>"
 
         # 统计算法数量
-        algorithm_count = len(set(ds['label'].split('_')[0] for ds in datasets))
+        algorithm_count = len(set(ds['label'].rsplit('_', 1)[0] for ds in datasets))
 
         html = f'''
         <div class="row">
@@ -735,6 +740,7 @@ def _generate_integrated_trend_chart_html(integrated_data):
                             <p><strong>算法颜色：</strong></p>
                             <ul class="mb-0">
                                 <li><span style="color: #e91e63; font-weight: bold;">●</span> SGW算法</li>
+                                <li><span style="color: #00bcd4; font-weight: bold;">●</span> AGW_noMap算法</li>
                                 <li><span style="color: #3f51b5; font-weight: bold;">●</span> AGW算法</li>
                                 <li><span style="color: #4caf50; font-weight: bold;">●</span> Mix算法</li>
                                 <li><span style="color: #ff9800; font-weight: bold;">●</span> After_face算法</li>
@@ -846,7 +852,7 @@ def _generate_integrated_trend_chart_scripts(integrated_data):
                                     const label = context.dataset.label;
                                     const value = context.parsed.y.toFixed(3);
                                     const dataType = label.includes('RpG') ? 'RpG' : 'BpG';
-                                    const algorithm = label.split('_')[0];
+                                    const algorithm = label.substring(0, label.lastIndexOf('_'));
                                     return `${{algorithm}} ${{dataType}}: ${{value}}`;
                                 }},
                                 labelColor: function(context) {{
@@ -925,6 +931,7 @@ def _reorganize_rpg_bpg_data_by_image(trend_data):
         # 定义算法字段映射
         algorithm_fields = {
             'SGW': ('ealgo_data_SGW_gray_RpG', 'ealgo_data_SGW_gray_BpG'),
+            'AGW_noMap': ('ealgo_data_AGW_noMap_RpG', 'ealgo_data_AGW_noMap_BpG'),
             'AGW': ('ealgo_data_AGW_gray_RpG', 'ealgo_data_AGW_gray_BpG'),
             'Mix': ('ealgo_data_Mix_csalgo_RpG', 'ealgo_data_Mix_csalgo_BpG'),
             'After_face': ('ealgo_data_After_face_RpG', 'ealgo_data_After_face_BpG'),

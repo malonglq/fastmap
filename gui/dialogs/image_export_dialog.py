@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict
 from pathlib import Path
+import shutil
 
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox, QCheckBox,
@@ -21,7 +22,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 
 from core.interfaces.image_classification import (
-    ClassificationOptions, ExportSelection, NamingOptions
+    ClassificationOptions, ExportSelection, NamingOptions, ChangeThresholds
 )
 from core.services.exif_processing.image_export_workflow_service import ImageExportWorkflowService
 
@@ -58,6 +59,57 @@ class ImageExportDialog(QDialog):
             self.field_combo.addItem(f)
         row.addWidget(self.field_combo, 1)
         layout.addLayout(row)
+
+        # 字段对比(SPC)模式
+        pair_row = QHBoxLayout()
+        self.cb_pair = QCheckBox("使用字段对比(SPC)")
+        self.cb_pair.stateChanged.connect(self._on_mode_changed)
+        pair_row.addWidget(self.cb_pair)
+        pair_row.addWidget(QLabel("字段对:"))
+        self.pair_combo = QComboBox()
+        # 预置6组字段对
+        self._preset_pairs = [
+            ("ealgo_data_agw_nomap_rpg", "ealgo_data_agw_gray_rpg"),
+            ("ealgo_data_agw_nomap_bpg", "ealgo_data_agw_gray_bpg"),
+            ("ealgo_data_agw_nomap_rpg", "ealgo_data_after_face_rpg"),
+            ("ealgo_data_agw_nomap_bpg", "ealgo_data_after_face_bpg"),
+            ("ealgo_data_agw_nomap_rpg", "ealgo_data_cnvgest_rpg"),
+            ("ealgo_data_agw_nomap_bpg", "ealgo_data_cnvgest_bpg"),
+        ]
+        for a,b in self._preset_pairs:
+            self.pair_combo.addItem(f"{a} vs {b}")
+        # 下拉选择变化时刷新统计
+        try:
+            self.pair_combo.currentIndexChanged.connect(self._on_pair_changed)
+            self.pair_combo.currentTextChanged.connect(self._on_pair_changed)
+        except Exception:
+            pass
+        pair_row.addWidget(self.pair_combo, 1)
+        layout.addLayout(pair_row)
+
+        # 阈值设置（仅字段对比时生效）
+        thr_row = QHBoxLayout()
+        thr_row.addWidget(QLabel("无变化<"))
+        self.thr_none = QLineEdit("0.5")
+        self.thr_none.setFixedWidth(60)
+        thr_row.addWidget(self.thr_none)
+        thr_row.addWidget(QLabel("%， 小[none,med)<"))
+        self.thr_med = QLineEdit("5")
+        self.thr_med.setFixedWidth(60)
+        thr_row.addWidget(self.thr_med)
+        thr_row.addWidget(QLabel("%， 中[med,large)<"))
+        self.thr_large = QLineEdit("10")
+        self.thr_large.setFixedWidth(60)
+        thr_row.addWidget(self.thr_large)
+        # 阈值变更时刷新（在SPC模式时生效）
+        try:
+            self.thr_none.editingFinished.connect(self._on_threshold_changed)
+            self.thr_med.editingFinished.connect(self._on_threshold_changed)
+            self.thr_large.editingFinished.connect(self._on_threshold_changed)
+        except Exception:
+            pass
+        thr_row.addWidget(QLabel("% (SPC)"))
+        layout.addLayout(thr_row)
 
         # 统计卡片区域（在复选框之上）
         self._build_stats_area(layout)
@@ -132,10 +184,35 @@ class ImageExportDialog(QDialog):
 
     def _recompute_and_update_stats(self):
         try:
-            pf = self.field_combo.currentText().strip() if self.field_combo.count() else ''
-            if not pf:
-                return
-            options = ClassificationOptions(primary_field=pf, selected_fields=[pf])
+            # 构建选项（根据模式）
+            if self.cb_pair.isChecked():
+                pair_text = self.pair_combo.currentText()
+                # 解析 "a vs b"
+                parts = [p.strip() for p in pair_text.split('vs')]
+                compare_pair = [parts[0], parts[1]] if len(parts) >= 2 else None
+                # 阈值
+                def _to_float(s, dv):
+                    try:
+                        return float(str(s).strip())
+                    except Exception:
+                        return dv
+                none_max = _to_float(self.thr_none.text(), 3.0)
+                med_min = _to_float(self.thr_med.text(), 10.0)
+                large_min = _to_float(self.thr_large.text(), 20.0)
+
+                th = ChangeThresholds(
+                    pct_large_min=large_min,
+                    pct_medium_min=med_min,
+                    pct_medium_max=large_min,
+                    pct_no_change_max=none_max
+                )
+                options = ClassificationOptions(primary_field='', selected_fields=[], compare_pair=compare_pair, metric='percent_spc', thresholds=th)
+            else:
+                pf = self.field_combo.currentText().strip() if self.field_combo.count() else ''
+                if not pf:
+                    return
+                options = ClassificationOptions(primary_field=pf, selected_fields=[pf])
+
             result = self.workflow.compute_classification(self.match_result, options)
             panel = self.workflow.build_stats_panel(result)
 
@@ -157,6 +234,15 @@ class ImageExportDialog(QDialog):
             logger.error(f"==liuq debug== 更新统计失败: {e}")
 
     def _on_field_changed(self, _):
+        self._recompute_and_update_stats()
+
+    def _on_mode_changed(self, _):
+        self._recompute_and_update_stats()
+
+    def _on_pair_changed(self, _):
+        self._recompute_and_update_stats()
+
+    def _on_threshold_changed(self):
         self._recompute_and_update_stats()
 
     # ===== 目录与导出 =====
@@ -181,7 +267,30 @@ class ImageExportDialog(QDialog):
             QMessageBox.warning(self, "提示", "请设置源目录与输出目录")
             return
 
-        options = ClassificationOptions(primary_field=pf, selected_fields=[pf])
+        # 构建分类选项
+        if self.cb_pair.isChecked():
+            pair_text = self.pair_combo.currentText()
+            parts = [p.strip() for p in pair_text.split('vs')]
+            compare_pair = [parts[0], parts[1]] if len(parts) >= 2 else None
+            # 阈值
+            def _to_float(s, dv):
+                try:
+                    return float(str(s).strip())
+                except Exception:
+                    return dv
+            none_max = _to_float(self.thr_none.text(), 3.0)
+            med_min = _to_float(self.thr_med.text(), 10.0)
+            large_min = _to_float(self.thr_large.text(), 20.0)
+            th = ChangeThresholds(
+                pct_large_min=large_min,
+                pct_medium_min=med_min,
+                pct_medium_max=large_min,
+                pct_no_change_max=none_max
+            )
+            options = ClassificationOptions(primary_field='', selected_fields=[], compare_pair=compare_pair, metric='percent_spc', thresholds=th)
+        else:
+            options = ClassificationOptions(primary_field=pf, selected_fields=[pf])
+
         selection = ExportSelection(
             export_large=self.c_large.isChecked(),
             export_medium=self.c_medium.isChecked(),
@@ -191,6 +300,27 @@ class ImageExportDialog(QDialog):
 
         # 分类
         result = self.workflow.compute_classification(self.match_result, options)
+
+        # 导出前清理输出目录下的分类子目录
+        try:
+            out_path = Path(out)
+            targets = [
+                "1_large_changes",
+                "2_medium_changes",
+                "3_small_changes",
+                "4_no_changes",
+            ]
+            for name in targets:
+                p = out_path / name
+                if p.exists():
+                    if p.is_dir():
+                        shutil.rmtree(p)
+                        logger.info(f"==liuq debug== 已清理输出子目录: {p}")
+                    else:
+                        p.unlink()
+                        logger.info(f"==liuq debug== 已删除同名文件: {p}")
+        except Exception as e:
+            logger.warning(f"==liuq debug== 清理输出目录失败(跳过不阻塞): {e}")
 
         # 进度对话框
         prog = QProgressDialog("正在导出…", "取消", 0, 100, self)

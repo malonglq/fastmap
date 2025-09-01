@@ -24,6 +24,8 @@ class ChangeThresholds:
     pct_large_min: float = 10.0
     pct_medium_min: float = 1.0
     pct_medium_max: float = 10.0
+    # 新增：无变化上限（用于字段对比的百分比分类）；None 表示使用旧逻辑(仅0视为无变化)
+    pct_no_change_max: Optional[float] = None
 
 
 @dataclass
@@ -32,6 +34,13 @@ class ClassificationOptions:
     selected_fields: List[str] = field(default_factory=list)
     thresholds: ChangeThresholds = field(default_factory=ChangeThresholds)
     is_cct_field: Optional[bool] = None  # None=自动判断
+    # 新增：字段对比模式（compare_pair!=None 表示启用）
+    # compare_pair: [fieldA, fieldB]
+    compare_pair: Optional[List[str]] = None
+    # 变化度量：'percent_spc'（默认）、'percent_rc'、'abs'
+    metric: str = 'percent_spc'
+    # 零值保护阈值（用于percent_rc）
+    epsilon: float = 1e-6
 
 
 @dataclass

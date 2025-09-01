@@ -86,7 +86,7 @@ class AnalysisReportTab(QWidget):
         layout.setSpacing(16)
 
         # 标题区域
-        self.create_title_section(layout)
+        #self.create_title_section(layout)
 
         # 主要内容区域（使用分割器）
         splitter = QSplitter(Qt.Vertical)
@@ -220,7 +220,7 @@ class AnalysisReportTab(QWidget):
                 self,
                 "模块错误",
                 f"EXIF对比分析模块加载失败:\n{e}\n\n"
-                "请检查0_csv_compare模块是否正确安装。"
+                "请检查相关依赖模块是否正确安装。"
             )
         except Exception as e:
             logger.error(f"==liuq debug== 打开EXIF对比分析对话框失败: {e}")
@@ -282,9 +282,9 @@ class AnalysisReportTab(QWidget):
     def open_map_analysis_dialog(self):
         """打开Map多维度分析对话框"""
         try:
-            # 检查是否已有Map分析数据
+            # 检查是否已有Map分析数据（兼容新旧架构：直接属性或经由ViewModel）
             main_window = self.get_main_window()
-            if not main_window or not hasattr(main_window, 'map_configuration'):
+            if not main_window:
                 QMessageBox.warning(
                     self,
                     "警告",
@@ -297,12 +297,26 @@ class AnalysisReportTab(QWidget):
                 )
                 return
 
-            map_configuration = main_window.map_configuration
+            # 优先从ViewModel获取，其次回退到MainWindow上的直接属性
+            map_configuration = None
+            try:
+                if hasattr(main_window, 'view_model') and getattr(main_window.view_model, 'map_configuration', None):
+                    map_configuration = main_window.view_model.map_configuration
+                    logger.info("==liuq debug== 从ViewModel获取map_configuration 成功")
+                elif hasattr(main_window, 'map_configuration') and getattr(main_window, 'map_configuration', None):
+                    map_configuration = main_window.map_configuration
+                    logger.info("==liuq debug== 从MainWindow属性获取map_configuration 成功")
+                else:
+                    logger.warning("==liuq debug== 未找到map_configuration：可能分析尚未开始或仍在进行中")
+            except Exception as _e:
+                logger.warning(f"==liuq debug== 读取map_configuration异常: {_e}")
+
             if not map_configuration:
                 QMessageBox.warning(
                     self,
                     "警告",
-                    "Map配置数据为空，请重新进行Map分析"
+                    "请先在Map分析标签页进行Map数据分析（未检测到配置数据）。\n\n"
+                    "提示：完成XML解析/分析后再尝试。若已完成，请点击一次'开始分析'后等待状态更新再重试。"
                 )
                 return
 
@@ -391,10 +405,15 @@ class AnalysisReportTab(QWidget):
     def refresh_history(self):
         """刷新历史记录"""
         try:
+            # 先从磁盘重新加载，避免多实例写入后GUI看不到最新
+            try:
+                self.report_manager.reload_history()
+            except Exception:
+                pass
             history = self.report_manager.get_history(limit=50)
-            
+
             self.history_table.setRowCount(len(history))
-            
+
             for row, item in enumerate(history):
                 # 报告类型
                 type_item = QTableWidgetItem(item.report_name)
@@ -461,10 +480,23 @@ class AnalysisReportTab(QWidget):
             QMessageBox.warning(self, "错误", f"打开报告文件失败: {e}")
     
     def get_main_window(self):
-        """获取主窗口引用"""
-        parent = self.parent()
-        while parent:
-            if hasattr(parent, 'map_configuration'):
-                return parent
-            parent = parent.parent()
+        """获取主窗口引用（更健壮）
+        优先返回顶层Window，再回退父链搜索；不再依赖是否已有map_configuration属性。
+        """
+        try:
+            # 1) 首选顶层window()
+            try:
+                win = self.window()
+                if win:
+                    return win
+            except Exception:
+                pass
+            # 2) 回退：沿父链查找任意拥有 view_model 或 map_configuration 的窗口
+            parent = self.parent()
+            while parent:
+                if hasattr(parent, 'view_model') or hasattr(parent, 'map_configuration'):
+                    return parent
+                parent = parent.parent()
+        except Exception:
+            pass
         return None
