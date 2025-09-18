@@ -1,0 +1,63 @@
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">分类准确性分析</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h3 class="text-success">{{ accuracy_percentage|floatformat:1 }}%</h3>
+                        <p class="text-muted">准确率</p>
+                    </div>
+                    <div class="col-6">
+                        <h3 class="text-info">{{ total_maps }}</h3>
+                        <p class="text-muted">总Map数</p>
+                    </div>
+                </div>
+                <hr>
+                <p><strong>一致分类:</strong> {{ consistent_count }} 个</p>
+                <p><strong>不一致分类:</strong> {{ inconsistent_count }} 个</p>
+                <small class="text-muted">注：准确率是指新分类规则与原始分类的一致性程度</small>
+            </div>
+        </div>
+    </div>
+    {% if inconsistent_examples %}
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">不一致分类案例</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Map名称</th>
+                                <th>原始</th>
+                                <th>新分类</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for example in inconsistent_examples|slice:":5" %}
+                            <tr>
+                                <td><small>{{ example.alias_name|truncatechars:20 }}</small></td>
+                                <td><small>{{ example.original }}</small></td>
+                                <td><small>{{ example.new }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-md-6">
+        <div class="alert alert-success">
+            <h6>🎉 完美一致!</h6>
+            <p class="mb-0">所有Map的分类结果都与原始分类一致。</p>
+        </div>
+    </div>
+    {% endif %}
+</div>

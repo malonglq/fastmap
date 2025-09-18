@@ -1,0 +1,61 @@
+<div class="mb-3">
+  <input type="text" id="{{ search_id }}" class="form-control" placeholder="🔍 搜索表格内容..." style="max-width: 300px;">
+</div>
+
+<div class="table-container">
+  <table id="{{ table_id }}" class="table table-striped table-hover">
+    <thead class="table-dark">
+      <tr>
+        <th class="sticky-col sticky-col-1">文件1 (image_name)</th>
+        <th class="sticky-col sticky-col-2">文件2 (sequence_number)</th>
+        <th>相似度</th>
+        {% for field in selected_fields %}
+        <th colspan="3">{{ field }}</th>
+        {% endfor %}
+      </tr>
+      <tr>
+        <th class="sticky-col sticky-col-1"></th>
+        <th class="sticky-col sticky-col-2"></th>
+        <th></th>
+        {% for field in selected_fields %}
+        <th>处理前</th>
+        <th>处理后</th>
+        <th>变化%</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td class="sticky-col sticky-col-1">{{ row.filename1 }}</td>
+        <td class="sticky-col sticky-col-2">{{ row.filename2 }}</td>
+        <td>{{ row.similarity | round(3) }}</td>
+        {% for cell in row.cells %}
+          <td>{{ cell.before }}</td>
+          <td>{{ cell.after }}</td>
+          <td class="{{ cell.cls }}">{{ cell.change_pct }}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+(function(){
+  var input = document.getElementById('{{ search_id }}');
+  var table = document.getElementById('{{ table_id }}');
+  if (!input || !table) return;
+  input.addEventListener('keyup', function(){
+    var filter = input.value.toLowerCase();
+    var rows = table.getElementsByTagName('tr');
+    for (var i=2; i<rows.length; i++) { // skip header rows
+      var tds = rows[i].getElementsByTagName('td');
+      var text = '';
+      for (var j=0; j<tds.length; j++) text += (tds[j].textContent || '').toLowerCase() + ' ';
+      rows[i].style.display = text.indexOf(filter) > -1 ? '' : 'none';
+    }
+  });
+})();
+</script>
+

@@ -28,7 +28,7 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QFont, QBrush, QColor
 from pathlib import Path
 
-from core.services.reporting.exif_comparison_report_generator import ExifComparisonReportGenerator
+from core.services.reporting.domains.exif import ExifComparisonReportGenerator
 from core.config.exif_display_config_manager import get_exif_display_config
 
 
@@ -968,7 +968,7 @@ class ExifComparisonDialog(BaseAnalysisDialog):
                 return
 
             # 通过报告管理器生成报告（确保添加到历史记录）
-            from core.services.reporting.unified_report_manager import UnifiedReportManager
+            from core.services.reporting.manager import UnifiedReportManager
             from core.interfaces.report_generator import ReportType
 
             report_manager = UnifiedReportManager()
@@ -1042,7 +1042,7 @@ class ExifAnalysisWorker(BaseWorker):
             self.progress_updated.emit(10, "开始EXIF对比分析...")
 
             # 通过报告管理器生成报告（确保添加到历史记录）
-            from core.services.reporting.unified_report_manager import UnifiedReportManager
+            from core.services.reporting.manager import UnifiedReportManager
             from core.interfaces.report_generator import ReportType
 
             report_manager = UnifiedReportManager()

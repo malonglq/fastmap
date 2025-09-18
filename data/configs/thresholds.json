@@ -1,0 +1,20 @@
+{
+  "thresholds": {
+    "cct": {
+      "medium_min": 100.0,
+      "medium_max": 500.0,
+      "large_min": 500.0
+    },
+    "percentage": {
+      "medium_min": 1.0,
+      "medium_max": 10.0,
+      "large_min": 10.0,
+      "no_change_max": 3.0
+    },
+    "_notes": {
+      "cct": "CCT绝对值阈值，单位K",
+      "percentage": "百分比变化阈值，单位%",
+      "no_change_max": "无变化上限，超过此值视为小变化"
+    }
+  }
+}

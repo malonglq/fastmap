@@ -1,0 +1,99 @@
+{% set render_mode = mode or 'both' %}
+
+{% if render_mode in ['html', 'both'] %}
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="fas fa-chart-line"></i> RpG/BpG综合趋势图
+          <small class="text-muted">({{ algorithm_count }}种算法，{{ image_count }}张图片)</small>
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="chart-container" style="height: 500px;">
+          <canvas id="integrated_rpg_bpg_trend_chart" style="width:100%;height:100%;display:block;"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-3">
+  <div class="col-12">
+    <div class="alert alert-info">
+      <h6><i class="fas fa-info-circle"></i> 图表说明</h6>
+      <div class="row">
+        <div class="col-md-6">
+          <p><strong>线条样式：</strong></p>
+          <ul class="mb-0">
+            <li><strong>实线</strong> - RpG数值（红/绿比值）</li>
+            <li><strong>虚线</strong> - BpG数值（蓝/绿比值）</li>
+          </ul>
+        </div>
+        <div class="col-md-6">
+          <p><strong>算法颜色：</strong></p>
+          <ul class="mb-0">
+            <li><span style="color: #e91e63; font-weight: bold;">●</span> SGW算法</li>
+            <li><span style="color: #00bcd4; font-weight: bold;">●</span> AGW_noMap算法</li>
+            <li><span style="color: #3f51b5; font-weight: bold;">●</span> AGW算法</li>
+            <li><span style="color: #4caf50; font-weight: bold;">●</span> Mix算法</li>
+            <li><span style="color: #ff9800; font-weight: bold;">●</span> After_face算法</li>
+            <li><span style="color: #9c27b0; font-weight: bold;">●</span> cnvgEst算法</li>
+          </ul>
+        </div>
+      </div>
+      <hr>
+      <small class="text-muted">
+        <i class="fas fa-mouse-pointer"></i> 点击图例显示/隐藏算法线条 |
+        <i class="fas fa-search-plus"></i> 悬停查看数值 |
+        <i class="fas fa-arrows-alt"></i> 支持缩放/平移
+      </small>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if render_mode in ['script', 'both'] %}
+<script>
+// RpG/BpG综合趋势图渲染（模板）
+(function() {
+  function renderIntegratedTrendChart() {
+    var ctx = document.getElementById('integrated_rpg_bpg_trend_chart');
+    if (!ctx) { console.error('==liuq debug== 找不到canvas元素: integrated_rpg_bpg_trend_chart'); return; }
+    var c = ctx.getContext('2d');
+    new Chart(c, {
+      type: 'line',
+      data: {
+        labels: {{ image_labels|tojson }},
+        datasets: {{ datasets_json|safe }}
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+          title: { display: true, text: 'RpG/BpG综合趋势分析', font: { size: 16, weight: 'bold' } },
+          legend: { display: true, position: 'top' }
+        },
+        scales: {
+          x: { display: true, title: { display: true, text: '图片序号' } },
+          y: { display: true, title: { display: true, text: '数值' }, beginAtZero: false }
+        }
+      }
+    });
+  }
+  if (typeof window.waitForAssetThen === 'function') {
+    window.waitForAssetThen(renderIntegratedTrendChart);
+  } else {
+    // 兜底：兼容没有辅助函数的情况
+    if (typeof Chart === 'undefined') {
+      var retry = function(){ if (typeof Chart !== 'undefined') { renderIntegratedTrendChart(); } else { setTimeout(retry, 200); } };
+      retry();
+    } else {
+      renderIntegratedTrendChart();
+    }
+  }
+})();
+</script>
+{% endif %}

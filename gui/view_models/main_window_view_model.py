@@ -235,50 +235,27 @@ class MainWindowViewModel(BaseViewModel):
             return False
 
     def _execute_report_generation(self) -> Optional[str]:
-        """
-        执行实际的报告生成逻辑（从旧的MainWindow.generate_html_report迁移）
-
-        Returns:
-            str: 报告文件路径，失败返回None
-        """
+        """执行实际的报告生成逻辑（迁移自旧版 MainWindow.generate_html_report）。"""
         try:
-            # 导入必要的类
-            from core.services.reporting.html_generator import UniversalHTMLGenerator
-            from core.services.reporting.combined_report_data_provider import CombinedReportDataProvider
-            from core.services.map_analysis.multi_dimensional_analyzer import MultiDimensionalAnalyzer
+            from core.services.reporting.domains.map import MapMultiDimensionalReportGenerator
             from core.models.scene_classification_config import SceneClassificationConfig, get_default_config_path
 
-            # 检查是否有MapConfiguration数据
             if not self._map_configuration:
-                logger.error("==liuq debug== 缺少MapConfiguration数据，无法创建多维度分析器")
+                logger.error("==liuq debug== 缺少MapConfiguration数据，无法生成多维度报告")
                 return None
 
-            # 创建多维度分析器（需要传递configuration参数）
-            classification_config = SceneClassificationConfig.load_from_file(get_default_config_path())
-            multi_dimensional_analyzer = MultiDimensionalAnalyzer(
-                self._map_configuration,
-                classification_config
-            )
+            try:
+                classification_config = SceneClassificationConfig.load_from_file(get_default_config_path())
+            except Exception:
+                classification_config = SceneClassificationConfig()
 
-            # 执行多维度分析
-            multi_dimensional_result = multi_dimensional_analyzer.analyze()
-
-            # 创建组合数据提供者
-            combined_data_provider = CombinedReportDataProvider(
-                self._map_analyzer,
-                multi_dimensional_analyzer,
-                include_multi_dimensional=True  # 默认包含多维度分析
-            )
-
-            # 创建报告生成器
-            html_generator = UniversalHTMLGenerator()
-
-            # 生成报告
-            report_path = html_generator.generate_report(
-                combined_data_provider,
-                template_name="map_analysis"
-            )
-
+            generator = MapMultiDimensionalReportGenerator()
+            report_path = generator.generate({
+                'map_configuration': self._map_configuration,
+                'include_multi_dimensional': True,
+                'classification_config': classification_config,
+                    'template_name': 'reporting/domains/map/report.html'
+            })
             return report_path
 
         except Exception as e:

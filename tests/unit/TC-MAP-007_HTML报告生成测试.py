@@ -23,7 +23,7 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
 
 from core.services.map_analysis.xml_parser_service import XMLParserService
-from core.services.reporting.unified_report_manager import UnifiedReportManager
+from core.services.reporting.manager import UnifiedReportManager
 from gui.main_window import MainWindow
 
 logger = logging.getLogger(__name__)

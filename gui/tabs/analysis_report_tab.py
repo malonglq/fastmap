@@ -25,7 +25,7 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont, QIcon
 from datetime import datetime
 
-from core.services.reporting.unified_report_manager import UnifiedReportManager, ReportHistoryItem
+from core.services.reporting.manager import UnifiedReportManager, ReportHistoryItem
 from core.interfaces.report_generator import ReportType
 from gui.styles.style_utils import (
     create_styled_button, create_title_label, create_card_group,
@@ -42,7 +42,7 @@ class AnalysisReportTab(QWidget):
     
     统一管理三种报告类型：
     1. EXIF对比分析报告
-    2. Map多维度分析报告  
+    2. Map多维度分析报告
     3. 预留报告类型
     """
     
@@ -145,7 +145,7 @@ class AnalysisReportTab(QWidget):
             "预留功能",
             button_type="ghost",
             min_height=80,
-            icon="🔮"
+            icon="🛠️"
         )
         self.reserved_btn.clicked.connect(self.open_reserved_dialog)
         self.reserved_btn.setEnabled(False)  # 暂时禁用
@@ -201,7 +201,7 @@ class AnalysisReportTab(QWidget):
         """打开EXIF对比分析对话框"""
         try:
             from gui.dialogs.exif_comparison_dialog import ExifComparisonDialog
-            from core.services.reporting.exif_comparison_report_generator import ExifComparisonReportGenerator
+            from core.services.reporting.domains.exif import ExifComparisonReportGenerator
 
             # 创建对话框
             dialog = ExifComparisonDialog(self)
@@ -229,7 +229,7 @@ class AnalysisReportTab(QWidget):
     def generate_exif_comparison_report(self, config: Dict[str, Any]):
         """生成EXIF对比分析报告"""
         try:
-            from core.services.reporting.exif_comparison_report_generator import ExifComparisonReportGenerator
+            from core.services.reporting.domains.exif import ExifComparisonReportGenerator
             from core.interfaces.report_generator import ReportType
 
             # 显示进度遮罩
@@ -321,7 +321,7 @@ class AnalysisReportTab(QWidget):
                 return
 
             from gui.dialogs.map_multi_dimensional_dialog import MapMultiDimensionalDialog
-            from core.services.reporting.map_multi_dimensional_report_generator import MapMultiDimensionalReportGenerator
+            from core.services.reporting.domains.map import MapMultiDimensionalReportGenerator
 
             # 创建对话框
             dialog = MapMultiDimensionalDialog(map_configuration, self)
@@ -349,7 +349,7 @@ class AnalysisReportTab(QWidget):
     def generate_map_multi_dimensional_report(self, config: Dict[str, Any]):
         """生成Map多维度分析报告"""
         try:
-            from core.services.reporting.map_multi_dimensional_report_generator import MapMultiDimensionalReportGenerator
+            from core.services.reporting.domains.map import MapMultiDimensionalReportGenerator
             from core.interfaces.report_generator import ReportType
 
             # 显示进度提示
@@ -395,8 +395,8 @@ class AnalysisReportTab(QWidget):
     def open_reserved_dialog(self):
         """打开预留功能对话框"""
         QMessageBox.information(
-            self, 
-            "预留功能", 
+            self,
+            "预留功能",
             "此功能为未来扩展预留\n\n"
             "将在阶段5实现可插拔的报告类型架构"
         )
@@ -442,8 +442,8 @@ class AnalysisReportTab(QWidget):
     def clear_history(self):
         """清空历史记录"""
         reply = QMessageBox.question(
-            self, 
-            "确认清空", 
+            self,
+            "确认清空",
             "确定要清空所有历史记录吗？\n\n此操作不可撤销。",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No
@@ -481,7 +481,7 @@ class AnalysisReportTab(QWidget):
     
     def get_main_window(self):
         """获取主窗口引用（更健壮）
-        优先返回顶层Window，再回退父链搜索；不再依赖是否已有map_configuration属性。
+        优先返回顶层Window，再回退父链搜索；不再依赖是否有map_configuration属性。
         """
         try:
             # 1) 首选顶层window()

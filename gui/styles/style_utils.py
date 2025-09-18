@@ -38,7 +38,7 @@ def create_styled_button(text: str,
         button_type: 按钮类型 (primary, secondary, success, warning, error, ghost)
         min_height: 最小高度
         min_width: 最小宽度（可选）
-        icon: 图标文本（可选，如 "📊"）
+        icon: 图标文本（可选，如 "📁"）
         
     Returns:
         配置好样式的QPushButton
@@ -137,7 +137,7 @@ def create_title_label(text: str,
         return label
 
 
-def create_card_group(title: str, 
+def create_card_group(title: str,
                      content_widget: Optional[QWidget] = None) -> QGroupBox:
     """
     创建卡片式分组框

@@ -1,0 +1,98 @@
+{% set render_mode = mode or 'both' %}
+{% set has_charts = charts | length > 0 %}
+
+{% if render_mode in ['html', 'both'] %}
+  {% if has_charts %}
+  <div class="row">
+    {% for chart in charts %}
+    <div class="col-md-6 mb-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">{{ chart.field_name }} 趋势图</h5>
+        </div>
+        <div class="card-body">
+          <canvas id="{{ chart.chart_id }}" width="400" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i>
+    没有足够的趋势数据来生成图表
+  </div>
+  {% endif %}
+{% endif %}
+
+{% if render_mode in ['script', 'both'] and has_charts %}
+<script>
+{% for chart in charts %}
+(function() {
+    function renderOne(){
+        const ctx = document.getElementById('{{ chart.chart_id }}');
+        if (!ctx) return;
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ chart.sequence_numbers | tojson }},
+                datasets: [
+                    {
+                        label: '测试值',
+                        data: {{ chart.test_values | tojson }},
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        tension: 0.1
+                    },
+                    {
+                        label: '参考值',
+                        data: {{ chart.ref_values | tojson }},
+                        borderColor: 'rgb(255, 99, 132)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        tension: 0.1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: '{{ chart.field_name }}'
+                    },
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: '序列号'
+                        }
+                    },
+                    y: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: '数值'
+                        }
+                    }
+                }
+            }
+        });
+    }
+    if (typeof window.waitForAssetThen === 'function') {
+        window.waitForAssetThen(renderOne);
+    } else {
+        if (typeof Chart === 'undefined') {
+            var t=function(){ if(typeof Chart!=='undefined'){renderOne();} else { setTimeout(t,200);} }; t();
+        } else {
+            renderOne();
+        }
+    }
+})();
+{% endfor %}
+</script>
+{% endif %}

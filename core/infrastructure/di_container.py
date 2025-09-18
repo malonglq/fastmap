@@ -258,11 +258,9 @@ def configure_services() -> DIContainer:
     container.register_singleton(ImageExportWorkflowService)
     
     # 注册报告生成服务
-    from core.services.reporting import UnifiedReportManager, UniversalHTMLGenerator, UniversalChartGenerator
+    from core.services.reporting import UnifiedReportManager
     from core.services.reporting import ExifComparisonReportGenerator, MapMultiDimensionalReportGenerator
     container.register_singleton(UnifiedReportManager)
-    container.register_singleton(UniversalHTMLGenerator)
-    container.register_singleton(UniversalChartGenerator)
     container.register_singleton(ExifComparisonReportGenerator)
     container.register_singleton(MapMultiDimensionalReportGenerator)
     

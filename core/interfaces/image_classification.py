@@ -9,6 +9,7 @@ Action: Added; Timestamp: 2025-08-11 10:55:00 +08:00; Reason: 新增图片分类
 }}
 """
 from __future__ import annotations
+import json
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Protocol
 from pathlib import Path
@@ -27,12 +28,52 @@ class ChangeThresholds:
     # 新增：无变化上限（用于字段对比的百分比分类）；None 表示使用旧逻辑(仅0视为无变化)
     pct_no_change_max: Optional[float] = None
 
+    @classmethod
+    def from_config_file(cls, config_path: Optional[Path] = None) -> 'ChangeThresholds':
+        """从配置文件加载阈值设置"""
+        if config_path is None:
+            # 使用默认配置路径
+            current_dir = Path(__file__).parent
+            config_path = current_dir.parent.parent / "data" / "configs" / "thresholds.json"
+
+        try:
+            if config_path.exists():
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config_data = json.load(f)
+
+                thresholds_config = config_data.get('thresholds', {})
+
+                # 从配置文件中读取值，如果没有则使用默认值
+                cct_config = thresholds_config.get('cct', {})
+                percentage_config = thresholds_config.get('percentage', {})
+
+                return cls(
+                    cct_large_min=cct_config.get('large_min', 500.0),
+                    cct_medium_min=cct_config.get('medium_min', 100.0),
+                    cct_medium_max=cct_config.get('medium_max', 500.0),
+                    pct_large_min=percentage_config.get('large_min', 10.0),
+                    pct_medium_min=percentage_config.get('medium_min', 1.0),
+                    pct_medium_max=percentage_config.get('medium_max', 10.0),
+                    pct_no_change_max=percentage_config.get('no_change_max')
+                )
+        except Exception as e:
+            # 如果配置文件读取失败，使用默认值
+            print(f"Warning: Failed to load thresholds config from {config_path}: {e}")
+
+        # 如果配置文件不存在或读取失败，返回默认值
+        return cls()
+
+    @classmethod
+    def load_default(cls) -> 'ChangeThresholds':
+        """加载默认阈值设置（向后兼容）"""
+        return cls()
+
 
 @dataclass
 class ClassificationOptions:
     primary_field: str
     selected_fields: List[str] = field(default_factory=list)
-    thresholds: ChangeThresholds = field(default_factory=ChangeThresholds)
+    thresholds: ChangeThresholds = field(default_factory=ChangeThresholds.from_config_file)
     is_cct_field: Optional[bool] = None  # None=自动判断
     # 新增：字段对比模式（compare_pair!=None 表示启用）
     # compare_pair: [fieldA, fieldB]

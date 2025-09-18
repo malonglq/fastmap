@@ -1,37 +1,88 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-报告生成服务模块
+"""Reporting service package entry point."""
 
-该模块包含所有与报告生成相关的服务：
-- 统一报告管理
-- HTML生成
-- 图表生成  
-- 各类报告生成器
-"""
-
-# 导入主要服务
-from .unified_report_manager import UnifiedReportManager
-from .html_generator import UniversalHTMLGenerator
-from .html_template_service import HTMLTemplateService
-from .html_style_service import HTMLStyleService
-from .html_content_service import HTMLContentService
-from .chart_generator import UniversalChartGenerator
-from .exif_comparison_report_generator import ExifComparisonReportGenerator
-from .map_multi_dimensional_report_generator import MapMultiDimensionalReportGenerator
-from .combined_report_data_provider import CombinedReportDataProvider
-# EXIF报告辅助函数
-# from .exif_report_helpers import ExifReportHelpers  # 该文件包含辅助函数，非类
+from .engine.report_engine import (
+    ReportGenerator,
+    EXIFReportGenerator,
+    create_report_generator,
+)
+from .infrastructure import (
+    AssetManager,
+    HTMLTemplateService,
+    HTMLStyleService,
+    HTMLContentService,
+    TemplateRenderer,
+    ReportData,
+    ReportConfig,
+    ReportSection,
+    SectionType,
+    TableData,
+    ChartData,
+    ChartType,
+    KPIData,
+    create_table_section,
+    create_chart_section,
+    create_kpi_section,
+    create_text_section,
+    create_html_section,
+)
+from .manager import UnifiedReportManager, ReportHistoryItem
+from .domains import (
+    ExifComparisonReportGenerator,
+    generate_trend_charts_html,
+    generate_chart_scripts,
+    generate_comparison_table,
+    generate_statistics_table,
+    generate_topn_anomaly_table,
+    generate_kpi_cards,
+    generate_per_image_rpg_bpg_analysis,
+    legacy_generate_statistics_table,
+    legacy_generate_kpi_cards,
+    legacy_generate_comparison_table,
+    legacy_generate_per_image_rpg_bpg_analysis,
+    generate_sgw_baseline_analysis,
+    legacy_generate_topn_anomaly_table,
+    MapMultiDimensionalReportGenerator,
+)
 
 __all__ = [
-    'UnifiedReportManager',
-    'UniversalHTMLGenerator',
+    'ReportGenerator',
+    'EXIFReportGenerator',
+    'create_report_generator',
+    'AssetManager',
     'HTMLTemplateService',
     'HTMLStyleService',
     'HTMLContentService',
-    'UniversalChartGenerator',
-    'ExifComparisonReportGenerator', 
+    'TemplateRenderer',
+    'ReportData',
+    'ReportConfig',
+    'ReportSection',
+    'SectionType',
+    'TableData',
+    'ChartData',
+    'ChartType',
+    'KPIData',
+    'create_table_section',
+    'create_chart_section',
+    'create_kpi_section',
+    'create_text_section',
+    'create_html_section',
+    'UnifiedReportManager',
+    'ReportHistoryItem',
+    'ExifComparisonReportGenerator',
+    'generate_trend_charts_html',
+    'generate_chart_scripts',
+    'generate_comparison_table',
+    'generate_statistics_table',
+    'generate_topn_anomaly_table',
+    'generate_kpi_cards',
+    'generate_per_image_rpg_bpg_analysis',
+    'legacy_generate_statistics_table',
+    'legacy_generate_kpi_cards',
+    'legacy_generate_comparison_table',
+    'legacy_generate_per_image_rpg_bpg_analysis',
+    'generate_sgw_baseline_analysis',
+    'legacy_generate_topn_anomaly_table',
     'MapMultiDimensionalReportGenerator',
-    'CombinedReportDataProvider'
-    # 'ExifReportHelpers'  # 该文件包含辅助函数，非类
 ]

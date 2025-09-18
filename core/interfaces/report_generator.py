@@ -157,9 +157,9 @@ class IChartGenerator(ABC):
         pass
     
     @abstractmethod
-    def generate_statistics_chart(self, data: Dict[str, Any], chart_id: str) -> str:
+    def generate_bar_chart(self, data: Dict[str, Any], chart_id: str) -> str:
         """
-        生成统计图表
+        生成柱状图
         
         Args:
             data: 图表数据
@@ -202,10 +202,8 @@ class IHTMLReportGenerator(ABC):
     """HTML报告生成器接口"""
     
     @abstractmethod
-    def generate_report(self, 
-                       data_provider: IReportDataProvider,
-                       output_path: Optional[str] = None,
-                       template_name: str = "default") -> str:
+    def generate_html_report(self, data_provider: IReportDataProvider, output_path: str,
+                             template_name: str = "default") -> str:
         """
         生成HTML报告
         
@@ -220,8 +218,7 @@ class IHTMLReportGenerator(ABC):
         pass
     
     @abstractmethod
-    def generate_html_content(self, report_data: Dict[str, Any], 
-                            template_name: str = "default") -> str:
+    def render_template(self, report_data: Dict[str, Any], template_name: str = "default") -> str:
         """
         生成HTML内容
         
@@ -329,7 +326,7 @@ class ReportGeneratorConfig:
             '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
             '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
         ]
-        self.default_template = "default"
+        self.default_template = "reporting/domains/exif/new_report.html"
         self.auto_open_report = True
         self.include_raw_data = False
         

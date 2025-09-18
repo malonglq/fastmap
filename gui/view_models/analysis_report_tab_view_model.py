@@ -17,9 +17,7 @@ from PyQt5.QtCore import pyqtSignal
 
 from core.infrastructure.base_view_model import BaseViewModel
 from core.infrastructure.event_bus import EventType
-from core.services.reporting.html_template_service import HTMLTemplateService
-from core.services.reporting.html_style_service import HTMLStyleService
-from core.services.reporting.html_content_service import HTMLContentService
+from core.services.reporting.infrastructure import HTMLTemplateService, HTMLStyleService, HTMLContentService
 
 logger = logging.getLogger(__name__)
 

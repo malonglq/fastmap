@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {% set ctx = config.metadata.legacy_context if config and config.metadata else {} %}
+  <title>{{ (ctx.title or report.title) | default('Map 分类特性报告（离线版）') }}</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    .main-container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      margin: 20px;
+      padding: 30px;
+    }
+
+    h1 {
+      font-size: 2.4rem;
+      font-weight: 300;
+      margin: 0;
+      color: #fff;
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      margin: 40px 0 20px;
+      color: #667eea;
+      border-left: 4px solid #667eea;
+      padding-left: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    table { border-collapse:collapse; width:100%; font-size:13px; }
+    th, td { border:1px solid #e5e7eb; padding:6px 8px; text-align:left; }
+    thead { background:#f3f4f6; }
+
+    .panel {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 16px 0;
+      border: 1px solid rgba(76, 91, 212, 0.16);
+      box-shadow: 0 14px 28px rgba(103, 126, 234, 0.12);
+    }
+
+    .panel.header-panel {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: #fff;
+      border: none;
+      box-shadow: 0 12px 24px rgba(102, 126, 234, 0.35);
+    }
+
+    .panel.header-panel .muted { color: rgba(255, 255, 255, 0.85); }
+
+    .muted { color:#6c757d; }
+
+    .charts { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:12px; }
+
+    .tag {
+      display:inline-block;
+      background: rgba(102, 126, 234, 0.12);
+      color: #4c5bd4;
+      border-radius:9999px;
+      padding:2px 10px;
+      margin-right:6px;
+      font-size:12px;
+      font-weight:600;
+    }
+
+    button.toggle {
+      padding:6px 14px;
+      background:#4c6ef5;
+      border:none;
+      border-radius:999px;
+      color:#fff;
+      cursor:pointer;
+      font-size:12px;
+      box-shadow:0 6px 12px rgba(76,110,245,0.18);
+      transition:transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button.toggle:hover {
+      background:#3b5bdb;
+      transform:translateY(-1px);
+      box-shadow:0 10px 20px rgba(76,110,245,0.25);
+    }
+
+    .summary-table th { white-space:nowrap; }
+  </style>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body>
+  {% set generated_at = ctx.generated_at or config.metadata.generation_time if config and config.metadata else '' %}
+  <div class="main-container">
+  <div class="panel header-panel">
+    <h1>{{ (ctx.title or report.title) | default('Map 分类特性报告（离线版）') }}</h1>
+    <div class="muted">维度：ML（强拉 / 减小权重） × 色温段 × BV段</div>
+    <div class="muted">生成时间：{{ generated_at }}</div>
+    {% if ctx.total_maps is defined %}
+      <div class="muted">总 MAP 数量：{{ ctx.total_maps }}</div>
+    {% endif %}
+  </div>
+
+  <h2>分类总表（点击跳转到详情）</h2>
+  <div class="panel" id="summary">
+    {% set bv_headers = ctx.bv_order | default(['BV>6','BV(2,6]','BV[-2,2]','BV<-2']) %}
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>ML/色温段 \ BV段</th>
+          {% for header in bv_headers %}
+            <th>{{ header }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for group in ctx.ml_groups | default([]) %}
+          {% for row in group.rows %}
+            <tr>
+              <th>{{ group.ml_label }}({{ group.ml_value }}) / {{ row.cct_label }}</th>
+              {% for cell in row.cells %}
+                {% if cell.count > 0 %}
+                  <td><a class="anchor" href="#{{ cell.section_id }}">{{ cell.count }} 个</a></td>
+                {% else %}
+                  <td>-</td>
+                {% endif %}
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div id="sections">
+    {% for section in ctx.sections | default([]) %}
+      <div class="panel" id="{{ section.id }}">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <h2 style="margin:0;">{{ section.title }}</h2>
+          <button class="toggle" id="{{ section.id }}_toggle" data-mode="top">展开全部</button>
+        </div>
+        <div class="muted">
+          <span class="tag">ML：{{ section.ml_label }}({{ section.ml_value }})</span>
+          <span class="tag">色温段：{{ section.cct_label }}</span>
+          <span class="tag">BV段：{{ section.bv_label }}</span>
+          <span class="tag">数量：{{ section.count }}</span>
+        </div>
+        <div class="charts">
+          <div id="{{ section.id }}_trend_bv"></div>
+          <div id="{{ section.id }}_trend_ir"></div>
+          <div id="{{ section.id }}_trend_CTemp"></div>
+          <div id="{{ section.id }}_scatter_target"></div>
+        </div>
+        <div class="panel" style="margin-top:12px;">
+          <table>
+            <thead>
+              <tr>
+                <th>alias</th>
+                <th>bv[min,max]</th>
+                <th>ir[min,max]</th>
+                <th>ctemp[min,max]</th>
+                <th>offset_x</th>
+                <th>offset_y</th>
+                <th>weight</th>
+                <th>TransStep</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in section.table_rows %}
+                <tr>
+                  <td>{{ row.alias }}</td>
+                  <td>{{ row.bv_range }}</td>
+                  <td>{{ row.ir_range }}</td>
+                  <td>{{ row.ctemp_range }}</td>
+                  <td>{{ row.offset_x }}</td>
+                  <td>{{ row.offset_y }}</td>
+                  <td>{{ row.weight }}</td>
+                  <td>{{ row.trans_step }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <script>
+    const chartPayloads = {{ ctx.chart_payloads_json | default('[]') | safe }};
+    const modes = {};
+    let chartPayloadsCurrent = null;
+
+    function buildSeries(values, aliases, topOnly, metric) {
+      if (!values || !Array.isArray(values)) return { labels: [], mins: [], maxs: [], spans: [] };
+      const indexed = values.map((min, idx) => ({
+        min: values[idx],
+        max: (metric === 'bv' ? chartPayloadsCurrent.bv.maxs[idx] : metric === 'ir' ? chartPayloadsCurrent.ir.maxs[idx] : chartPayloadsCurrent.CTemp.maxs[idx]),
+        span: (metric === 'bv' ? chartPayloadsCurrent.bv.spans[idx] : metric === 'ir' ? chartPayloadsCurrent.ir.spans[idx] : chartPayloadsCurrent.CTemp.spans[idx]),
+        alias: aliases[idx]
+      }));
+      indexed.sort((a, b) => b.span - a.span);
+      const sliced = topOnly ? indexed.slice(0, Math.min(30, indexed.length)) : indexed;
+      return {
+        labels: sliced.map(item => item.alias),
+        mins: sliced.map(item => item.min),
+        maxs: sliced.map(item => item.max),
+        spans: sliced.map(item => item.span)
+      };
+    }
+
+    function renderBar(targetId, label, series) {
+      if (!document.getElementById(targetId)) return;
+      Plotly.newPlot(targetId, [{
+        type: 'bar',
+        x: series.labels,
+        y: series.spans,
+        marker: { color: '#2563eb' },
+        name: label
+      }], {
+        title: `${label} 跨度`,
+        margin: { t: 30 },
+        xaxis: { automargin: true },
+        yaxis: { zeroline: false }
+      }, { responsive: true, displayModeBar: false });
+    }
+
+    function renderScatter(targetId, offsets, topOnly) {
+      if (!document.getElementById(targetId)) return;
+      const indexed = offsets.x.map((x, idx) => ({ x, y: offsets.y[idx], alias: offsets.alias[idx] }));
+      indexed.sort((a, b) => Math.hypot(b.x, b.y) - Math.hypot(a.x, a.y));
+      const sliced = topOnly ? indexed.slice(0, Math.min(30, indexed.length)) : indexed;
+      Plotly.newPlot(targetId, [{
+        x: sliced.map(item => item.x),
+        y: sliced.map(item => item.y),
+        mode: 'markers+text',
+        text: sliced.map(item => item.alias),
+        textposition: 'top center',
+        marker: { color: '#f97316', size: 10 },
+      }], {
+        title: '偏移散点 (offset_x vs offset_y)',
+        margin: { t: 30 },
+        xaxis: { zeroline: false },
+        yaxis: { zeroline: false }
+      }, { responsive: true, displayModeBar: false });
+    }
+
+    function renderSection(sectionId, payload, topOnly) {
+      if (!payload) return;
+      chartPayloadsCurrent = payload;
+      const bvSeries = buildSeries(payload.bv.mins, payload.bv.alias, topOnly, 'bv');
+      const irSeries = buildSeries(payload.ir.mins, payload.ir.alias, topOnly, 'ir');
+      const ctSeries = buildSeries(payload.CTemp.mins, payload.CTemp.alias, topOnly, 'ct');
+      renderBar(`${sectionId}_trend_bv`, 'BV', bvSeries);
+      renderBar(`${sectionId}_trend_ir`, 'IR', irSeries);
+      renderBar(`${sectionId}_trend_CTemp`, 'CTemp', ctSeries);
+      renderScatter(`${sectionId}_scatter_target`, payload.offsets, topOnly);
+    }
+
+    function median(values) {
+      if (!values || !values.length) return 0;
+      const sorted = [...values].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    }
+
+    function mean(values) {
+      if (!values || !values.length) return 0;
+      return values.reduce((sum, v) => sum + v, 0) / values.length;
+    }
+
+    function updateSummaryLine(sectionId, payload, topOnly) {
+      const panel = document.getElementById(sectionId);
+      if (!panel || !payload) return;
+      const header = panel.querySelector('h2');
+      if (!header) return;
+      let summary = panel.querySelector('.summary-line');
+      if (!summary) {
+        summary = document.createElement('div');
+        summary.className = 'muted summary-line';
+        header.insertAdjacentElement('afterend', summary);
+      }
+      const bvSpans = payload.bv.spans || [];
+      const irSpans = payload.ir.spans || [];
+      const ctSpans = payload.CTemp.spans || [];
+      const offsets = payload.offsets || {};
+      const indices = [...Array(bvSpans.length).keys()];
+      const useIdx = topOnly ? indices.slice(0, Math.min(30, indices.length)) : indices;
+      const topAliases = [];
+      useIdx.slice(0, 3).forEach(i => topAliases.push((payload.bv.alias || [])[i] || ''));
+      const bvMed = median(useIdx.map(i => bvSpans[i] || 0));
+      const irMed = median(useIdx.map(i => irSpans[i] || 0));
+      const ctMed = median(useIdx.map(i => ctSpans[i] || 0));
+      const oxMean = mean(useIdx.map(i => (offsets.x || [])[i] || 0));
+      const oyMean = mean(useIdx.map(i => (offsets.y || [])[i] || 0));
+      summary.textContent = `小结：BV跨度中位 ${bvMed.toPrecision(3)}，IR跨度中位 ${irMed.toPrecision(3)}，CTemp跨度中位 ${ctMed.toPrecision(3)}；偏移均值 (${oxMean.toPrecision(3)}, ${oyMean.toPrecision(3)})；Top3：${topAliases.filter(Boolean).join(', ')}`;
+    }
+
+    function initSections() {
+      chartPayloads.forEach(function(item) {
+        const sectionId = item[0];
+        const payload = item[1];
+        modes[sectionId] = 'top';
+        renderSection(sectionId, payload, true);
+        updateSummaryLine(sectionId, payload, true);
+        const button = document.getElementById(sectionId + '_toggle');
+        if (button) {
+          button.addEventListener('click', function() {
+            const nextMode = modes[sectionId] === 'top' ? 'all' : 'top';
+            modes[sectionId] = nextMode;
+            button.textContent = nextMode === 'top' ? '展开全部' : '收起Top-30';
+            const topOnly = nextMode === 'top';
+            renderSection(sectionId, payload, topOnly);
+            updateSummaryLine(sectionId, payload, topOnly);
+          });
+        }
+      });
+    }
+
+    if (document.readyState === 'complete') {
+      initSections();
+    } else {
+      window.addEventListener('load', initSections);
+    }
+  </script>
+  </div>
+</body>
+</html>

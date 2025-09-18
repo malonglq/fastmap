@@ -166,7 +166,7 @@ class AnalysisConfigDialog(QDialog):
         rules_text = """
 <b>场景分类规则：</b><br>
 <br>
-<b>🌙 夜景场景：</b><br>
+<b>🌃 夜景场景：</b><br>
 • BV_min < BV室内下限<br>
 <br>
 <b>🏞️ 室外场景：</b><br>
@@ -269,7 +269,7 @@ class AnalysisConfigDialog(QDialog):
             
             if validation_result['warnings']:
                 warning_msg = "配置警告：\n" + "\n".join(validation_result['warnings'])
-                reply = QMessageBox.question(self, "配置警告", 
+                reply = QMessageBox.question(self, "配置警告",
                                            warning_msg + "\n\n是否继续？",
                                            QMessageBox.Yes | QMessageBox.No)
                 if reply != QMessageBox.Yes:
@@ -293,7 +293,7 @@ class AnalysisConfigDialog(QDialog):
         """从文件加载配置"""
         try:
             file_path, _ = QFileDialog.getOpenFileName(
-                self, "加载配置文件", get_default_config_path(), 
+                self, "加载配置文件", get_default_config_path(),
                 "JSON文件 (*.json);;所有文件 (*)"
             )
             
@@ -330,7 +330,7 @@ class AnalysisConfigDialog(QDialog):
     
     def reset_to_default(self):
         """重置为默认配置"""
-        reply = QMessageBox.question(self, "确认重置", 
+        reply = QMessageBox.question(self, "确认重置",
                                    "确定要重置为默认配置吗？当前修改将丢失。",
                                    QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:

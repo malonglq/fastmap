@@ -1,0 +1,24 @@
+{% if rows and rows|length > 0 %}
+<table class="table table-striped table-hover">
+  <thead>
+    <tr>
+      <th>字段</th>
+      <th>序号</th>
+      <th>偏差%</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    {% set cls = 'highlight-high' if (r.pct | abs) > 10 else ('highlight-medium' if (r.pct | abs) > 5 else '') %}
+    <tr class="{{ cls }}">
+      <td>{{ r.field }}</td>
+      <td>{{ r.sequence }}</td>
+      <td>{{ r.pct | round(2) }}%</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  </table>
+{% else %}
+<p class="muted">无异常样本</p>
+{% endif %}
+

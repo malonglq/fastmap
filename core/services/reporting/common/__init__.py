@@ -1,0 +1,46 @@
+"""Compatibility layer for legacy imports (alias to infrastructure)."""
+
+from ..manager import UnifiedReportManager, ReportHistoryItem
+from ..infrastructure import (
+    AssetManager,
+    TemplateRenderer,
+    ReportData,
+    ReportConfig,
+    ReportSection,
+    SectionType,
+    TableData,
+    ChartData,
+    ChartType,
+    KPIData,
+    create_text_section,
+    create_table_section,
+    create_chart_section,
+    create_kpi_section,
+    create_html_section,
+    HTMLTemplateService,
+    HTMLStyleService,
+    HTMLContentService,
+)
+
+__all__ = [
+    'AssetManager',
+    'TemplateRenderer',
+    'ReportData',
+    'ReportConfig',
+    'ReportSection',
+    'SectionType',
+    'TableData',
+    'ChartData',
+    'ChartType',
+    'KPIData',
+    'create_text_section',
+    'create_table_section',
+    'create_chart_section',
+    'create_kpi_section',
+    'create_html_section',
+    'HTMLTemplateService',
+    'HTMLStyleService',
+    'HTMLContentService',
+    'UnifiedReportManager',
+    'ReportHistoryItem',
+]

@@ -43,7 +43,7 @@ class ImageClassifierService(IImageClassifierService):
         else:
             is_cct = False  # 字段对比(SPC)按百分比分类
 
-        th: ChangeThresholds = options.thresholds or ChangeThresholds()
+        th: ChangeThresholds = options.thresholds or ChangeThresholds.from_config_file()
 
         categories = {
             'large_changes': [],

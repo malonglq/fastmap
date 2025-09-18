@@ -29,9 +29,12 @@ from .feature_points import ImageClassifierService
 
 # 报告生成服务  
 from .reporting import (
-    UnifiedReportManager, UniversalHTMLGenerator, UniversalChartGenerator,
+    ReportGenerator, EXIFReportGenerator, create_report_generator,
     ExifComparisonReportGenerator, MapMultiDimensionalReportGenerator,
-    CombinedReportDataProvider
+    TemplateRenderer, HTMLTemplateService, HTMLStyleService, HTMLContentService,
+    AssetManager, UnifiedReportManager, ReportHistoryItem,
+    generate_statistics_table, generate_kpi_cards, generate_comparison_table,
+    generate_per_image_rpg_bpg_analysis, generate_sgw_baseline_analysis, generate_topn_anomaly_table
 )
 
 # 共享服务
@@ -55,9 +58,11 @@ __all__ = [
     'ImageClassifierService',
     
     # 报告生成服务
-    'UnifiedReportManager', 'UniversalHTMLGenerator', 'UniversalChartGenerator',
-    'ExifComparisonReportGenerator', 'MapMultiDimensionalReportGenerator', 
-    'CombinedReportDataProvider',
+    'ReportGenerator', 'EXIFReportGenerator', 'create_report_generator',
+    'ExifComparisonReportGenerator', 'MapMultiDimensionalReportGenerator',
+    'TemplateRenderer', 'HTMLTemplateService', 'HTMLStyleService', 'HTMLContentService',
+    'AssetManager', 'UnifiedReportManager', 'ReportHistoryItem', 'generate_statistics_table', 'generate_kpi_cards', 'generate_comparison_table',
+    'generate_per_image_rpg_bpg_analysis', 'generate_sgw_baseline_analysis', 'generate_topn_anomaly_table',
     
     # 共享服务
     'DataBindingManagerImpl', 'FieldRegistryService', 'FieldEditorFactory'

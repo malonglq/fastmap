@@ -1,0 +1,618 @@
+{% extends 'reporting/base.html' %}
+
+{% block head %}
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+    }
+
+    main.container {
+      max-width: 100%;
+      padding: 0;
+      margin: 0;
+    }
+
+    .main-container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      margin: 20px;
+      padding: 30px;
+      min-height: calc(100vh - 40px);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 24px;
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 12px 24px rgba(102, 126, 234, 0.35);
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 2.4rem;
+      font-weight: 300;
+    }
+
+    .header p {
+      margin: 6px 0 0 0;
+      opacity: 0.9;
+      letter-spacing: 0.5px;
+    }
+
+    .summary {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 32px;
+      box-shadow: 0 10px 20px rgba(103, 126, 234, 0.08);
+      border: 1px solid rgba(102, 126, 234, 0.18);
+    }
+
+    .summary h3 {
+      font-weight: 500;
+      color: #4c5bd4;
+      margin-bottom: 18px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(102, 126, 234, 0.12);
+      color: #4c5bd4;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+
+    .muted {
+      color: #6c757d;
+      font-size: 0.9rem;
+    }
+
+    h2.section-title {
+      color: #667eea;
+      margin-top: 48px;
+      margin-bottom: 20px;
+      font-weight: 500;
+      border-left: 4px solid #667eea;
+      padding-left: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .kpi-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .kpi-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+      border: 1px solid rgba(102, 126, 234, 0.2);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 12px 24px rgba(102, 126, 234, 0.08);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 30px rgba(102, 126, 234, 0.16);
+    }
+
+    .kpi-title {
+      color: #6c757d;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .kpi-value {
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: #425466;
+    }
+
+    .kpi-subtitle {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: #9aa6b2;
+      letter-spacing: 0.3px;
+    }
+
+    .rate-tag {
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .rate-tag.positive { color: #2e7d32; }
+    .rate-tag.warning { color: #ef6c00; }
+    .rate-tag.negative { color: #d32f2f; }
+
+    .table-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid rgba(76, 91, 212, 0.16);
+      box-shadow: 0 14px 28px rgba(103, 126, 234, 0.12);
+    }
+
+    .highlight-high { color: #d32f2f; font-weight: 600; }
+    .highlight-medium { color: #ef6c00; font-weight: 600; }
+
+    .table-container {
+      max-height: 520px;
+      overflow: auto;
+      border-radius: 10px;
+      border: 1px solid #dee2e6;
+    }
+
+    .table thead tr:first-child {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      color: #fff;
+    }
+
+    .table thead tr:nth-child(2) {
+      background: #f4f6ff;
+    }
+
+    .sticky-col {
+      position: sticky;
+      left: 0;
+      background: inherit;
+      z-index: 2;
+    }
+
+    .sticky-col-1 { left: 0; }
+    .sticky-col-2 { left: 220px; }
+
+    tbody tr:nth-child(even) {
+      background: rgba(102, 126, 234, 0.04);
+    }
+
+    tbody tr:hover {
+      background: rgba(102, 126, 234, 0.12);
+    }
+
+    tbody tr:hover .sticky-col {
+      background: rgba(102, 126, 234, 0.18);
+    }
+
+    .change-positive { color: #2e7d32; font-weight: 600; }
+    .change-negative { color: #d32f2f; font-weight: 600; }
+    .change-neutral { color: #616161; font-weight: 500; }
+
+    .field-section {
+      margin: 36px 0;
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid rgba(118, 75, 162, 0.12);
+      box-shadow: 0 14px 28px rgba(72, 61, 139, 0.15);
+    }
+
+    .field-section h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #444;
+      margin: 0;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 320px;
+      background: linear-gradient(135deg, rgba(106, 123, 246, 0.08), rgba(118, 75, 162, 0.08));
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .search-input {
+      max-width: 320px;
+      margin-bottom: 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(102, 126, 234, 0.3);
+      box-shadow: 0 6px 12px rgba(102, 126, 234, 0.12);
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="main-container">
+    <div class="header">
+      <h1><i class="fas fa-camera"></i> {{ report.title }}</h1>
+      <p>生成时间：{{ report.metadata.generation_time }}</p>
+      <p>分析字段数量：{{ report.metadata.selected_fields_count }} 个</p>
+    </div>
+
+    <div class="summary">
+      <h3><i class="fas fa-info-circle"></i> 报告摘要</h3>
+      <div class="row g-4">
+        <div class="col-md-6">
+          <p><strong><i class="fas fa-file-csv"></i> 测试机文件：</strong> {{ report.metadata.test_file }}</p>
+          <p><strong><i class="fas fa-file-csv"></i> 对比机文件：</strong> {{ report.metadata.reference_file }}</p>
+          <p class="muted"><i class="fas fa-database"></i> 总计记录：测试 {{ report.metadata.match_summary.total_test }} 条，参考 {{ report.metadata.match_summary.total_reference }} 条</p>
+        </div>
+        <div class="col-md-6">
+          <p>
+            <strong><i class="fas fa-link"></i> 匹配结果：</strong>
+            {{ report.metadata.match_summary.matched_pairs }} 对
+            <span class="pill">覆盖率 {{ report.metadata.match_summary.match_rate_percent | round(1) }}%</span>
+            <span class="pill">阈值 {{ report.metadata.match_summary.similarity_threshold }}</span>
+          </p>
+          <p class="muted"><i class="fas fa-exclamation-triangle"></i> 未匹配 - 测试：{{ report.metadata.match_summary.unmatched_test }} | 参考：{{ report.metadata.match_summary.unmatched_reference }}</p>
+        </div>
+      </div>
+    </div>
+
+    {% if report.metadata.kpi_metrics %}
+    <h2 class="section-title"><i class="fas fa-tachometer-alt"></i> 核心 KPI 总览</h2>
+    <div class="kpi-cards">
+      {% for metric in report.metadata.kpi_metrics %}
+      <div class="kpi-card">
+        <div class="kpi-title"><i class="{{ metric.icon }}"></i> {{ metric.display_name }}</div>
+        <div class="row text-center g-3">
+          <div class="col-6">
+            <div class="kpi-value">{{ metric.mae | round(3) }}</div>
+            <div class="kpi-subtitle">MAE</div>
+          </div>
+          <div class="col-6">
+            <div class="kpi-value">{{ metric.rmse | round(3) }}</div>
+            <div class="kpi-subtitle">RMSE</div>
+          </div>
+          <div class="col-6">
+            <div class="kpi-value">{{ metric.r2 | round(3) }}</div>
+            <div class="kpi-subtitle">R²</div>
+          </div>
+          <div class="col-6">
+            <div class="kpi-value rate-tag {{ metric.rate_class }}">{{ metric.anomaly_rate | round(1) }}%</div>
+            <div class="kpi-subtitle">异常率</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if report.metadata.integrated_trend.datasets %}
+    <h2 class="section-title"><i class="fas fa-wave-square"></i> RpG/BpG 综合趋势</h2>
+    <div class="table-card">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h5 class="mb-1"><i class="fas fa-chart-line"></i> RpG/BpG综合趋势图</h5>
+          <small class="text-muted">({{ report.metadata.integrated_trend.algorithm_count }} 种算法，{{ report.metadata.integrated_trend.image_count }} 张图片)</small>
+        </div>
+      </div>
+      <div class="chart-container" style="height: 420px;">
+        <canvas id="integrated_rpg_bpg_trend_chart"></canvas>
+      </div>
+      <div class="mt-3 p-3" style="background:#f1f5ff;border-radius:10px;border:1px solid rgba(102,126,234,0.2);">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <h6><i class="fas fa-info-circle"></i> 线条样式</h6>
+            <ul class="mb-0">
+              <li><strong>实线</strong>：RpG 数值（红/绿比值）</li>
+              <li><strong>虚线</strong>：BpG 数值（蓝/绿比值）</li>
+            </ul>
+          </div>
+          <div class="col-md-6">
+            <h6><i class="fas fa-palette"></i> 算法配色</h6>
+            <ul class="mb-0">
+              <li><span style="color:#e91e63;font-weight:bold;">●</span> SGW 算法</li>
+              <li><span style="color:#3f51b5;font-weight:bold;">●</span> AGW 算法</li>
+              <li><span style="color:#00bcd4;font-weight:bold;">●</span> AGW_noMap 算法</li>
+              <li><span style="color:#4caf50;font-weight:bold;">●</span> Mix 算法</li>
+              <li><span style="color:#ff9800;font-weight:bold;">●</span> After_face 算法</li>
+              <li><span style="color:#9c27b0;font-weight:bold;">●</span> cnvgEst 算法</li>
+            </ul>
+          </div>
+        </div>
+        <hr>
+        <small class="text-muted d-flex flex-wrap gap-3">
+          <span><i class="fas fa-mouse-pointer"></i> 点击图例可切换算法曲线</span>
+          <span><i class="fas fa-search-plus"></i> 悬停查看详细数值</span>
+          <span><i class="fas fa-sync-alt"></i> 支持平移与缩放操作</span>
+        </small>
+      </div>
+    </div>
+    {% endif %}
+
+    <h2 class="section-title"><i class="fas fa-table"></i> 字段对比明细</h2>
+    <div class="table-card">
+      <input type="text" id="comparison-search" class="form-control search-input" placeholder="🔍 输入关键字过滤表格...">
+      <div class="table-container">
+        <table id="comparison-table" class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th class="sticky-col sticky-col-1">测试文件</th>
+              <th class="sticky-col sticky-col-2">参考文件</th>
+              <th>相似度</th>
+              {% for field in report.metadata.selected_field_details %}
+              <th colspan="3">{{ field.display_name }}</th>
+              {% endfor %}
+            </tr>
+            <tr>
+              <th class="sticky-col sticky-col-1"></th>
+              <th class="sticky-col sticky-col-2"></th>
+              <th></th>
+              {% for _ in report.metadata.selected_field_details %}
+              <th>处理前</th>
+              <th>处理后</th>
+              <th>变化%</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in report.metadata.comparison_rows %}
+            <tr>
+              <td class="sticky-col sticky-col-1">{{ row.filename1 }}</td>
+              <td class="sticky-col sticky-col-2">{{ row.filename2 }}</td>
+              <td>{{ row.similarity | round(3) }}</td>
+              {% for cell in row.cells %}
+              <td>{{ cell.before }}</td>
+              <td>{{ cell.after }}</td>
+              <td class="{{ cell.change_class }}">{{ cell.change_pct }}</td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% if report.metadata.statistics_rows %}
+    <h2 class="section-title"><i class="fas fa-chart-bar"></i> 统计指标</h2>
+    <div class="table-card">
+      <table class="table table-striped table-hover mb-0">
+        <thead>
+          <tr>
+            <th>字段名</th>
+            <th>测试均值</th>
+            <th>参考均值</th>
+            <th>测试范围</th>
+            <th>参考范围</th>
+            <th>均值差</th>
+            <th>均值差%</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in report.metadata.statistics_rows %}
+          {% set highlight = 'highlight-high' if row.mean_diff_percentage | abs > 10 else ('highlight-medium' if row.mean_diff_percentage | abs > 5 else '') %}
+          <tr>
+            <td>{{ row.field }}</td>
+            <td>{{ row.test_mean | round(4) }}</td>
+            <td>{{ row.ref_mean | round(4) }}</td>
+            <td>{{ row.test_min | round(4) }} ~ {{ row.test_max | round(4) }}</td>
+            <td>{{ row.ref_min | round(4) }} ~ {{ row.ref_max | round(4) }}</td>
+            <td class="{{ highlight }}">{{ row.mean_diff | round(4) }}</td>
+            <td class="{{ highlight }}">{{ row.mean_diff_percentage | round(2) }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    {% if report.metadata.trend_charts %}
+    <h2 class="section-title"><i class="fas fa-chart-line"></i> 字段趋势分析</h2>
+    {% for chart in report.metadata.trend_charts %}
+    <div class="field-section">
+      <div class="d-flex align-items-center mb-3">
+        <h3 class="me-2">{{ chart.display_name }}</h3>
+        <span class="pill">趋势对比</span>
+      </div>
+      <div class="row g-3">
+        <div class="col-lg-8 col-md-7">
+          <div class="chart-container">
+            <canvas id="{{ chart.chart_id }}_line"></canvas>
+          </div>
+        </div>
+        <div class="col-lg-4 col-md-5">
+          <div class="chart-container">
+            <canvas id="{{ chart.chart_id }}_donut"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    (function() {
+      const searchInput = document.getElementById('comparison-search');
+      const table = document.getElementById('comparison-table');
+      if (searchInput && table) {
+        searchInput.addEventListener('keyup', function() {
+          const filter = this.value.toLowerCase();
+          const rows = table.getElementsByTagName('tr');
+          for (let i = 2; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName('td');
+            let text = '';
+            for (let j = 0; j < cells.length; j++) {
+              text += (cells[j].textContent || '').toLowerCase() + ' ';
+            }
+            rows[i].style.display = text.includes(filter) ? '' : 'none';
+          }
+        });
+      }
+
+      const integratedTrend = {{ report.metadata.integrated_trend | tojson }};
+      if (integratedTrend && integratedTrend.datasets && integratedTrend.datasets.length) {
+        renderIntegratedTrendChart(integratedTrend);
+      }
+
+      const trendCharts = {{ report.metadata.trend_charts | tojson }};
+      if (Array.isArray(trendCharts)) {
+        trendCharts.forEach(function(item) {
+          const lineCanvas = document.getElementById(item.chart_id + '_line');
+          if (lineCanvas) {
+            const ctx = lineCanvas.getContext('2d');
+            new Chart(ctx, {
+              type: 'line',
+              data: {
+                labels: item.sequence_numbers,
+                datasets: [
+                  {
+                    label: '测试机',
+                    data: item.test_values,
+                    borderColor: '#4c6ef5',
+                    backgroundColor: 'rgba(76, 110, 245, 0.15)',
+                    tension: 0.25,
+                    pointRadius: 3,
+                    borderWidth: 2,
+                    fill: true
+                  },
+                  {
+                    label: '对比机',
+                    data: item.reference_values,
+                    borderColor: '#ff6b6b',
+                    backgroundColor: 'rgba(255, 107, 107, 0.15)',
+                    tension: 0.25,
+                    pointRadius: 3,
+                    borderWidth: 2,
+                    fill: true
+                  }
+                ]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'index' },
+                plugins: {
+                  legend: { position: 'top' },
+                  title: { display: true, text: item.display_name + ' 趋势' }
+                },
+                scales: {
+                  x: { display: true, title: { display: true, text: '序列号' } },
+                  y: { display: true, title: { display: true, text: '数值' } }
+                }
+              }
+            });
+          }
+
+          const donutCanvas = document.getElementById(item.chart_id + '_donut');
+          if (donutCanvas) {
+            const ctx = donutCanvas.getContext('2d');
+            const buckets = { '>10%': 0, '1~10%': 0, '0%': 0, '-1~-10%': 0, '<-10%': 0 };
+            (item.diff_percentages || []).forEach(function(value) {
+              const v = parseFloat(value);
+              if (Number.isNaN(v)) return;
+              if (v > 10) buckets['>10%'] += 1;
+              else if (v > 1) buckets['1~10%'] += 1;
+              else if (v >= -1) buckets['0%'] += 1;
+              else if (v >= -10) buckets['-1~-10%'] += 1;
+              else buckets['<-10%'] += 1;
+            });
+
+            new Chart(ctx, {
+              type: 'doughnut',
+              data: {
+                labels: Object.keys(buckets),
+                datasets: [{
+                  data: Object.values(buckets),
+                  backgroundColor: ['#ff6b6b', '#ffa94d', '#51cf66', '#4dabf7', '#845ef7']
+                }]
+              },
+              options: {
+                plugins: {
+                  legend: { position: 'bottom' },
+                  title: { display: true, text: '变化百分比分布' }
+                }
+              }
+            });
+          }
+        });
+      }
+
+      function renderIntegratedTrendChart(trendData) {
+        const ensureChart = function(callback) {
+          if (typeof Chart !== 'undefined') {
+            callback();
+            return;
+          }
+          setTimeout(function() { ensureChart(callback); }, 200);
+        };
+
+        ensureChart(function() {
+          const canvas = document.getElementById('integrated_rpg_bpg_trend_chart');
+          if (!canvas) {
+            console.error('未找到综合趋势图画布元素');
+            return;
+          }
+
+          const ctx = canvas.getContext('2d');
+          new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: trendData.image_labels,
+              datasets: trendData.datasets,
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              interaction: { intersect: false, mode: 'index' },
+              plugins: {
+                title: {
+                  display: true,
+                  text: 'RpG/BpG综合趋势分析',
+                  font: { size: 16, weight: 'bold' },
+                },
+                legend: {
+                  display: true,
+                  position: 'top',
+                  labels: {
+                    usePointStyle: true,
+                  },
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      const rawLabel = context.dataset.label || '';
+                      const parts = rawLabel.split('_');
+                      const algo = parts.slice(0, -1).join('_') || rawLabel;
+                      const type = parts.slice(-1)[0] || '';
+                      const value = (context.parsed.y ?? 0).toFixed(3);
+                      return algo + ' ' + type + ': ' + value;
+                    },
+                  },
+                },
+              },
+              scales: {
+                x: {
+                  display: true,
+                  title: { display: true, text: '图片序列', font: { weight: 'bold' } },
+                  grid: { color: 'rgba(0,0,0,0.08)' },
+                },
+                y: {
+                  display: true,
+                  title: { display: true, text: 'RpG/BpG数值', font: { weight: 'bold' } },
+                  grid: { color: 'rgba(0,0,0,0.08)' },
+                },
+              },
+            },
+          });
+        });
+      }
+
+    })();
+  </script>
+{% endblock %}

@@ -1,0 +1,28 @@
+<table>
+  <thead>
+    <tr>
+      <th>字段名</th>
+      <th>对比前均值</th>
+      <th>参考均值</th>
+      <th>对比前范围</th>
+      <th>参考范围</th>
+      <th>均值差</th>
+      <th>均值差%</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for row in rows %}
+    {% set cls = 'highlight-high' if (row.mean_diff_percent | abs) > 10 else ('highlight-medium' if (row.mean_diff_percent | abs) > 5 else '') %}
+    <tr>
+      <td>{{ row.field_name }}</td>
+      <td>{{ row.test_mean | round(4) }}</td>
+      <td>{{ row.ref_mean | round(4) }}</td>
+      <td>{{ row.test_min | round(4) }} ~ {{ row.test_max | round(4) }}</td>
+      <td>{{ row.ref_min | round(4) }} ~ {{ row.ref_max | round(4) }}</td>
+      <td class="{{ cls }}">{{ row.mean_diff | round(4) }}</td>
+      <td class="{{ cls }}">{{ row.mean_diff_percent | round(2) }}%</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+

@@ -1,0 +1,38 @@
+<div class="kpi-cards">
+  {% for item in items %}
+  <div class='kpi-card'>
+    <div class='kpi-title'>
+      <i class='{{ item.icon }}'></i> {{ item.display_name }}
+    </div>
+    <div class='row text-center'>
+      <div class='col-6'>
+        <div class='kpi-value' style='font-size: 1.2rem; color: #495057;'>
+          {{ item.metrics.mae | round(3) }}
+        </div>
+        <small class='text-muted'>MAE</small>
+      </div>
+      <div class='col-6'>
+        <div class='kpi-value' style='font-size: 1.2rem; color: #495057;'>
+          {{ item.metrics.rmse | round(3) }}
+        </div>
+        <small class='text-muted'>RMSE</small>
+      </div>
+    </div>
+    <div class='row text-center mt-2'>
+      <div class='col-6'>
+        <div class='kpi-value' style='font-size: 1.2rem; color: #495057;'>
+          {{ item.metrics.r2 | round(3) }}
+        </div>
+        <small class='text-muted'>R2</small>
+      </div>
+      <div class='col-6'>
+        <div class='kpi-value' style='font-size: 1.2rem; color: {{ item.rate_color }};'>
+          {{ item.abnormal_rate | round(1) }}%
+        </div>
+        <small class='text-muted'>异常率</small>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+

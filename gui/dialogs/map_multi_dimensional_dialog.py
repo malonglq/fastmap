@@ -27,7 +27,7 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QFont
 from pathlib import Path
 
-from core.services.reporting.map_multi_dimensional_report_generator import MapMultiDimensionalReportGenerator
+from core.services.reporting.domains.map import MapMultiDimensionalReportGenerator
 from core.models.map_data import MapConfiguration
 from core.models.scene_classification_config import SceneClassificationConfig
 
@@ -86,7 +86,7 @@ class MapMultiDimensionalDialog(BaseAnalysisDialog):
 
     def setup_ui(self):
         """设置用户界面"""
-        # 基础UI设置已由基类完成
+        # 鍩虹UI璁剧疆宸茬敱鍩虹被完成
 
         # Map数据概览标签页
         self.overview_tab = self.create_overview_tab()
@@ -248,8 +248,10 @@ class MapMultiDimensionalDialog(BaseAnalysisDialog):
         template_layout = QFormLayout(template_group)
 
         self.template_combo = QComboBox()
-        self.template_combo.addItems(["map_analysis", "default"])
-        self.template_combo.setCurrentText("map_analysis")
+        self.template_combo.addItems([
+            "reporting/domains/map/report.html",
+        ])
+        self.template_combo.setCurrentText("reporting/domains/map/report.html")
         template_layout.addRow("模板类型:", self.template_combo)
 
         layout.addWidget(template_group)
@@ -365,9 +367,9 @@ class MapMultiDimensionalDialog(BaseAnalysisDialog):
             # 分析范围
             analysis_scope = preview.get('analysis_scope', {})
             preview_text += "分析内容:\n"
-            preview_text += f"• 传统Map分析: {'是' if analysis_scope.get('traditional_analysis', False) else '否'}\n"
-            preview_text += f"• 多维度场景分析: {'是' if analysis_scope.get('multi_dimensional_analysis', False) else '否'}\n"
-            preview_text += f"• 场景分类分析: {'是' if analysis_scope.get('scene_classification', False) else '否'}\n\n"
+            preview_text += f"· 传统Map分析: {'是' if analysis_scope.get('traditional_analysis', False) else '否'}\n"
+            preview_text += f"· 多维度场景分析: {'是' if analysis_scope.get('multi_dimensional_analysis', False) else '否'}\n"
+            preview_text += f"· 场景分类分析: {'是' if analysis_scope.get('scene_classification', False) else '否'}\n\n"
 
             # 预计处理时间
             preview_text += f"预计处理时间: {preview.get('estimated_processing_time', '未知')}\n\n"
@@ -376,7 +378,7 @@ class MapMultiDimensionalDialog(BaseAnalysisDialog):
             output_sections = preview.get('output_sections', [])
             preview_text += "报告章节:\n"
             for section in output_sections:
-                preview_text += f"• {section}\n"
+                preview_text += f"· {section}\n"
 
             self.preview_text.setPlainText(preview_text)
 
@@ -415,7 +417,7 @@ class MapMultiDimensionalDialog(BaseAnalysisDialog):
         }
 
 
-    # 覆盖基类：点击“开始分析”时返回对话框接受状态，由外部生成报告
+    # 覆写基类：点击“开始分析”时返回对话框接受状态，由外部生成报告
     def start_analysis(self):
         """开始分析 -> 接受对话框，让上游页面执行生成流程"""
         try:
@@ -429,7 +431,7 @@ class MapMultiDimensionalDialog(BaseAnalysisDialog):
             logger.error(f"==liuq debug== start_analysis失败: {e}")
             QMessageBox.critical(self, "错误", f"开始分析失败: {e}")
 
-    # 覆盖基类：直接在对话框内导出报告（可选，即时生成）
+    # 覆写基类：直接在对话框内导出报告（可选，即时生成）
     def export_report(self):
         """导出报告（在本对话框内直接生成HTML）"""
         try:

@@ -258,6 +258,14 @@ class BaseAnalysisDialog(QDialog):
         self.analyze_btn.setEnabled(True)
         QMessageBox.critical(self, "分析失败", f"分析过程中发生错误:\n{error_message}")
         logger.error(f"==liuq debug== 分析失败: {error_message}")
+
+    def show_warning(self, title: str, message: str) -> None:
+        """Display a consistent warning dialog."""
+        try:
+            QMessageBox.warning(self, title, message)
+        except Exception as exc:  # noqa: BLE001
+            logger.error(f"==liuq debug== Failed to show warning: {exc}")
+
     
     def start_analysis(self):
         """开始分析（子类重写此方法）"""

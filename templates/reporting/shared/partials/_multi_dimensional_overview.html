@@ -1,0 +1,41 @@
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">分析概览</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>总Map数量:</strong> {{ total_maps }}</p>
+                <p><strong>主导场景:</strong> {{ dominant_scene }}</p>
+                <hr>
+                <h6>场景分布:</h6>
+                <ul class="list-unstyled">
+                    <li>🏞️ 室外场景: {{ outdoor_count }} 个 ({{ outdoor_pct|floatformat:1 }}%)</li>
+                    <li>🏠 室内场景: {{ indoor_count }} 个 ({{ indoor_pct|floatformat:1 }}%)</li>
+                    <li>🌙 夜景场景: {{ night_count }} 个 ({{ night_pct|floatformat:1 }}%)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">分类规则</h5>
+            </div>
+            <div class="card-body">
+                <h6>当前阈值设置:</h6>
+                <ul class="list-unstyled">
+                    <li><strong>BV室外阈值:</strong> {{ bv_outdoor_threshold }}</li>
+                    <li><strong>BV室内下限:</strong> {{ bv_indoor_min }}</li>
+                    <li><strong>IR室外阈值:</strong> {{ ir_outdoor_threshold }}</li>
+                </ul>
+                <hr>
+                <small class="text-muted">
+                    室外: BV_min > {{ bv_outdoor_threshold }} 或 IR_min > {{ ir_outdoor_threshold }}<br>
+                    室内: {{ bv_indoor_min }} ≤ BV_min ≤ {{ bv_outdoor_threshold }} 且 IR_min ≤ {{ ir_outdoor_threshold }}<br>
+                    夜景: BV_min < {{ bv_indoor_min }}
+                </small>
+            </div>
+        </div>
+    </div>
+</div>

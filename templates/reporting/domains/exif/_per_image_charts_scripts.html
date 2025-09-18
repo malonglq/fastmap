@@ -1,0 +1,44 @@
+// RpG/BpG逐图渲染脚本（模板）
+(function(){
+  function renderPerImage(){
+    {% for item in charts %}
+    (function(){
+      var el = document.getElementById('{{ item.chart_id }}');
+      if (!el) { console.error('canvas not found: {{ item.chart_id }}'); return; }
+      var ctx = el.getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: {{ item.labels_json|safe }},
+          datasets: [
+            { label: 'RpG', data: {{ item.rpg_values_json|safe }}, borderColor: '#e91e63', backgroundColor: 'rgba(233,30,99,0.1)', tension: 0.3, pointRadius: 4, pointHoverRadius: 6, borderWidth: 2 },
+            { label: 'BpG', data: {{ item.bpg_values_json|safe }}, borderColor: '#3f51b5', backgroundColor: 'rgba(63,81,181,0.1)', tension: 0.3, pointRadius: 4, pointHoverRadius: 6, borderWidth: 2 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { intersect: false, mode: 'index' },
+          plugins: {
+            title: { display: true, text: '{{ item.title }}', font: { size: 14 } },
+            legend: { display: true, position: 'top' }
+          },
+          scales: {
+            x: { display: true, title: { display: true, text: '算法类型' }, grid: { display: true, color: 'rgba(0,0,0,0.1)' } },
+            y: { display: true, title: { display: true, text: '数值' }, grid: { display: true, color: 'rgba(0,0,0,0.1)' }, beginAtZero: false }
+          }
+        }
+      });
+    })();
+    {% endfor %}
+  }
+  if (typeof window.waitForAssetThen === 'function') {
+    window.waitForAssetThen(renderPerImage);
+  } else {
+    if (typeof Chart === 'undefined') {
+      var t=function(){ if(typeof Chart!=='undefined'){renderPerImage();} else { setTimeout(t,200);} }; t();
+    } else {
+      renderPerImage();
+    }
+  }
+})();
