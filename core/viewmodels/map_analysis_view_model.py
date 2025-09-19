@@ -18,6 +18,8 @@ from PyQt5.QtCore import pyqtSignal
 from core.infrastructure.base_view_model import BaseViewModel
 from core.infrastructure.event_bus import Event, EventType
 from core.services.map_analysis import XMLParserService, XMLWriterService, MapAnalyzer
+from core.services.reporting.domains.map import MapMultiDimensionalReportGenerator
+from core.models.scene_classification_config import SceneClassificationConfig, get_default_config_path
 from core.models.map_data import MapConfiguration, AnalysisResult
 
 logger = logging.getLogger(__name__)
@@ -61,6 +63,18 @@ class MapAnalysisViewModel(BaseViewModel):
         
         logger.debug("==liuq debug== MapAnalysisViewModel 初始化完成")
     
+    def _initialize_report_generator(self):
+        """初始化多维度报告生成器"""
+        try:
+            self._report_generator = self.resolve_service(MapMultiDimensionalReportGenerator)
+        except Exception as exc:
+            logger.warning("==liuq debug== 解析Map多维度报告生成器失败，尝试直接实例化: %s", exc)
+            try:
+                self._report_generator = MapMultiDimensionalReportGenerator()
+            except Exception as inner_exc:
+                logger.error("==liuq debug== 初始化Map多维度报告生成器失败: %s", inner_exc)
+                self._report_generator = None
+
     def _initialize_properties(self):
         """初始化属性"""
         self.set_property("xml_file_path", "", False)
@@ -139,7 +153,7 @@ class MapAnalysisViewModel(BaseViewModel):
                 return False
             
             # 解析XML文件
-            self._map_configuration = self._xml_parser.parse_file(xml_path)
+            self._map_configuration = self._xml_parser.parse_xml(xml_path)
             if not self._map_configuration:
                 self.handle_error(ValueError("XML文件解析失败"))
                 return False
@@ -195,7 +209,7 @@ class MapAnalysisViewModel(BaseViewModel):
             if self._analysis_result:
                 # 提取Map数据
                 self._map_data = self._map_configuration  # 这里应该是解析后的数据
-                map_count = len(getattr(self._map_data, 'maps', [])) if self._map_data else 0
+                map_count = len(getattr(self._map_data, 'map_points', [])) if self._map_data else 0
                 
                 # 更新属性
                 self.set_property("map_count", map_count)
@@ -307,7 +321,7 @@ class MapAnalysisViewModel(BaseViewModel):
     def generate_html_report(self) -> Optional[str]:
         """
         生成HTML报告
-        
+
         Returns:
             str: 报告文件路径，失败返回None
         """
@@ -315,38 +329,52 @@ class MapAnalysisViewModel(BaseViewModel):
             if not self.can_generate_report:
                 self.handle_error(ValueError("无法生成报告：分析未完成"))
                 return None
-            
+            if not self._map_configuration:
+                self.handle_error(ValueError("缺少Map配置，无法生成报告"))
+                return None
+            if not self._report_generator:
+                self.handle_error(RuntimeError("报告生成器未初始化"))
+                return None
+
             self.set_busy(True, "正在生成HTML报告...")
-            
+
             # 发布报告生成开始事件
             self.emit_event(EventType.REPORT_GENERATION_STARTED, {
                 "report_type": "map_analysis",
                 "source": "MapAnalysisViewModel"
             })
-            
-            # 这里应该调用报告生成服务
-            # 暂时返回成功状态，实际实现需要集成报告生成器
-            
-            report_path = f"output/map_analysis_report_{self._get_current_timestamp()}.html"
-            
+
+            try:
+                classification_config = SceneClassificationConfig.load_from_file(get_default_config_path())
+            except Exception as exc:
+                logger.warning("==liuq debug== 加载场景分类配置失败，使用默认配置: %s", exc)
+                classification_config = SceneClassificationConfig()
+
+            report_path = self._report_generator.generate({
+                'map_configuration': self._map_configuration,
+                'include_multi_dimensional': True,
+                'classification_config': classification_config,
+                'template_name': 'reporting/domains/map/report.html'
+            })
+
             # 发布报告生成完成事件
             self.emit_event(EventType.REPORT_GENERATION_COMPLETED, {
                 "report_type": "map_analysis",
                 "report_path": report_path,
                 "success": True
             })
-            
+
             self.emit_status(f"HTML报告生成成功: {report_path}")
             logger.info(f"==liuq debug== HTML报告生成成功: {report_path}")
-            
+
             return report_path
-            
+
         except Exception as e:
             self.handle_error(e, "生成HTML报告失败")
             return None
         finally:
             self.set_busy(False)
-    
+
     # 事件处理器
     def _on_tab_switched(self, event: Event):
         """Tab切换事件处理"""

@@ -1,5 +1,6 @@
 # Claude Code配置
 .claude/
+.spec-workflow
 
 # Git配置
 .git/

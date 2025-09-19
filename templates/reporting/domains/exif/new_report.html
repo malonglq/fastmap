@@ -173,6 +173,28 @@
       background: #f4f6ff;
     }
 
+    /* 表头竖向分割线（两层表头分别处理） */
+    .table thead tr:first-child th {
+      border-right: 1px solid rgba(255, 255, 255, 0.35);
+    }
+
+    .table thead tr:first-child th:first-child { border-left: none; }
+    .table thead tr:first-child th:last-child { border-right: none; }
+
+    .table thead tr:nth-child(2) th {
+      border-right: 1px solid rgba(102, 126, 234, 0.3);
+    }
+    .table thead tr:nth-child(2) th:first-child { border-left: none; }
+    .table thead tr:nth-child(2) th:last-child { border-right: none; }
+
+    /* 可点击排序的视觉提示 */
+    .table thead th[data-sort],
+    .table thead th[data-field-group],
+    .table thead th[data-field-col] {
+      cursor: pointer;
+      user-select: none;
+    }
+
     .sticky-col {
       position: sticky;
       left: 0;
@@ -223,6 +245,38 @@
       padding: 12px;
     }
 
+    .trend-toggle {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .trend-toggle label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(102, 126, 234, 0.12);
+      color: #4c5bd4;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid rgba(102, 126, 234, 0.25);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.12);
+      transition: all 0.2s ease;
+    }
+
+    .trend-toggle label:hover {
+      background: rgba(102, 126, 234, 0.2);
+    }
+
+    .trend-toggle input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: #4c5bd4;
+    }
+
     .search-input {
       max-width: 320px;
       margin-bottom: 16px;
@@ -261,34 +315,7 @@
       </div>
     </div>
 
-    {% if report.metadata.kpi_metrics %}
-    <h2 class="section-title"><i class="fas fa-tachometer-alt"></i> 核心 KPI 总览</h2>
-    <div class="kpi-cards">
-      {% for metric in report.metadata.kpi_metrics %}
-      <div class="kpi-card">
-        <div class="kpi-title"><i class="{{ metric.icon }}"></i> {{ metric.display_name }}</div>
-        <div class="row text-center g-3">
-          <div class="col-6">
-            <div class="kpi-value">{{ metric.mae | round(3) }}</div>
-            <div class="kpi-subtitle">MAE</div>
-          </div>
-          <div class="col-6">
-            <div class="kpi-value">{{ metric.rmse | round(3) }}</div>
-            <div class="kpi-subtitle">RMSE</div>
-          </div>
-          <div class="col-6">
-            <div class="kpi-value">{{ metric.r2 | round(3) }}</div>
-            <div class="kpi-subtitle">R²</div>
-          </div>
-          <div class="col-6">
-            <div class="kpi-value rate-tag {{ metric.rate_class }}">{{ metric.anomaly_rate | round(1) }}%</div>
-            <div class="kpi-subtitle">异常率</div>
-          </div>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
+    {# 核心 KPI 总览暂时隐藏，保留占位便于未来启用 #}
 
     {% if report.metadata.integrated_trend.datasets %}
     <h2 class="section-title"><i class="fas fa-wave-square"></i> RpG/BpG 综合趋势</h2>
@@ -298,6 +325,10 @@
           <h5 class="mb-1"><i class="fas fa-chart-line"></i> RpG/BpG综合趋势图</h5>
           <small class="text-muted">({{ report.metadata.integrated_trend.algorithm_count }} 种算法，{{ report.metadata.integrated_trend.image_count }} 张图片)</small>
         </div>
+      </div>
+      <div class="trend-toggle">
+        <label><input type="checkbox" id="toggle-rpg" checked> 只看 RpG</label>
+        <label><input type="checkbox" id="toggle-bpg" checked> 只看 BpG</label>
       </div>
       <div class="chart-container" style="height: 420px;">
         <canvas id="integrated_rpg_bpg_trend_chart"></canvas>
@@ -315,8 +346,8 @@
             <h6><i class="fas fa-palette"></i> 算法配色</h6>
             <ul class="mb-0">
               <li><span style="color:#e91e63;font-weight:bold;">●</span> SGW 算法</li>
-              <li><span style="color:#3f51b5;font-weight:bold;">●</span> AGW 算法</li>
               <li><span style="color:#00bcd4;font-weight:bold;">●</span> AGW_noMap 算法</li>
+              <li><span style="color:#3f51b5;font-weight:bold;">●</span> AGW 算法</li>
               <li><span style="color:#4caf50;font-weight:bold;">●</span> Mix 算法</li>
               <li><span style="color:#ff9800;font-weight:bold;">●</span> After_face 算法</li>
               <li><span style="color:#9c27b0;font-weight:bold;">●</span> cnvgEst 算法</li>
@@ -340,11 +371,11 @@
         <table id="comparison-table" class="table table-hover align-middle mb-0">
           <thead>
             <tr>
-              <th class="sticky-col sticky-col-1">测试文件</th>
-              <th class="sticky-col sticky-col-2">参考文件</th>
-              <th>相似度</th>
+              <th class="sticky-col sticky-col-1" data-sort="text">测试文件</th>
+              <th class="sticky-col sticky-col-2" data-sort="text">参考文件</th>
+              <th data-sort="number">相似度</th>
               {% for field in report.metadata.selected_field_details %}
-              <th colspan="3">{{ field.display_name }}</th>
+              <th colspan="3" data-field-group="{{ loop.index0 }}" class="sortable-group">{{ field.display_name }}</th>
               {% endfor %}
             </tr>
             <tr>
@@ -352,9 +383,9 @@
               <th class="sticky-col sticky-col-2"></th>
               <th></th>
               {% for _ in report.metadata.selected_field_details %}
-              <th>处理前</th>
-              <th>处理后</th>
-              <th>变化%</th>
+              <th data-field-col="{{ loop.index0 }}-before">处理前</th>
+              <th data-field-col="{{ loop.index0 }}-after">处理后</th>
+              <th data-field-col="{{ loop.index0 }}-change" data-sort="number">变化%</th>
               {% endfor %}
             </tr>
           </thead>
@@ -454,6 +485,109 @@
           }
         });
       }
+
+      // ===== 可点击排序：基础列与字段组排序 =====
+      (function enableSorting() {
+        const tbl = document.getElementById('comparison-table');
+        if (!tbl || !tbl.tHead || tbl.tHead.rows.length < 2) return;
+
+        const headerTop = tbl.tHead.rows[0];
+        const headerSub = tbl.tHead.rows[1];
+
+        const getCellValue = (td) => {
+          if (!td) return '';
+          const t = (td.textContent || '').trim();
+          if (t.endsWith('%')) {
+            const v = parseFloat(t.replace('%',''));
+            return Number.isNaN(v) ? t : v;
+          }
+          const n = parseFloat(t);
+          return Number.isNaN(n) ? t.toLowerCase() : n;
+        };
+
+        const isMissing = (v) => (
+          v === null || v === undefined || v === '' ||
+          (typeof v === 'number' && Number.isNaN(v)) ||
+          (typeof v === 'string' && ['nan','n/a','na','null','none','-','—'].includes(v.trim().toLowerCase()))
+        );
+
+        const compare = (a, b, dir, type) => {
+          let res = 0;
+          // 缺失值永远靠后
+          const aMiss = isMissing(a);
+          const bMiss = isMissing(b);
+          if (aMiss && bMiss) return 0;
+          if (aMiss) return 1; // a 在后
+          if (bMiss) return -1; // b 在后
+          if (type === 'number' && typeof a === 'number' && typeof b === 'number') {
+            res = a - b;
+          } else {
+            res = String(a).localeCompare(String(b), 'zh');
+          }
+          return dir === 'asc' ? res : -res;
+        };
+
+        const sortTableByCol = (colIndex, type = 'text', dir = 'asc') => {
+          const tbody = tbl.tBodies[0];
+          if (!tbody) return;
+          const rows = Array.from(tbody.rows);
+          const dataRows = rows.slice(0);
+          dataRows.sort((r1, r2) => {
+            const v1 = getCellValue(r1.cells[colIndex]);
+            const v2 = getCellValue(r2.cells[colIndex]);
+            return compare(v1, v2, dir, type);
+          });
+          dataRows.forEach(r => tbody.appendChild(r));
+        };
+
+        // 基础列排序：测试文件/参考文件/相似度
+        Array.from(headerTop.cells).forEach((th, idx) => {
+          const sortType = th.getAttribute('data-sort');
+          if (!sortType) return;
+          th.style.cursor = 'pointer';
+          th.title = '点击排序';
+          let dir = 'asc';
+          th.addEventListener('click', () => {
+            sortTableByCol(idx, sortType, dir);
+            dir = dir === 'asc' ? 'desc' : 'asc';
+          });
+        });
+
+        // 字段组排序：按每组的“变化%”列排序
+        const baseOffset = 3; // 前三列为：测试文件/参考文件/相似度
+        Array.from(headerTop.cells).forEach((th) => {
+          const group = th.getAttribute('data-field-group');
+          if (group === null) return;
+          th.style.cursor = 'pointer';
+          th.title = '点击按该字段变化%排序';
+          let dir = 'desc';
+          th.addEventListener('click', () => {
+            const g = parseInt(group, 10) || 0;
+            const changeColIndex = baseOffset + g * 3 + 2; // 每组三列，第三列为变化%
+            sortTableByCol(changeColIndex, 'number', dir);
+            dir = dir === 'asc' ? 'desc' : 'asc';
+          });
+        });
+
+        // 子表头排序：处理前/处理后/变化% 直接按对应列排序
+        Array.from(headerSub.cells).forEach((th) => {
+          const key = th.getAttribute('data-field-col');
+          const explicitType = th.getAttribute('data-sort');
+          if (!key && !explicitType) return; // 无标记则不处理
+          let dir = (key && key.endsWith('-change')) ? 'desc' : 'asc';
+          th.addEventListener('click', () => {
+            // 若是基础前三列的第二行（空表头），忽略
+            if (!key) return;
+            const [gStr, kind] = key.split('-');
+            const g = parseInt(gStr, 10) || 0;
+            const kindOffset = kind === 'before' ? 0 : (kind === 'after' ? 1 : 2);
+            const colIndex = baseOffset + g * 3 + kindOffset;
+            const type = explicitType || (kind === 'change' ? 'number' : 'number');
+            sortTableByCol(colIndex, type, dir);
+            dir = dir === 'asc' ? 'desc' : 'asc';
+          });
+        });
+      })();
 
       const integratedTrend = {{ report.metadata.integrated_trend | tojson }};
       if (integratedTrend && integratedTrend.datasets && integratedTrend.datasets.length) {
@@ -560,7 +694,7 @@
           }
 
           const ctx = canvas.getContext('2d');
-          new Chart(ctx, {
+          const chartInstance = new Chart(ctx, {
             type: 'line',
             data: {
               labels: trendData.image_labels,
@@ -610,6 +744,27 @@
               },
             },
           });
+
+          const toggleRpg = document.getElementById('toggle-rpg');
+          const toggleBpg = document.getElementById('toggle-bpg');
+
+          if (toggleRpg && toggleBpg) {
+            const applyVisibility = function() {
+              chartInstance.data.datasets.forEach(function(ds) {
+                const label = ds.label || '';
+                const isRpg = /_RpG$/i.test(label);
+                const isBpg = /_BpG$/i.test(label);
+                const hideRpg = isRpg && !toggleRpg.checked;
+                const hideBpg = isBpg && !toggleBpg.checked;
+                ds.hidden = hideRpg || hideBpg;
+              });
+              chartInstance.update();
+            };
+
+            toggleRpg.addEventListener('change', applyVisibility);
+            toggleBpg.addEventListener('change', applyVisibility);
+            applyVisibility();
+          }
         });
       }
 

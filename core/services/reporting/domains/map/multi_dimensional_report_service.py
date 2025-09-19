@@ -22,8 +22,9 @@ from core.services.map_analysis.map_analyzer import MapAnalyzer
 from core.services.map_analysis.multi_dimensional_analyzer import MultiDimensionalAnalyzer
 from core.services.reporting.engine.report_engine import ReportGenerator, ReportConfig
 from core.services.reporting.infrastructure import ReportData
-from core.models.map_data import MapConfiguration, MapPoint, MapType
+from core.models.map_data import MapConfiguration, MapPoint, MapType, SceneType
 from core.models.scene_classification_config import SceneClassificationConfig
+from utils.geometry_utils import polygon_centroid
 
 logger = logging.getLogger(__name__)
 
@@ -131,6 +132,71 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
             raise RuntimeError(f"Map多维度分析报告生成失败: {e}")
     
 
+    def preview_analysis_scope(
+        self,
+        map_configuration: MapConfiguration,
+        include_multi_dimensional: bool = True,
+        classification_config: Optional[SceneClassificationConfig] = None
+    ) -> Dict[str, Any]:
+        """生成报告前的分析范围预览数据。"""
+        if not map_configuration:
+            raise ValueError('缺少Map配置，无法预览分析范围')
+
+        map_points = list(getattr(map_configuration, 'map_points', []) or [])
+        total_points = len(map_points)
+
+        scene_distribution: Dict[str, int] = {}
+        for point in map_points:
+            scene_type = getattr(point, 'scene_type', None)
+            if hasattr(scene_type, 'name'):
+                key = scene_type.name
+            elif scene_type is not None:
+                key = str(scene_type)
+            else:
+                key = 'UNKNOWN'
+            scene_distribution[key] = scene_distribution.get(key, 0) + 1
+
+        analysis_scope = {
+            'traditional_analysis': True,
+            'multi_dimensional_analysis': bool(include_multi_dimensional),
+            'scene_classification': bool(include_multi_dimensional),
+        }
+
+        estimated_seconds = max(0.1, 0.3 + total_points * 0.015)
+        estimated_processing_time = f"约 {estimated_seconds:.2f} 秒"
+
+        output_sections = [
+            'Map 数据概览',
+            '偏移散点 (offset_x vs offset_y)',
+            'BV 跨度分析',
+            'CTemp 跨度分析',
+            'IR 跨度分析',
+            'Top Map 列表',
+        ]
+        if include_multi_dimensional:
+            output_sections.extend(['场景分类统计', '色温跨度分析'])
+
+        classification_info: Dict[str, Any] = {}
+        if include_multi_dimensional and classification_config:
+            classification_info = {
+                'indoor_bv_threshold': getattr(classification_config, 'indoor_bv_threshold', None),
+                'night_bv_threshold': getattr(classification_config, 'night_bv_threshold', None),
+                'ir_threshold': getattr(classification_config, 'ir_threshold', None),
+            }
+
+        return {
+            'map_summary': {
+                'device_type': getattr(map_configuration, 'device_type', 'unknown'),
+                'total_map_points': total_points,
+                'scene_distribution': scene_distribution,
+            },
+            'analysis_scope': analysis_scope,
+            'estimated_processing_time': estimated_processing_time,
+            'output_sections': output_sections,
+            'classification_config': classification_info,
+        }
+
+
     def _resolve_template(self, template_name: Optional[str]) -> str:
         default_template = 'reporting/domains/map/report.html'
         if not template_name:
@@ -156,8 +222,10 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
                               multi_dimensional_result: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         map_points: List[MapPoint] = list(getattr(map_configuration, 'map_points', []) or [])
         temperature_span = {}
+        temperature_span_analysis = {}
         if multi_dimensional_result:
-            temperature_span = (multi_dimensional_result.get('temperature_span_analysis') or {}).get('spans_by_map', {})
+            temperature_span_analysis = multi_dimensional_result.get('temperature_span_analysis') or {}
+            temperature_span = temperature_span_analysis.get('spans_by_map', {})
 
         groups: Dict[Tuple[str, int], Dict[str, Dict[str, List[MapPoint]]]] = defaultdict(
             lambda: defaultdict(lambda: defaultdict(list))
@@ -171,13 +239,15 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
             bv_label = self._resolve_bv_label(map_point)
             groups[(ml_label, ml_value)][cct_label][bv_label].append(map_point)
 
-        cct_order = ['<1500', '1500-2300', '2300-2800', '2800-4000', '4000-5000', '5000-6500', '6500-7500', '>7500']
+        # 调整色温段显示顺序：从高到低排列
+        cct_order = ['>7500', '6500-7500', '5000-6500', '4000-5000', '2800-4000', '2300-2800', '1500-2300', '<1500']
         bv_order = ['BV>6', 'BV(2,6]', 'BV[-2,2]', 'BV<-2']
 
         ml_groups: List[Dict[str, Any]] = []
         sections: List[Dict[str, Any]] = []
         chart_payloads: List[List[Any]] = []
         ml_summary: List[Dict[str, Any]] = []
+        base_boundary_point = getattr(map_configuration, 'base_boundary_point', None)
 
         for (ml_label, ml_value) in sorted(groups.keys(), key=lambda item: item[1]):
             cct_group = groups[(ml_label, ml_value)]
@@ -209,7 +279,7 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
                             'bv_label': bv_label,
                             'count': count,
                             'table_rows': self._build_table_rows(sorted_maps),
-                            'chart_payload': self._build_chart_payload(sorted_maps),
+                            'chart_payload': self._build_chart_payload(sorted_maps, base_boundary_point),
                         }
                         sections.append(section)
                         chart_payloads.append([section_id, section['chart_payload']])
@@ -242,6 +312,7 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
             'chart_payloads_json': json.dumps(chart_payloads, ensure_ascii=False),
             'bv_order': bv_order,
             'cct_order': cct_order,
+            'temperature_span_analysis': temperature_span_analysis,
         }
 
     def _resolve_ml_label(self, map_point: MapPoint) -> Tuple[str, int]:
@@ -328,7 +399,9 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
                 sanitized.append('_')
         return ''.join(sanitized)
 
-    def _build_chart_payload(self, map_points: List[MapPoint]) -> Dict[str, Any]:
+    def _build_chart_payload(self,
+                             map_points: List[MapPoint],
+                             base_boundary_point: Optional[MapPoint] = None) -> Dict[str, Any]:
         bv_mins, bv_maxs, bv_spans, bv_alias = [], [], [], []
         ir_mins, ir_maxs, ir_spans, ir_alias = [], [], [], []
         ctemp_mins, ctemp_maxs, ctemp_spans, ctemp_alias = [], [], [], []
@@ -378,7 +451,45 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
                 'y': offsets_y,
                 'alias': offsets_alias,
             },
+            'base_boundary_polygon': self._build_polygon_series(base_boundary_point),
+            'offset_polygons': self._build_offset_polygons(map_points),
         }
+
+    def _build_offset_polygons(self, map_points: List[MapPoint]) -> List[Dict[str, Any]]:
+        polygons: List[Dict[str, Any]] = []
+        for mp in map_points:
+            polygon = self._build_polygon_series(mp)
+            if polygon:
+                # 计算多边形重心，用于在前端绘制映射箭头（重心 -> offset）
+                cx, cy = (0.0, 0.0)
+                try:
+                    verts = list(zip(polygon['x'], polygon['y'])) if polygon['x'] and polygon['y'] else []
+                    if verts:
+                        cx, cy = polygon_centroid(verts)
+                except Exception:
+                    cx, cy = (0.0, 0.0)
+                polygons.append({
+                    'alias': mp.alias_name,
+                    'x': polygon['x'],
+                    'y': polygon['y'],
+                    'cx': cx,
+                    'cy': cy,
+                    'ox': float(getattr(mp, 'offset_x', 0.0)),
+                    'oy': float(getattr(mp, 'offset_y', 0.0)),
+                })
+        return polygons
+
+    def _build_polygon_series(self, map_point: Optional[MapPoint]) -> Dict[str, List[float]]:
+        if not map_point or not getattr(map_point, 'polygon_vertices', None):
+            return {'x': [], 'y': []}
+
+        vertices = map_point.polygon_vertices or []
+        if not vertices:
+            return {'x': [], 'y': []}
+
+        xs = [float(v[0]) for v in vertices]
+        ys = [float(v[1]) for v in vertices]
+        return {'x': xs, 'y': ys}
 
     def _build_table_rows(self, map_points: List[MapPoint]) -> List[Dict[str, str]]:
         rows: List[Dict[str, str]] = []

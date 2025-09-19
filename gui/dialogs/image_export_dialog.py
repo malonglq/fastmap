@@ -68,13 +68,14 @@ class ImageExportDialog(QDialog):
         pair_row.addWidget(QLabel("字段对:"))
         self.pair_combo = QComboBox()
         # 预置6组字段对
+        # 使用与CSV列一致的大小写，避免字段匹配失败
         self._preset_pairs = [
-            ("ealgo_data_agw_nomap_rpg", "ealgo_data_agw_gray_rpg"),
-            ("ealgo_data_agw_nomap_bpg", "ealgo_data_agw_gray_bpg"),
-            ("ealgo_data_agw_nomap_rpg", "ealgo_data_after_face_rpg"),
-            ("ealgo_data_agw_nomap_bpg", "ealgo_data_after_face_bpg"),
-            ("ealgo_data_agw_nomap_rpg", "ealgo_data_cnvgest_rpg"),
-            ("ealgo_data_agw_nomap_bpg", "ealgo_data_cnvgest_bpg"),
+            ("ealgo_data_AGW_noMap_RpG", "ealgo_data_AGW_gray_RpG"),
+            ("ealgo_data_AGW_noMap_BpG", "ealgo_data_AGW_gray_BpG"),
+            ("ealgo_data_AGW_noMap_RpG", "ealgo_data_After_face_RpG"),
+            ("ealgo_data_AGW_noMap_BpG", "ealgo_data_After_face_BpG"),
+            ("ealgo_data_AGW_noMap_RpG", "ealgo_data_cnvgEst_RpG"),
+            ("ealgo_data_AGW_noMap_BpG", "ealgo_data_cnvgEst_BpG"),
         ]
         for a,b in self._preset_pairs:
             self.pair_combo.addItem(f"{a} vs {b}")

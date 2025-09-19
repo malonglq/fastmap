@@ -58,9 +58,22 @@ class ImageClassifierService(IImageClassifierService):
             except Exception:
                 return float('nan')
 
+        def get_ci(row: Dict[str, Any], key: str):
+            """不区分大小写地获取字段值。"""
+            if key in row:
+                return row[key]
+            lk = key.lower()
+            for k, v in row.items():
+                try:
+                    if str(k).lower() == lk:
+                        return v
+                except Exception:
+                    continue
+            return None
+
         def calc_change_primary(row1: Dict[str, Any], row2: Dict[str, Any]) -> float:
-            v1 = to_float(row1.get(pf))
-            v2 = to_float(row2.get(pf))
+            v1 = to_float(get_ci(row1, pf))
+            v2 = to_float(get_ci(row2, pf))
             if is_cct:
                 if math.isnan(v1) or math.isnan(v2):
                     return 0.0
@@ -88,12 +101,12 @@ class ImageClassifierService(IImageClassifierService):
 
             if is_pair_mode:
                 f1, f2 = (compare_pair + [None, None])[:2]
-                v1 = to_float(row1.get(f1))
-                v2 = to_float(row1.get(f2))
+                v1 = to_float(get_ci(row1, f1))
+                v2 = to_float(get_ci(row1, f2))
                 # 若测试机缺失，回退参考机
                 if (math.isnan(v1) or math.isnan(v2)):
-                    v1 = to_float(row2.get(f1))
-                    v2 = to_float(row2.get(f2))
+                    v1 = to_float(get_ci(row2, f1))
+                    v2 = to_float(get_ci(row2, f2))
                 spc = calc_spc(v1, v2)
                 abs_spc = 0.0 if math.isnan(spc) else round(abs(spc), 2)
                 pair_key = f"{f1}_VS_{f2}"
@@ -103,7 +116,12 @@ class ImageClassifierService(IImageClassifierService):
                     primary_field_name=pair_key,
                     is_cct_field=False,
                     field_changes={
-                        pair_key: FieldChange(before=row1.get(f1), after=row1.get(f2), change_percentage=round(spc, 2) if not math.isnan(spc) else None, absolute_change=(to_float(row1.get(f2)) - to_float(row1.get(f1))) if not math.isnan(v1) and not math.isnan(v2) else None)
+                        pair_key: FieldChange(
+                            before=get_ci(row1, f1),
+                            after=get_ci(row1, f2),
+                            change_percentage=round(spc, 2) if not math.isnan(spc) else None,
+                            absolute_change=(to_float(get_ci(row1, f2)) - to_float(get_ci(row1, f1))) if not math.isnan(v1) and not math.isnan(v2) else None
+                        )
                     },
                     pair_data=pair
                 )
@@ -125,7 +143,17 @@ class ImageClassifierService(IImageClassifierService):
                     primary_field_change=change_val,
                     primary_field_name=pf,
                     is_cct_field=is_cct,
-                    field_changes={pf: FieldChange(before=row1.get(pf), after=row2.get(pf), change_percentage=(change_val if not is_cct else None), absolute_change=(to_float(row2.get(pf)) - to_float(row1.get(pf)) if not math.isnan(to_float(row1.get(pf))) and not math.isnan(to_float(row2.get(pf))) else None))},
+                    field_changes={
+                        pf: FieldChange(
+                            before=get_ci(row1, pf),
+                            after=get_ci(row2, pf),
+                            change_percentage=(change_val if not is_cct else None),
+                            absolute_change=(
+                                to_float(get_ci(row2, pf)) - to_float(get_ci(row1, pf))
+                                if not math.isnan(to_float(get_ci(row1, pf))) and not math.isnan(to_float(get_ci(row2, pf))) else None
+                            )
+                        )
+                    },
                     pair_data=pair
                 )
 
@@ -157,4 +185,3 @@ class ImageClassifierService(IImageClassifierService):
 
         logger.info(f"==liuq debug== 分类完成: total={total}, large={summary['large_changes'].count}, medium={summary['medium_changes'].count}, small={summary['small_changes'].count}, none={summary['no_changes'].count}")
         return ClassificationResult(categories=categories, summary=summary, total=total)
-

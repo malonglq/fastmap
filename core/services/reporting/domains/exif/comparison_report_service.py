@@ -337,6 +337,22 @@ class ExifComparisonReportGenerator(IReportGenerator):
         pairs: List[Dict[str, Any]] = []
         unmatched_test = 0
 
+        # 优先尝试按文件名中的数字编号进行一一配对（例如 190_xxx.jpg ↔ 190_xxx.jpg）
+        def extract_numeric_id(text: str) -> Optional[str]:
+            if not text:
+                return None
+            import re
+            m = re.search(r"(?<!\d)(\d{2,})(?!\d)", text)
+            return m.group(1) if m else None
+
+        test_ids = [extract_numeric_id(v) for v in test_values]
+        ref_ids = [extract_numeric_id(v) for v in reference_values]
+        ref_id_map: Dict[str, List[int]] = {}
+        for idx, rid in enumerate(ref_ids):
+            if not rid:
+                continue
+            ref_id_map.setdefault(rid, []).append(idx)
+
         for test_idx, value in enumerate(test_values):
             if not value:
                 unmatched_test += 1
@@ -345,6 +361,16 @@ class ExifComparisonReportGenerator(IReportGenerator):
             normalized = value.lower()
             ref_idx: Optional[int] = None
             similarity = 0.0
+
+            # Step 1: 数字编号精确配对（不改变原有列名匹配逻辑，只是优先匹配）
+            t_id = test_ids[test_idx]
+            if t_id and t_id in ref_id_map:
+                # 找到第一个尚未使用的参考索引
+                for candidate in ref_id_map[t_id]:
+                    if candidate not in used_reference:
+                        ref_idx = candidate
+                        similarity = 1.0
+                        break
 
             for candidate in reference_map.get(normalized, []):
                 if candidate not in used_reference:
@@ -369,6 +395,7 @@ class ExifComparisonReportGenerator(IReportGenerator):
             sequence_value = (
                 self._extract_sequence_value(test_row)
                 or self._extract_sequence_value(reference_row)
+                or t_id
                 or test_idx
             )
             pair = {
@@ -386,6 +413,7 @@ class ExifComparisonReportGenerator(IReportGenerator):
                 'reference': self._extract_display_name(reference_row, match_column),
                 'match_score': float(round(similarity, 4)),
                 'sequence_number': self._coerce_sequence_label(sequence_value),
+                'pair_numeric_id': t_id,
             }
             pairs.append(pair)
 
@@ -722,10 +750,11 @@ class ExifComparisonReportGenerator(IReportGenerator):
         def resolve(field_name: str) -> Optional[str]:
             return field_map.get(field_name.lower())
 
+        # 调整顺序：将 AGW_noMap 放在 AGW 之前
         algorithm_config = {
             'SGW': {'rpg': 'ealgo_data_SGW_gray_RpG', 'bpg': 'ealgo_data_SGW_gray_BpG', 'color': '#e91e63'},
-            'AGW': {'rpg': 'ealgo_data_AGW_gray_RpG', 'bpg': 'ealgo_data_AGW_gray_BpG', 'color': '#3f51b5'},
             'AGW_noMap': {'rpg': 'ealgo_data_AGW_noMap_RpG', 'bpg': 'ealgo_data_AGW_noMap_BpG', 'color': '#00bcd4'},
+            'AGW': {'rpg': 'ealgo_data_AGW_gray_RpG', 'bpg': 'ealgo_data_AGW_gray_BpG', 'color': '#3f51b5'},
             'Mix': {'rpg': 'ealgo_data_Mix_csalgo_RpG', 'bpg': 'ealgo_data_Mix_csalgo_BpG', 'color': '#4caf50'},
             'After_face': {'rpg': 'ealgo_data_After_face_RpG', 'bpg': 'ealgo_data_After_face_BpG', 'color': '#ff9800'},
             'cnvgEst': {'rpg': 'ealgo_data_cnvgEst_RpG', 'bpg': 'ealgo_data_cnvgEst_BpG', 'color': '#9c27b0'},
@@ -811,10 +840,12 @@ class ExifComparisonReportGenerator(IReportGenerator):
 
     @staticmethod
     def _classify_change(change: float) -> str:
+        # 调整颜色语义：处理后“增加”为红色，减少为绿色
+        # 正值（after > before）标记为 negative 类（红色），负值标记为 positive 类（绿色）
         if change > 0:
-            return 'change-positive'
-        if change < 0:
             return 'change-negative'
+        if change < 0:
+            return 'change-positive'
         return 'change-neutral'
 
     @staticmethod

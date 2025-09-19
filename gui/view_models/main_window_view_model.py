@@ -21,6 +21,7 @@ from core.infrastructure.event_bus import EventType
 from core.models.map_data import MapPoint, BaseBoundary
 from core.services.map_analysis.xml_parser_service import XMLParserService
 from core.services.map_analysis.map_analyzer import MapAnalyzer
+from core.services.reporting.domains.map import MapMultiDimensionalReportGenerator
 from core.models.map_data import MapConfiguration
 
 logger = logging.getLogger(__name__)
@@ -57,12 +58,26 @@ class MainWindowViewModel(BaseViewModel):
         
         # 获取服务
         self._xml_parser = self.di_container.resolve(XMLParserService)
+        self._map_report_generator: Optional[MapMultiDimensionalReportGenerator] = None
+        self._initialize_map_report_generator()
         
         # 设置事件监听
         self._setup_event_listeners()
         
         logger.info("==liuq debug== 主窗口ViewModel初始化完成")
     
+    def _initialize_map_report_generator(self):
+        """初始化Map多维度报告生成器"""
+        try:
+            self._map_report_generator = self.resolve_service(MapMultiDimensionalReportGenerator)
+        except Exception as exc:
+            logger.warning("==liuq debug== 解析Map多维度报告生成器失败，尝试直接实例化: %s", exc)
+            try:
+                self._map_report_generator = MapMultiDimensionalReportGenerator()
+            except Exception as inner_exc:
+                logger.error("==liuq debug== 初始化Map多维度报告生成器失败: %s", inner_exc)
+                self._map_report_generator = None
+
     @property
     def current_xml_file(self) -> Optional[Path]:
         """当前XML文件路径"""
@@ -237,24 +252,26 @@ class MainWindowViewModel(BaseViewModel):
     def _execute_report_generation(self) -> Optional[str]:
         """执行实际的报告生成逻辑（迁移自旧版 MainWindow.generate_html_report）。"""
         try:
-            from core.services.reporting.domains.map import MapMultiDimensionalReportGenerator
             from core.models.scene_classification_config import SceneClassificationConfig, get_default_config_path
 
             if not self._map_configuration:
                 logger.error("==liuq debug== 缺少MapConfiguration数据，无法生成多维度报告")
                 return None
+            if not self._map_report_generator:
+                logger.error("==liuq debug== Map多维度报告生成器未初始化")
+                return None
 
             try:
                 classification_config = SceneClassificationConfig.load_from_file(get_default_config_path())
-            except Exception:
+            except Exception as exc:
+                logger.warning("==liuq debug== 加载场景分类配置失败，使用默认配置: %s", exc)
                 classification_config = SceneClassificationConfig()
 
-            generator = MapMultiDimensionalReportGenerator()
-            report_path = generator.generate({
+            report_path = self._map_report_generator.generate({
                 'map_configuration': self._map_configuration,
                 'include_multi_dimensional': True,
                 'classification_config': classification_config,
-                    'template_name': 'reporting/domains/map/report.html'
+                'template_name': 'reporting/domains/map/report.html'
             })
             return report_path
 

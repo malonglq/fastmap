@@ -64,7 +64,19 @@
 
     .muted { color:#6c757d; }
 
-    .charts { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:12px; }
+    /* 两列布局：左侧为偏移散点，占一半以上；右侧为三张跨度图紧凑排列 */
+    .charts {
+      display: grid;
+      grid-template-columns: minmax(420px, 1.2fr) minmax(320px, 1fr);
+      grid-auto-rows: 220px;
+      gap: 12px;
+    }
+    /* 第一个图（offset 散点）占据左列三行，增大可视面积 */
+    .charts > :first-child {
+      grid-column: 1 / 2;
+      grid-row: 1 / span 3;
+      min-height: 660px;
+    }
 
     .tag {
       display:inline-block;
@@ -156,21 +168,21 @@
           <span class="tag">数量：{{ section.count }}</span>
         </div>
         <div class="charts">
-          <div id="{{ section.id }}_trend_bv"></div>
-          <div id="{{ section.id }}_trend_ir"></div>
-          <div id="{{ section.id }}_trend_CTemp"></div>
           <div id="{{ section.id }}_scatter_target"></div>
+          <div id="{{ section.id }}_trend_bv"></div>
+          <div id="{{ section.id }}_trend_CTemp"></div>
+          <div id="{{ section.id }}_trend_ir"></div>
         </div>
         <div class="panel" style="margin-top:12px;">
           <table>
             <thead>
               <tr>
                 <th>alias</th>
-                <th>bv[min,max]</th>
-                <th>ir[min,max]</th>
-                <th>ctemp[min,max]</th>
                 <th>offset_x</th>
                 <th>offset_y</th>
+                <th>bv[min,max]</th>
+                <th>ctemp[min,max]</th>
+                <th>ir[min,max]</th>
                 <th>weight</th>
                 <th>TransStep</th>
               </tr>
@@ -179,11 +191,11 @@
               {% for row in section.table_rows %}
                 <tr>
                   <td>{{ row.alias }}</td>
-                  <td>{{ row.bv_range }}</td>
-                  <td>{{ row.ir_range }}</td>
-                  <td>{{ row.ctemp_range }}</td>
                   <td>{{ row.offset_x }}</td>
                   <td>{{ row.offset_y }}</td>
+                  <td>{{ row.bv_range }}</td>
+                  <td>{{ row.ctemp_range }}</td>
+                  <td>{{ row.ir_range }}</td>
                   <td>{{ row.weight }}</td>
                   <td>{{ row.trans_step }}</td>
                 </tr>
@@ -228,29 +240,161 @@
         name: label
       }], {
         title: `${label} 跨度`,
-        margin: { t: 30 },
+        margin: { t: 30, r: 160 },
         xaxis: { automargin: true },
-        yaxis: { zeroline: false }
+        yaxis: { zeroline: false },
+        showlegend: true,
+        legend: { x: 1.02, y: 1, xanchor: 'left', yanchor: 'top' }
       }, { responsive: true, displayModeBar: false });
     }
 
-    function renderScatter(targetId, offsets, topOnly) {
+    function renderScatter(targetId, payload, topOnly) {
       if (!document.getElementById(targetId)) return;
-      const indexed = offsets.x.map((x, idx) => ({ x, y: offsets.y[idx], alias: offsets.alias[idx] }));
-      indexed.sort((a, b) => Math.hypot(b.x, b.y) - Math.hypot(a.x, a.y));
+      const data = payload || {};
+      const offsets = data.offsets || {};
+      const sourceX = Array.isArray(offsets.x) ? offsets.x : [];
+      const sourceY = Array.isArray(offsets.y) ? offsets.y : [];
+      const sourceAlias = Array.isArray(offsets.alias) ? offsets.alias : [];
+      const entries = [];
+      for (let i = 0; i < sourceX.length; i += 1) {
+        const x = Number(sourceX[i]);
+        const y = Number(sourceY[i]);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) {
+          continue;
+        }
+        entries.push({ x, y, alias: sourceAlias[i] || '' });
+      }
+      const indexed = entries.slice().sort((a, b) => Math.hypot(b.x, b.y) - Math.hypot(a.x, a.y));
       const sliced = topOnly ? indexed.slice(0, Math.min(30, indexed.length)) : indexed;
-      Plotly.newPlot(targetId, [{
+      const slicedAliasSet = new Set(sliced.map(item => item.alias));
+      const basePolygon = data.base_boundary_polygon || {};
+      const offsetPolygons = Array.isArray(data.offset_polygons) ? data.offset_polygons : [];
+      const traces = [];
+      const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+      // 将原始几何（RpG/BpG）叠加到 offset 坐标系中显示：
+      // 为避免极端点拉伸坐标轴，这里对顶点做范围裁剪到 [0, 2.5]×[0, 1.6]。
+      // 调色板 + 颜色哈希，保证同一 alias 颜色稳定
+      const palette = ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf'];
+      const colorForAlias = (alias) => {
+        let h = 0; const s = String(alias || '');
+        for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+        return palette[h % palette.length];
+      };
+      const hexToRgba = (hex, alpha) => {
+        let c = (hex || '').replace('#','');
+        if (c.length === 3) c = c.split('').map(ch=>ch+ch).join('');
+        const r = parseInt(c.slice(0,2),16) || 0;
+        const g = parseInt(c.slice(2,4),16) || 0;
+        const b = parseInt(c.slice(4,6),16) || 0;
+        const a = Number.isFinite(alpha) ? alpha : 0.15;
+        return `rgba(${r},${g},${b},${a})`;
+      };
+
+      if (Array.isArray(basePolygon.x) && basePolygon.x.length > 1 && Array.isArray(basePolygon.y) && basePolygon.y.length > 1) {
+        const bx = basePolygon.x.map(v => clamp(Number(v), 0, 2.5));
+        const by = basePolygon.y.map(v => clamp(Number(v), 0, 1.6));
+        if (bx[0] !== bx[bx.length - 1] || by[0] !== by[by.length - 1]) {
+          bx.push(bx[0]);
+          by.push(by[0]);
+        }
+        traces.push({
+          x: bx,
+          y: by,
+          mode: 'lines',
+          line: { color: '#ef4444', width: 2 },
+          fill: 'toself',
+          fillcolor: 'rgba(239,68,68,0.12)',
+          name: 'base_boundary',
+          hoverinfo: 'skip',
+        });
+      }
+
+      // 只绘制当前展示的 alias 对应的多边形，保证与映射成对出现
+      offsetPolygons.forEach(poly => {
+        if (!Array.isArray(poly.x) || !Array.isArray(poly.y) || poly.x.length < 2 || poly.y.length < 2) {
+          return;
+        }
+        if (!slicedAliasSet.has(poly.alias)) return;
+        const px = poly.x.map(v => clamp(Number(v), 0, 2.5));
+        const py = poly.y.map(v => clamp(Number(v), 0, 1.6));
+        if (px[0] !== px[px.length - 1] || py[0] !== py[py.length - 1]) {
+          px.push(px[0]);
+          py.push(py[0]);
+        }
+        const lc = colorForAlias(poly.alias);
+        traces.push({
+          x: px,
+          y: py,
+          mode: 'lines',
+          line: { color: lc, width: 2 },
+          fill: 'toself',
+          fillcolor: hexToRgba(lc, 0.12),
+          name: poly.alias || 'offset_map',
+          legendgroup: poly.alias || '',
+          hoverinfo: 'skip',
+        });
+      });
+
+      const pointTrace = {
         x: sliced.map(item => item.x),
         y: sliced.map(item => item.y),
-        mode: 'markers+text',
-        text: sliced.map(item => item.alias),
-        textposition: 'top center',
+        mode: 'markers',
         marker: { color: '#f97316', size: 10 },
-      }], {
+        hovertext: sliced.map(item => item.alias),
+        hoverinfo: 'text',
+      };
+      traces.push(pointTrace);
+
+      // 画重心 -> offset 的映射箭头（以折线表示，避免箭头导致的坐标扩张问题）
+      let ax = [], ay = [];
+      const mappedAlias = new Set();
+      offsetPolygons.forEach(poly => {
+        if (!slicedAliasSet.has(poly.alias)) return; // 与当前展示的点保持一致
+        if (mappedAlias.has(poly.alias)) return; // 去重：每个 alias 仅一条映射
+        mappedAlias.add(poly.alias);
+        const haveCentroid = Number.isFinite(poly.cx) && Number.isFinite(poly.cy);
+        const offX = Number(poly.ox), offY = Number(poly.oy);
+        if (!haveCentroid || !Number.isFinite(offX) || !Number.isFinite(offY)) return;
+        const sx = clamp(poly.cx, 0, 2.5);
+        const sy = clamp(poly.cy, 0, 1.6);
+        const tx = clamp(offX, 0, 2.5);
+        const ty = clamp(offY, 0, 1.6);
+        // 为每个 alias 单独一条折线 trace，这样颜色与多边形匹配
+        traces.push({
+          x: [sx, tx],
+          y: [sy, ty],
+          mode: 'lines',
+          line: { color: colorForAlias(poly.alias), width: 2, dash: 'dash' },
+          name: `${poly.alias || 'mapping'}`,
+          hoverinfo: 'skip',
+          showlegend: false,
+          legendgroup: poly.alias || '',
+        });
+      });
+
+      Plotly.newPlot(targetId, traces, {
         title: '偏移散点 (offset_x vs offset_y)',
-        margin: { t: 30 },
-        xaxis: { zeroline: false },
-        yaxis: { zeroline: false }
+        margin: { t: 30, r: 160 },
+        xaxis: {
+          zeroline: true,
+          zerolinecolor: '#6b7280',
+          range: [0, 2.5],
+          autorange: false,
+          title: 'offset_x',
+          constrain: 'range',
+        },
+        yaxis: {
+          zeroline: true,
+          zerolinecolor: '#6b7280',
+          range: [0, 1.6],
+          autorange: false,
+          title: 'offset_y',
+          constrain: 'range',
+          scaleanchor: 'x',
+          scaleratio: 1,
+        },
+        showlegend: true,
+        legend: { x: 1.02, y: 1, xanchor: 'left', yanchor: 'top' }
       }, { responsive: true, displayModeBar: false });
     }
 
@@ -260,10 +404,11 @@
       const bvSeries = buildSeries(payload.bv.mins, payload.bv.alias, topOnly, 'bv');
       const irSeries = buildSeries(payload.ir.mins, payload.ir.alias, topOnly, 'ir');
       const ctSeries = buildSeries(payload.CTemp.mins, payload.CTemp.alias, topOnly, 'ct');
+      renderScatter(`${sectionId}_scatter_target`, payload, topOnly);	  
       renderBar(`${sectionId}_trend_bv`, 'BV', bvSeries);
       renderBar(`${sectionId}_trend_ir`, 'IR', irSeries);
       renderBar(`${sectionId}_trend_CTemp`, 'CTemp', ctSeries);
-      renderScatter(`${sectionId}_scatter_target`, payload.offsets, topOnly);
+
     }
 
     function median(values) {

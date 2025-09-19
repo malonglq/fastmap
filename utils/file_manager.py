@@ -66,7 +66,7 @@ class FileManager(IFileManager):
             
             # 生成基于时间戳的文件名
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            base_filename = f"fastmapv2_report_{timestamp}"
+            base_filename = f"map_analysis_report_{timestamp}"
             
             # 检查文件是否已存在，如果存在则添加序号
             counter = 1
