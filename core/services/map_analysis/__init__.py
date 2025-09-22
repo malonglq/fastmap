@@ -19,6 +19,14 @@ from .xml_data_conversion_service import XMLDataConversionService
 from .map_analyzer import MapAnalyzer
 from .temperature_span_analyzer import TemperatureSpanAnalyzer
 from .multi_dimensional_analyzer import MultiDimensionalAnalyzer
+from .offset_map_query_service import (
+    OffsetMapQueryService,
+    OffsetMapQuerySpec,
+    OffsetMapQueryResult,
+    RangeWindow,
+    RangeSpan,
+    build_report_section,
+)
 
 __all__ = [
     'XMLParserService',
@@ -28,5 +36,11 @@ __all__ = [
     'XMLDataConversionService',
     'MapAnalyzer',
     'TemperatureSpanAnalyzer',
-    'MultiDimensionalAnalyzer'
+    'MultiDimensionalAnalyzer',
+    'OffsetMapQueryService',
+    'OffsetMapQuerySpec',
+    'OffsetMapQueryResult',
+    'RangeWindow',
+    'RangeSpan',
+    'build_report_section',
 ]

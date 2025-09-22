@@ -40,6 +40,13 @@
       gap: 10px;
     }
 
+    h3 {
+      font-size: 1.1rem;
+      margin: 24px 0 12px;
+      color: #1f2937;
+      font-weight: 600;
+    }
+
     table { border-collapse:collapse; width:100%; font-size:13px; }
     th, td { border:1px solid #e5e7eb; padding:6px 8px; text-align:left; }
     thead { background:#f3f4f6; }
@@ -108,6 +115,10 @@
     }
 
     .summary-table th { white-space:nowrap; }
+
+    ul { margin: 0 0 16px 18px; padding: 0; }
+    ul li { margin-bottom: 6px; }
+    .panel.inner-panel { background:#f9fafb; }
   </style>
   <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 </head>
@@ -153,6 +164,77 @@
       </tbody>
     </table>
   </div>
+
+  {% if ctx.offset_query_sections %}
+    {% for query in ctx.offset_query_sections %}
+      <h2>{{ query.title }}</h2>
+      <div class="panel">
+        {% if query.methodology %}
+          <h3>统计方法</h3>
+          <ul>
+            {% for line in query.methodology %}
+              <li>{{ line|safe }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        {% if query.overview %}
+          <h3>统计概览</h3>
+          <ul>
+            {% for line in query.overview %}
+              <li>{{ line|safe }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        {% if query.insights %}
+          <h3>策略洞察</h3>
+          <ul>
+            {% for line in query.insights %}
+              <li>{{ line|safe }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        {% if query.table and query.table.rows %}
+          <div class="panel inner-panel" style="margin:12px 0 20px;">
+            <table>
+              <thead>
+                <tr>
+                  {% for header in query.table.headers %}
+                    <th>{{ header }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in query.table.rows %}
+                  <tr>
+                    <td>{{ row.tag }}</td>
+                    <td>{{ row.alias }}</td>
+                    <td>{{ row.weight }}</td>
+                    {% for axis, value in row.ranges.items() %}
+                      <td>{{ value }}</td>
+                    {% endfor %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="panel inner-panel" style="margin:12px 0 20px;">暂无符合条件的 offset_map 条目。</div>
+        {% endif %}
+
+        {% if query.highlights %}
+          <h3>重点说明</h3>
+          <ul>
+            {% for line in query.highlights %}
+              <li>{{ line|safe }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% endif %}
 
   <div id="sections">
     {% for section in ctx.sections | default([]) %}
@@ -214,14 +296,36 @@
 
     function buildSeries(values, aliases, topOnly, metric) {
       if (!values || !Array.isArray(values)) return { labels: [], mins: [], maxs: [], spans: [] };
-      const indexed = values.map((min, idx) => ({
-        min: values[idx],
-        max: (metric === 'bv' ? chartPayloadsCurrent.bv.maxs[idx] : metric === 'ir' ? chartPayloadsCurrent.ir.maxs[idx] : chartPayloadsCurrent.CTemp.maxs[idx]),
-        span: (metric === 'bv' ? chartPayloadsCurrent.bv.spans[idx] : metric === 'ir' ? chartPayloadsCurrent.ir.spans[idx] : chartPayloadsCurrent.CTemp.spans[idx]),
-        alias: aliases[idx]
-      }));
+
+      const payload = metric === 'bv'
+        ? (chartPayloadsCurrent && chartPayloadsCurrent.bv) || {}
+        : metric === 'ir'
+          ? (chartPayloadsCurrent && chartPayloadsCurrent.ir) || {}
+          : (chartPayloadsCurrent && chartPayloadsCurrent.CTemp) || {};
+
+      const spansSource = Array.isArray(payload.spans) ? payload.spans : [];
+      const maxsSource = Array.isArray(payload.maxs) ? payload.maxs : [];
+      const aliasSource = Array.isArray(aliases) ? aliases : [];
+
+      const indexed = [];
+      for (let idx = 0; idx < values.length; idx += 1) {
+        const minVal = Number(values[idx]);
+        const maxVal = Number(maxsSource[idx]);
+        const spanVal = Number(spansSource[idx]);
+        if (!Number.isFinite(minVal) || !Number.isFinite(maxVal) || !Number.isFinite(spanVal)) {
+          continue;
+        }
+        indexed.push({
+          min: minVal,
+          max: maxVal,
+          span: spanVal,
+          alias: aliasSource[idx] || ''
+        });
+      }
+
       indexed.sort((a, b) => b.span - a.span);
       const sliced = topOnly ? indexed.slice(0, Math.min(30, indexed.length)) : indexed;
+
       return {
         labels: sliced.map(item => item.alias),
         mins: sliced.map(item => item.min),
@@ -230,22 +334,140 @@
       };
     }
 
+    const axisStrategies = (() => {
+      const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+      const formatTick = (value) => {
+        if (value === 0) return '0';
+        if (value < 1) return value.toFixed(1).replace(/\.0+$/, '');
+        if (value < 10) {
+          return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0+$/, '');
+        }
+        return String(Math.round(value));
+      };
+
+      const createIrStrategy = () => {
+        const domainMin = 0;
+        const domainMax = 999;
+        const focusUpper = 1;
+        const lowFraction = 0.82; // 将 0~1 区间扩展为 82% 的轴长度
+        const lowSpan = focusUpper - domainMin;
+        const highSpan = domainMax - focusUpper;
+        const lowScale = lowFraction / (lowSpan || 1);
+        const highScale = (1 - lowFraction) / (highSpan || 1);
+
+        const project = (raw) => {
+          const numeric = Number(raw);
+          if (!Number.isFinite(numeric)) return 0;
+          const clampedValue = clamp(numeric, domainMin, domainMax);
+          if (clampedValue <= focusUpper) {
+            return (clampedValue - domainMin) * lowScale;
+          }
+          return lowFraction + (clampedValue - focusUpper) * highScale;
+        };
+
+        const ticks = [0, 0.2, 0.4, 0.6, 0.8, 1, 2, 5, 10, 20, 50, 100, 200, 400, 600, 800, 999];
+        const tickvals = ticks.map(project);
+        const ticktext = ticks.map(formatTick);
+
+        return {
+          project,
+          range: [project(domainMin), project(domainMax)],
+          tickvals,
+          ticktext,
+          tickfont: { size: 12 },
+          title: 'IR（0~1 区间放大显示）'
+        };
+      };
+
+      const cTempTicks = [1500, 3000, 4500, 6000, 7500, 9000, 10500, 12000];
+
+      return {
+        BV: { range: [-10, 20], title: 'BV' },
+        CTemp: {
+          range: [1500, 12000],
+          title: 'CTemp',
+          tickvals: cTempTicks,
+          ticktext: cTempTicks.map((value) => String(value)),
+          tickfont: { size: 12 }
+        },
+        IR: createIrStrategy(),
+      };
+    })();
+
     function renderBar(targetId, label, series) {
       if (!document.getElementById(targetId)) return;
-      Plotly.newPlot(targetId, [{
+      const spans = Array.isArray(series.spans) ? series.spans : [];
+      const mins = Array.isArray(series.mins) ? series.mins : [];
+      const maxs = Array.isArray(series.maxs) ? series.maxs : [];
+      const customdata = spans.map((span, idx) => [mins[idx], maxs[idx], span]);
+      const axisStrategy = axisStrategies[label] || { title: label };
+
+      const applyProject = typeof axisStrategy.project === 'function';
+      const projectedMins = applyProject ? mins.map(axisStrategy.project) : mins;
+      const projectedMaxs = applyProject ? maxs.map(axisStrategy.project) : maxs;
+      const projectedSpans = projectedMaxs.map((val, idx) => val - projectedMins[idx]);
+
+      const trace = {
         type: 'bar',
         x: series.labels,
-        y: series.spans,
+        y: applyProject ? projectedSpans : spans,
+        base: applyProject ? projectedMins : mins,
         marker: { color: '#2563eb' },
-        name: label
-      }], {
+        name: `${label} 跨度`,
+        customdata,
+        hovertemplate: '<b>%{x}</b><br>范围: %{customdata[0]:.2f} ~ %{customdata[1]:.2f}<br>跨度: %{customdata[2]:.2f}<extra></extra>'
+      };
+
+      const layout = {
         title: `${label} 跨度`,
         margin: { t: 30, r: 160 },
         xaxis: { automargin: true },
-        yaxis: { zeroline: false },
+        yaxis: {
+          zeroline: false,
+          title: axisStrategy.title || label,
+        },
         showlegend: true,
         legend: { x: 1.02, y: 1, xanchor: 'left', yanchor: 'top' }
-      }, { responsive: true, displayModeBar: false });
+      };
+
+      if (Array.isArray(axisStrategy.range)) {
+        layout.yaxis.range = axisStrategy.range;
+        layout.yaxis.autorange = false;
+      }
+
+      if (Array.isArray(axisStrategy.tickvals) && Array.isArray(axisStrategy.ticktext)) {
+        layout.yaxis.tickmode = 'array';
+        layout.yaxis.tickvals = axisStrategy.tickvals;
+        layout.yaxis.ticktext = axisStrategy.ticktext;
+      }
+
+      if (axisStrategy.tickfont) {
+        layout.yaxis.tickfont = axisStrategy.tickfont;
+      }
+
+      const minTrace = {
+        type: 'scatter',
+        mode: 'markers',
+        x: series.labels,
+        y: applyProject ? projectedMins : mins,
+        marker: { color: '#0ea5e9', size: 8, symbol: 'circle' },
+        name: `${label} 最小值`,
+        customdata,
+        hovertemplate: '<b>%{x}</b><br>最小值: %{customdata[0]:.2f}<extra></extra>'
+      };
+
+      const maxTrace = {
+        type: 'scatter',
+        mode: 'markers',
+        x: series.labels,
+        y: applyProject ? projectedMaxs : maxs,
+        marker: { color: '#f97316', size: 8, symbol: 'triangle-up' },
+        name: `${label} 最大值`,
+        customdata,
+        hovertemplate: '<b>%{x}</b><br>最大值: %{customdata[1]:.2f}<extra></extra>'
+      };
+
+      Plotly.newPlot(targetId, [trace, minTrace, maxTrace], layout, { responsive: true, displayModeBar: false });
     }
 
     function renderScatter(targetId, payload, topOnly) {
