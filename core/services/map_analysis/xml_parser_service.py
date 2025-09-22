@@ -467,7 +467,9 @@ class XMLParserService(XMLDataProcessor):
                 'source_node_count': len(offset_map_nodes),
                 'has_polygon': is_polygon,
                 'polygon_vertex_count': len(polygon_vertices) if polygon_vertices else 0,
-                'ml': detailed_params.get('ml', 0)
+                'ml': detailed_params.get('ml', 0),
+                'map_tag': f'offset_map{map_id}',
+                'map_index': int(map_id) if map_id.isdigit() else None,
             }
 
 
@@ -573,7 +575,9 @@ class XMLParserService(XMLDataProcessor):
                 'source_node_count': len(base_boundary_nodes),
                 'has_polygon': is_polygon,
                 'polygon_vertex_count': len(polygon_vertices) if polygon_vertices else 0,
-                'ml': detailed_params.get('ml', 0)
+                'ml': detailed_params.get('ml', 0),
+                'map_tag': 'base_boundary0',
+                'map_index': 0,
             }
 
 

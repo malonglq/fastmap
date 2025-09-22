@@ -135,7 +135,12 @@ def generate_map_analysis_report_from_xml(xml_file_path, output_file_path=None):
             'map_configuration': map_config,
             'include_multi_dimensional': True,
             'classification_config': SceneClassificationConfig(),
-            'output_path': str(output_file_path)
+            'output_path': str(output_file_path),
+            # 默认开启 AWB 减权 / 强拉查询，以便报告中展示关联章节
+            'include_awb_reduce_analysis': True,
+            'offset_query_options': {
+                'enabled': True,
+            },
         }
 
         # 生成报告
