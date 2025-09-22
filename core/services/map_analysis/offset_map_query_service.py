@@ -72,6 +72,98 @@ class OffsetMapRecord:
 
 
 @dataclass(frozen=True)
+class NormalizedRecord:
+    """Lower-cased aliases and cached axis ranges for downstream analysis."""
+
+    record: OffsetMapRecord
+    alias_lower: str
+    tag_lower: str
+    weight: float
+    bv: Tuple[Optional[float], Optional[float]]
+    ctemp: Tuple[Optional[float], Optional[float]]
+    ir: Tuple[Optional[float], Optional[float]]
+
+    @classmethod
+    def from_record(cls, record: OffsetMapRecord) -> "NormalizedRecord":
+        return cls(
+            record=record,
+            alias_lower=(record.alias or "").lower(),
+            tag_lower=record.tag.lower(),
+            weight=record.weight,
+            bv=_extract_axis_range(record, "bv"),
+            ctemp=_extract_axis_range(record, "ctemp"),
+            ir=_extract_axis_range(record, "ir"),
+        )
+
+    def matches_keyword(self, keyword: str) -> bool:
+        return keyword in self.alias_lower or keyword in self.tag_lower
+
+    def range_for(self, axis: str) -> Tuple[Optional[float], Optional[float]]:
+        if axis == "bv":
+            return self.bv
+        if axis == "ctemp":
+            return self.ctemp
+        if axis == "ir":
+            return self.ir
+        return (None, None)
+
+
+@dataclass(frozen=True)
+class CategoryDefinition:
+    """Semantic bucket used to describe减权/强拉条目的类型."""
+
+    label: str
+    keywords: Tuple[str, ...]
+    description: str = ""
+    purpose: str = ""
+    note_absent: bool = False
+
+
+@dataclass(frozen=True)
+class CategoryStat:
+    """Aggregated统计结果 derived from :class:`NormalizedRecord` matches."""
+
+    definition: CategoryDefinition
+    matches: Tuple[NormalizedRecord, ...] = ()
+
+    @property
+    def label(self) -> str:
+        return self.definition.label
+
+    @property
+    def count(self) -> int:
+        return len(self.matches)
+
+    @property
+    def records(self) -> List[OffsetMapRecord]:
+        return [item.record for item in self.matches]
+
+    @property
+    def bv_span(self) -> Tuple[Optional[float], Optional[float]]:
+        return self._span("bv")
+
+    @property
+    def ct_span(self) -> Tuple[Optional[float], Optional[float]]:
+        return self._span("ctemp")
+
+    @property
+    def ir_span(self) -> Tuple[Optional[float], Optional[float]]:
+        return self._span("ir")
+
+    @property
+    def weight_range(self) -> str:
+        return _format_weight_range(self.records)
+
+    @property
+    def map_list(self) -> str:
+        return _format_limited_map_list(self.records)
+
+    def _span(self, axis: str) -> Tuple[Optional[float], Optional[float]]:
+        if not self.matches:
+            return (None, None)
+        return _combine_ranges(record.range_for(axis) for record in self.matches)
+
+@dataclass(frozen=True)
 class OffsetMapQuerySpec:
     """Declarative query definition applied to :class:`OffsetMapRecord` objects."""
 
@@ -431,10 +523,9 @@ def _build_awb_enhance_section(result: OffsetMapQueryResult) -> Dict[str, Any]:
 def _generate_awb_reduce_insights(
     records: Sequence[OffsetMapRecord],
     spec: OffsetMapQuerySpec,
-    normalized: Optional[Sequence[Dict[str, Any]]] = None,
-    category_stats: Optional[Sequence[Dict[str, Any]]] = None,
+    normalized: Optional[Sequence[NormalizedRecord]] = None,
+    category_stats: Optional[Sequence[CategoryStat]] = None,
 ) -> List[str]:
-
     if not records:
         return []
 
@@ -447,22 +538,18 @@ def _generate_awb_reduce_insights(
         category_stats = _collect_awb_category_stats(normalized)
 
     insights: List[str] = []
-    insights.extend(_build_awb_category_summary(normalized, category_stats))
+    insights.extend(_build_awb_category_summary(category_stats))
     insights.extend(_build_awb_layout_highlights(normalized, bv_window, ct_window, category_stats))
     return insights
 
 
 def _build_awb_category_summary(
-    normalized: Sequence[Dict[str, Any]],
-    category_stats: Optional[Sequence[Dict[str, Any]]] = None,
+    category_stats: Optional[Sequence[CategoryStat]] = None,
 ) -> List[str]:
-    if not normalized:
+    if not category_stats:
         return []
 
-    if category_stats is None:
-        category_stats = _collect_awb_category_stats(normalized)
-
-    counts = {stat['label']: stat['count'] for stat in category_stats}
+    counts = {stat.label: stat.count for stat in category_stats}
 
     lines: List[str] = []
     mix_labels = ['MixLight', 'HiMixLow', 'MidMixLow', 'LowMixHigh']
@@ -501,165 +588,142 @@ def _build_awb_category_summary(
     return lines
 
 
-_CATEGORY_DEFINITIONS: Tuple[Dict[str, Any], ...] = (
-    {
-        'label': 'GreenZone',
-        'keywords': ('greenzone',),
-        'description': '绿区/人像低光场景',
-        'purpose': '压低绿区/人像的偏色统计点',
-        'note_absent': True,
-    },
-    {
-        'label': 'MixLight',
-        'keywords': ('mixlight', 'mix_light'),
-        'description': '多灯混合光段',
-        'purpose': '削弱复杂混合光的高权重点',
-        'note_absent': True,
-    },
-    {
-        'label': 'HiMixLow',
-        'keywords': ('himixlow', 'hi_mixlow', 'hi_mix_low'),
-        'description': '高亮混合光',
-        'purpose': '压制高亮混合光导致的色偏',
-        'note_absent': True,
-    },
-    {
-        'label': 'MidMixLow',
-        'keywords': ('midmixlow', 'mid_mixlow', 'mid_mix_low'),
-        'description': '中亮混合光',
-        'purpose': '平衡中亮混合光的权重分布',
-        'note_absent': True,
-    },
-    {
-        'label': 'LowMixHigh',
-        'keywords': ('lowmixhigh', 'low_mixhigh', 'low_mix_high'),
-        'description': '低 BV 混合光',
-        'purpose': '在低 BV 条件下保持混合光稳定',
-        'note_absent': True,
-    },
-    {
-        'label': 'Special/门店',
-        'keywords': ('special', 'store', 'huaweistore', 'oppostore'),
-        'description': '定制门店/特定环境',
-        'purpose': '针对华为/OPPO 等门店暖光进行减权',
-        'note_absent': True,
-    },
-    {
-        'label': 'ExtremeLow',
-        'keywords': ('extremelow', 'extreme_low'),
-        'description': '极低色温场景',
-        'purpose': '保护极低色温木质/暖光场景',
-        'note_absent': True,
-    },
-    {
-        'label': 'BlueMoment',
-        'keywords': ('bluemoment',),
-        'description': '蓝调/暮光场景',
-        'purpose': '控制蓝调时刻的偏蓝拉动',
-        'note_absent': True,
-    },
-    {
-        'label': 'Pure 色块',
-        'keywords': ('pureyellow', 'pureblue'),
-        'description': '纯色块/广告屏',
-        'purpose': '压制纯色广告屏等极端色块',
-        'note_absent': True,
-    },
-    {
-        'label': 'Sunset',
-        'keywords': ('sunset',),
-        'description': '日落暖色段',
-        'purpose': '限制日落暖光偏红',
-        'note_absent': True,
-    },
-    {
-        'label': 'BlueSky',
-        'keywords': ('bluesky', 'blue_sky'),
-        'description': '蓝天高色温',
-        'purpose': '约束蓝天高色温拉动',
-        'note_absent': True,
-    },
-    {
-        'label': 'BrightOutdoor',
-        'keywords': ('brightoutdoor', 'bightoutdoor', 'bright_outdoor'),
-        'description': '高亮户外',
-        'purpose': '在户外高亮场景维持白点稳定',
-        'note_absent': True,
-    },
-    {
-        'label': 'OutdoorScene',
-        'keywords': ('outdoorscene', 'outdoor_scene', 'outdoor'),
-        'description': '泛户外场景',
-        'purpose': '泛化户外光源的减权基线',
-        'note_absent': True,
-    },
-    {
-        'label': 'Starbucks',
-        'keywords': ('starbucks',),
-        'description': '咖啡店/Starbucks',
-        'purpose': '应对咖啡店暖光',
-        'note_absent': True,
-    },
-    {
-        'label': 'Face',
-        'keywords': ('face',),
-        'description': '人像优先条目',
-        'purpose': '与混合光条目配合守护肤色',
-        'note_absent': False,
-    },
+_CATEGORY_DEFINITIONS: Tuple[CategoryDefinition, ...] = (
+    CategoryDefinition(
+        label='GreenZone',
+        keywords=('greenzone',),
+        description='绿区/人像低光场景',
+        purpose='压低绿区/人像的偏色统计点',
+        note_absent=True,
+    ),
+    CategoryDefinition(
+        label='MixLight',
+        keywords=('mixlight', 'mix_light'),
+        description='多灯混合光段',
+        purpose='削弱复杂混合光的高权重点',
+        note_absent=True,
+    ),
+    CategoryDefinition(
+        label='HiMixLow',
+        keywords=('himixlow', 'hi_mixlow', 'hi_mix_low'),
+        description='高亮混合光',
+        purpose='压制高亮混合光导致的色偏',
+        note_absent=True,
+    ),
+    CategoryDefinition(
+        label='MidMixLow',
+        keywords=('midmixlow', 'mid_mixlow', 'mid_mix_low'),
+        description='中亮混合光',
+        purpose='平衡中亮混合光的权重分布',
+        note_absent=True,
+    ),
+    CategoryDefinition(
+        label='LowMixHigh',
+        keywords=('lowmixhigh', 'low_mixhigh', 'low_mix_high'),
+        description='低 BV 混合光',
+        purpose='在低 BV 条件下保持混合光稳定',
+        note_absent=True,
+    ),
+    CategoryDefinition(
+        label='Special/门店',
+        keywords=('special', 'store', 'huaweistore', 'oppostore'),
+        description='定制门店/特定环境',
+        purpose='针对华为/OPPO 等门店暖光进行减权',
+        note_absent=True,
+    ),
+    CategoryDefinition(
+        label='ExtremeLow',
+        keywords=('extremelow', 'extreme_low'),
+        description='极低色温场景',
+        purpose='保护极低色温木质/暖光场景',
+        note_absent=True,
+    ),
+    CategoryDefinition(
+        label='BlueMoment',
+        keywords=('bluemoment',),
+        description='蓝调/暮光场景',
+        purpose='控制蓝调时刻的偏蓝拉动',
+        note_absent=True,
+    ),
+    CategoryDefinition(
+        label='Pure 色块',
+        keywords=('pureyellow', 'pureblue'),
+        description='纯色块/广告屏',
+        purpose='压制纯色广告屏等极端色块',
+        note_absent=True,
+    ),
+    CategoryDefinition(
+        label='Sunset',
+        keywords=('sunset',),
+        description='日落暖色段',
+        purpose='限制日落暖光偏红',
+        note_absent=True,
+    ),
+    CategoryDefinition(
+        label='BlueSky',
+        keywords=('bluesky', 'blue_sky'),
+        description='蓝天高色温',
+        purpose='约束蓝天高色温拉动',
+        note_absent=True,
+    ),
+    CategoryDefinition(
+        label='BrightOutdoor',
+        keywords=('brightoutdoor', 'bightoutdoor', 'bright_outdoor'),
+        description='高亮户外',
+        purpose='在户外高亮场景维持白点稳定',
+        note_absent=True,
+    ),
+    CategoryDefinition(
+        label='OutdoorScene',
+        keywords=('outdoorscene', 'outdoor_scene', 'outdoor'),
+        description='泛户外场景',
+        purpose='泛化户外光源的减权基线',
+        note_absent=True,
+    ),
+    CategoryDefinition(
+        label='Starbucks',
+        keywords=('starbucks',),
+        description='咖啡店/Starbucks',
+        purpose='应对咖啡店暖光',
+        note_absent=True,
+    ),
+    CategoryDefinition(
+        label='Face',
+        keywords=('face',),
+        description='人像优先条目',
+        purpose='与混合光条目配合守护肤色',
+    ),
 )
 
 
-def _normalize_records(records: Sequence[OffsetMapRecord]) -> List[Dict[str, Any]]:
-    normalized: List[Dict[str, Any]] = []
-    for record in records:
-        normalized.append({
-            'record': record,
-            'alias_lower': (record.alias or '').lower(),
-            'tag_lower': record.tag.lower(),
-            'weight': record.weight,
-            'bv': _extract_axis_range(record, 'bv'),
-            'ctemp': _extract_axis_range(record, 'ctemp'),
-            'ir': _extract_axis_range(record, 'ir'),
-        })
-    return normalized
+def _normalize_records(records: Sequence[OffsetMapRecord]) -> List[NormalizedRecord]:
+    return [NormalizedRecord.from_record(record) for record in records]
 
 
-def _collect_awb_category_stats(normalized: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    stats: List[Dict[str, Any]] = []
+def _collect_awb_category_stats(normalized: Sequence[NormalizedRecord]) -> List[CategoryStat]:
+    stats: List[CategoryStat] = []
     for definition in _CATEGORY_DEFINITIONS:
-        matches = [
+        matches = tuple(
             item
             for item in normalized
-            if any(keyword in item['alias_lower'] or keyword in item['tag_lower'] for keyword in definition['keywords'])
-        ]
-        records = [item['record'] for item in matches]
-        stats.append({
-            'definition': definition,
-            'label': definition['label'],
-            'description': definition.get('description', ''),
-            'purpose': definition.get('purpose', ''),
-            'keywords': definition['keywords'],
-            'count': len(matches),
-            'records': records,
-            'bv_span': _combine_ranges((item.get('bv') for item in matches)) if matches else (None, None),
-            'ct_span': _combine_ranges((item.get('ctemp') for item in matches)) if matches else (None, None),
-            'ir_span': _combine_ranges((item.get('ir') for item in matches)) if matches else (None, None),
-            'weight_range': _format_weight_range(records),
-            'map_list': _format_map_list(records),
-        })
+            if any(item.matches_keyword(keyword) for keyword in definition.keywords)
+        )
+        stats.append(CategoryStat(definition=definition, matches=matches))
+
     return stats
 
 
 def _build_overlap_summary_line(
-    normalized: Sequence[Dict[str, Any]],
+    normalized: Sequence[NormalizedRecord],
+
     bv_window: Optional[RangeWindow],
     ct_window: Optional[RangeWindow],
 ) -> Optional[str]:
     segments: List[str] = []
     if bv_window:
         overlaps = [
-            _overlap_length(item.get('bv', (None, None)), bv_window)
+            _overlap_length(item.range_for('bv'), bv_window)
+
             for item in normalized
         ]
         overlaps = [value for value in overlaps if value > 0]
@@ -669,7 +733,7 @@ def _build_overlap_summary_line(
             )
     if ct_window:
         overlaps = [
-            _overlap_length(item.get('ctemp', (None, None)), ct_window)
+            _overlap_length(item.range_for('ctemp'), ct_window)
             for item in normalized
         ]
         overlaps = [value for value in overlaps if value > 0]
@@ -682,23 +746,25 @@ def _build_overlap_summary_line(
     return "- 区间交集：" + "，".join(segments) + "，说明大部分条目在目标窗口内具备实际重叠。"
 
 
-def _build_category_overview_line(category_stats: Sequence[Dict[str, Any]]) -> Optional[str]:
-    entries = [f"{stat['label']} {stat['count']} 条" for stat in category_stats if stat.get('count')]
+def _build_category_overview_line(category_stats: Sequence[CategoryStat]) -> Optional[str]:
+    entries = [f"{stat.label} {stat.count} 条" for stat in category_stats if stat.count]
+
     if not entries:
         return None
     return "- 类型覆盖：" + "、".join(entries) + "。"
 
 
 def _build_awb_reduce_highlights(
-    normalized: Sequence[Dict[str, Any]],
-    category_stats: Sequence[Dict[str, Any]],
+    normalized: Sequence[NormalizedRecord],
+    category_stats: Sequence[CategoryStat],
     bv_window: Optional[RangeWindow],
     ct_window: Optional[RangeWindow],
     ct_full: Sequence[OffsetMapRecord],
     bv_full: Sequence[OffsetMapRecord],
 ) -> List[str]:
     lines: List[str] = []
-    counts = {stat['label']: stat['count'] for stat in category_stats}
+    counts = {stat.label: stat.count for stat in category_stats}
+
 
     mix_labels = ['MixLight', 'HiMixLow', 'MidMixLow', 'LowMixHigh']
     mix_breakdown = [f"{label} {counts.get(label, 0)} 条" for label in mix_labels if counts.get(label, 0)]
@@ -778,29 +844,27 @@ def _build_awb_reduce_highlights(
 
 
 def _describe_category_stat(
-    stat: Dict[str, Any],
+    stat: CategoryStat,
     bv_window: Optional[RangeWindow],
     ct_window: Optional[RangeWindow],
 ) -> Optional[str]:
-    records = stat.get('records') or []
-    if not records:
+    if stat.count == 0:
         return None
 
-    label = stat.get('label', '')
-    description = stat.get('description') or ''
-    purpose = stat.get('purpose') or '削弱该类场景的偏色统计点'
-    map_desc = _format_limited_map_list(records)
+    label = stat.label
+    description = stat.definition.description or ''
+    purpose = stat.definition.purpose or '削弱该类场景的偏色统计点'
+    map_desc = stat.map_list
 
     line = f"- {label}"
     if description:
         line += f"（{description}）"
     if map_desc:
-        line += f"：{map_desc}（共 {stat.get('count', len(records))} 条）"
+        line += f"：{map_desc}（共 {stat.count} 条）"
     else:
-        line += f"：共 {stat.get('count', len(records))} 条"
+        line += f"：共 {stat.count} 条"
 
-    weight_range = stat.get('weight_range') or '-'
-    line += f"；权重 {weight_range}"
+    line += f"；权重 {stat.weight_range or '-'}"
 
     span_parts = _format_category_span_parts(stat, bv_window, ct_window)
     if span_parts:
@@ -814,12 +878,13 @@ def _describe_category_stat(
 
 
 def _format_category_span_parts(
-    stat: Dict[str, Any],
+    stat: CategoryStat,
+
     bv_window: Optional[RangeWindow],
     ct_window: Optional[RangeWindow],
 ) -> List[str]:
     parts: List[str] = []
-    bv_span = stat.get('bv_span')
+    bv_span = stat.bv_span
     if bv_span and bv_span[0] is not None and bv_span[1] is not None:
         text = f"BV {_format_range_descriptor(bv_span)}"
         if bv_window:
@@ -828,7 +893,7 @@ def _format_category_span_parts(
                 text += f"（与目标重叠 {_format_number(overlap)} EV）"
         parts.append(text)
 
-    ct_span = stat.get('ct_span')
+    ct_span = stat.ct_span
     if ct_span and ct_span[0] is not None and ct_span[1] is not None:
         text = f"色温 {_format_range_descriptor(ct_span, 'K')}"
         if ct_window:
@@ -837,7 +902,7 @@ def _format_category_span_parts(
                 text += f"（与目标重叠 {_format_number(overlap)} K）"
         parts.append(text)
 
-    ir_span = stat.get('ir_span')
+    ir_span = stat.ir_span
     if ir_span and (ir_span[0] is not None or ir_span[1] is not None):
         parts.append(_format_ir_descriptor(ir_span))
 
@@ -854,11 +919,11 @@ def _format_limited_map_list(records: Sequence[OffsetMapRecord], limit: int = 6)
     return '、'.join(tags)
 
 
-def _build_category_absence_line(category_stats: Sequence[Dict[str, Any]]) -> Optional[str]:
+def _build_category_absence_line(category_stats: Sequence[CategoryStat]) -> Optional[str]:
     missing = [
-        stat['label']
+        stat.label
         for stat in category_stats
-        if not stat.get('count') and stat.get('definition', {}).get('note_absent')
+        if stat.count == 0 and stat.definition.note_absent
     ]
     if not missing:
         return None
@@ -866,7 +931,7 @@ def _build_category_absence_line(category_stats: Sequence[Dict[str, Any]]) -> Op
 
 
 def _collect_partial_overlaps(
-    normalized: Sequence[Dict[str, Any]],
+    normalized: Sequence[NormalizedRecord],
     axis: str,
     window: RangeWindow,
     exclude_tags: Sequence[str],
@@ -874,12 +939,10 @@ def _collect_partial_overlaps(
     exclude = set(exclude_tags)
     overlaps: List[float] = []
     for item in normalized:
-        record = item.get('record')
-        tag = getattr(record, 'tag', None) if record else None
+        tag = item.record.tag
         if tag in exclude:
             continue
-        bounds = item.get(axis, (None, None))
-        overlap = _overlap_length(bounds, window)
+        overlap = _overlap_length(item.range_for(axis), window)
         if overlap > 0:
             overlaps.append(overlap)
     return overlaps
@@ -911,7 +974,6 @@ def _median(values: Sequence[float]) -> float:
     return (ordered[mid - 1] + ordered[mid]) / 2.0
 
 
-
 def _build_awb_enhance_category_line(records: Sequence[OffsetMapRecord]) -> Optional[str]:
     if not records:
         return None
@@ -941,22 +1003,21 @@ def _build_awb_enhance_category_line(records: Sequence[OffsetMapRecord]) -> Opti
 
 
 def _build_awb_layout_highlights(
-    normalized: Sequence[Dict[str, Any]],
+    normalized: Sequence[NormalizedRecord],
     bv_window: Optional[RangeWindow],
     ct_window: Optional[RangeWindow],
-    category_stats: Sequence[Dict[str, Any]],
+    category_stats: Sequence[CategoryStat],
 ) -> List[str]:
     if not normalized:
         return []
 
     insights: List[str] = []
     for stat in category_stats:
-        if not stat.get('count'):
+        if not stat.count:
             continue
         line = _describe_category_stat(stat, bv_window, ct_window)
         if line:
             insights.append(line)
-
 
     return insights
 
@@ -1117,6 +1178,9 @@ __all__ = [
     'OffsetMapQuerySpec',
     'OffsetMapQueryResult',
     'OffsetMapRecord',
+    'NormalizedRecord',
+    'CategoryDefinition',
+    'CategoryStat',
     'RangeWindow',
     'RangeSpan',
     'build_report_section',

@@ -67,7 +67,6 @@ def verify_section(report_path: Path) -> None:
         '门店/特定场景',
         '色彩极端场景',
         '组合策略',
-
         'BV(2,6) 强拉映射统计',
         'ml=65471',
         '高 IR 门限主要用于强拉',
