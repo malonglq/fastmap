@@ -349,6 +349,7 @@ def _build_awb_reduce_section(result: OffsetMapQueryResult) -> Dict[str, Any]:
     if category_line:
         overview_lines.append(category_line)
 
+
     table = _build_table_payload(matched, spec, default_axes=['bv', 'ctemp'])
 
     methodology = spec.metadata.get('methodology_lines') or [
@@ -370,6 +371,7 @@ def _build_awb_reduce_section(result: OffsetMapQueryResult) -> Dict[str, Any]:
         ct_full,
         bv_full,
     )
+
 
     return {
         'title': spec.title or spec.name,
@@ -707,11 +709,13 @@ def _collect_awb_category_stats(normalized: Sequence[NormalizedRecord]) -> List[
             if any(item.matches_keyword(keyword) for keyword in definition.keywords)
         )
         stats.append(CategoryStat(definition=definition, matches=matches))
+
     return stats
 
 
 def _build_overlap_summary_line(
     normalized: Sequence[NormalizedRecord],
+
     bv_window: Optional[RangeWindow],
     ct_window: Optional[RangeWindow],
 ) -> Optional[str]:
@@ -719,6 +723,7 @@ def _build_overlap_summary_line(
     if bv_window:
         overlaps = [
             _overlap_length(item.range_for('bv'), bv_window)
+
             for item in normalized
         ]
         overlaps = [value for value in overlaps if value > 0]
@@ -743,6 +748,7 @@ def _build_overlap_summary_line(
 
 def _build_category_overview_line(category_stats: Sequence[CategoryStat]) -> Optional[str]:
     entries = [f"{stat.label} {stat.count} 条" for stat in category_stats if stat.count]
+
     if not entries:
         return None
     return "- 类型覆盖：" + "、".join(entries) + "。"
@@ -758,6 +764,7 @@ def _build_awb_reduce_highlights(
 ) -> List[str]:
     lines: List[str] = []
     counts = {stat.label: stat.count for stat in category_stats}
+
 
     mix_labels = ['MixLight', 'HiMixLow', 'MidMixLow', 'LowMixHigh']
     mix_breakdown = [f"{label} {counts.get(label, 0)} 条" for label in mix_labels if counts.get(label, 0)]
@@ -872,6 +879,7 @@ def _describe_category_stat(
 
 def _format_category_span_parts(
     stat: CategoryStat,
+
     bv_window: Optional[RangeWindow],
     ct_window: Optional[RangeWindow],
 ) -> List[str]:
