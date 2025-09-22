@@ -242,20 +242,20 @@ def _build_awb_reduce_section(result: OffsetMapQueryResult) -> Dict[str, Any]:
     ct_full = coverage_sorted.get('ctemp', [])
     bv_full = coverage_sorted.get('bv', [])
 
+    normalized = _normalize_records(matched)
+    category_stats = _collect_awb_category_stats(normalized)
+
     overview_lines = [
         f"- 满足 BV ∈ ({_format_number(bv_window.lower)}, {_format_number(bv_window.upper)}) 且色温段与 {_format_number(ct_window.lower)}–{_format_number(ct_window.upper)} K 有交集、同时 ml={spec.ml} 的 offset_map 一共有 {len(matched)} 条。",
-        f"- 其中只有 {len(ct_full)} 条（{_format_map_list(ct_full)}）在色温上完全覆盖 {_format_number(ct_window.lower)}–{_format_number(ct_window.upper)} K；另有 {len(bv_full)} 条（{_format_map_list(bv_full)}）在 BV 上完整覆盖 {_format_number(bv_window.lower)}–{_format_number(bv_window.upper)}，其他条目仅与目标区间部分重叠。",
     ]
 
-    highlights = []
-    if ct_full:
-        highlights.append(
-            f"- 完整覆盖色温 {_format_number(ct_window.lower)}–{_format_number(ct_window.upper)} K 的 {len(ct_full)} 条规则（{_format_map_list(ct_full)}）分别以 {_format_weight_list(ct_full)} 的权重在高 BV（5.5–7.0）或低 BV（0–5.0）范围抑制统计点，属于专门的门店/蓝衣场景。"
-        )
-    if bv_full:
-        highlights.append(
-            f"- 能够在 BV 轴完全覆盖 {_format_number(bv_window.lower)}–{_format_number(bv_window.upper)} 的 {len(bv_full)} 条（{_format_map_list(bv_full)}）多为人脸或混合光场景，权重集中在 {_format_weight_list(bv_full)}，提示在整个目标 BV 带上都进行权重削减。"
-        )
+    overlap_line = _build_overlap_summary_line(normalized, bv_window, ct_window)
+    if overlap_line:
+        overview_lines.append(overlap_line)
+
+    category_line = _build_category_overview_line(category_stats)
+    if category_line:
+        overview_lines.append(category_line)
 
     table = _build_table_payload(matched, spec, default_axes=['bv', 'ctemp'])
 
@@ -263,7 +263,21 @@ def _build_awb_reduce_section(result: OffsetMapQueryResult) -> Dict[str, Any]:
         "- 解析当前 Map 配置的 `offset_map` `<range>` 数据，读取 BV、色温、权重与 `ml`，并结合同名节点下的 `<AliasName>` 获取别名信息，确认 `ml=65535`（减小权重）的场景。",
     ]
 
-    insights = _generate_awb_reduce_insights(matched, spec)
+    insights = _generate_awb_reduce_insights(
+        matched,
+        spec,
+        normalized=normalized,
+        category_stats=category_stats,
+    )
+
+    highlights = _build_awb_reduce_highlights(
+        normalized,
+        category_stats,
+        bv_window,
+        ct_window,
+        ct_full,
+        bv_full,
+    )
 
     return {
         'title': spec.title or spec.name,
@@ -412,13 +426,188 @@ def _build_awb_enhance_section(result: OffsetMapQueryResult) -> Dict[str, Any]:
     }
 
 
-def _generate_awb_reduce_insights(records: Sequence[OffsetMapRecord], spec: OffsetMapQuerySpec) -> List[str]:
+def _generate_awb_reduce_insights(
+    records: Sequence[OffsetMapRecord],
+    spec: OffsetMapQuerySpec,
+    normalized: Optional[Sequence[Dict[str, Any]]] = None,
+    category_stats: Optional[Sequence[Dict[str, Any]]] = None,
+) -> List[str]:
     if not records:
         return []
 
     bv_window = spec.range_windows.get('bv') if spec.range_windows else None
     ct_window = spec.range_windows.get('ctemp') if spec.range_windows else None
 
+    if normalized is None:
+        normalized = _normalize_records(records)
+    if category_stats is None:
+        category_stats = _collect_awb_category_stats(normalized)
+
+    insights: List[str] = []
+    insights.extend(_build_awb_category_summary(normalized, category_stats))
+    insights.extend(_build_awb_layout_highlights(normalized, bv_window, ct_window, category_stats))
+    return insights
+
+
+def _build_awb_category_summary(
+    normalized: Sequence[Dict[str, Any]],
+    category_stats: Optional[Sequence[Dict[str, Any]]] = None,
+) -> List[str]:
+    if not normalized:
+        return []
+
+    if category_stats is None:
+        category_stats = _collect_awb_category_stats(normalized)
+
+    counts = {stat['label']: stat['count'] for stat in category_stats}
+
+    lines: List[str] = []
+    mix_labels = ['MixLight', 'HiMixLow', 'MidMixLow', 'LowMixHigh']
+    mix_segments = [f"{label} {counts.get(label, 0)} 条" for label in mix_labels if counts.get(label, 0)]
+    if mix_segments:
+        lines.append(
+            "- 混合光条目：" + "、".join(mix_segments) + "，通过多段 Mix 组合削弱高比重混合光统计点。"
+        )
+
+    store_labels = ['Special/门店', 'Starbucks']
+    store_segments = [f"{label} {counts.get(label, 0)} 条" for label in store_labels if counts.get(label, 0)]
+    if store_segments:
+        lines.append(
+            "- 门店/特定场景：" + "、".join(store_segments) + "，对华为/OPPO/咖啡店等暖光门店进行权重削减。"
+        )
+
+    color_labels = ['BlueMoment', 'Pure 色块', 'Sunset', 'BlueSky', 'BrightOutdoor', 'OutdoorScene', 'ExtremeLow']
+    color_segments = [f"{label} {counts.get(label, 0)} 条" for label in color_labels if counts.get(label, 0)]
+    if color_segments:
+        lines.append(
+            "- 色彩极端场景：" + "、".join(color_segments) + "，保持蓝调、极暖或高亮户外场景不过度拉动白点。"
+        )
+
+    greenzone_count = counts.get('GreenZone', 0)
+    if greenzone_count:
+        lines.append(
+            f"- GreenZone 场景：GreenZone {greenzone_count} 条，重点压制低光绿区/人像的偏色统计点。"
+        )
+
+    face_count = counts.get('Face', 0)
+    if face_count:
+        lines.append(
+            f"- 人像辅助：Face {face_count} 条，结合混合光条目在目标 BV 内守护肤色。"
+        )
+
+    return lines
+
+
+_CATEGORY_DEFINITIONS: Tuple[Dict[str, Any], ...] = (
+    {
+        'label': 'GreenZone',
+        'keywords': ('greenzone',),
+        'description': '绿区/人像低光场景',
+        'purpose': '压低绿区/人像的偏色统计点',
+        'note_absent': True,
+    },
+    {
+        'label': 'MixLight',
+        'keywords': ('mixlight', 'mix_light'),
+        'description': '多灯混合光段',
+        'purpose': '削弱复杂混合光的高权重点',
+        'note_absent': True,
+    },
+    {
+        'label': 'HiMixLow',
+        'keywords': ('himixlow', 'hi_mixlow', 'hi_mix_low'),
+        'description': '高亮混合光',
+        'purpose': '压制高亮混合光导致的色偏',
+        'note_absent': True,
+    },
+    {
+        'label': 'MidMixLow',
+        'keywords': ('midmixlow', 'mid_mixlow', 'mid_mix_low'),
+        'description': '中亮混合光',
+        'purpose': '平衡中亮混合光的权重分布',
+        'note_absent': True,
+    },
+    {
+        'label': 'LowMixHigh',
+        'keywords': ('lowmixhigh', 'low_mixhigh', 'low_mix_high'),
+        'description': '低 BV 混合光',
+        'purpose': '在低 BV 条件下保持混合光稳定',
+        'note_absent': True,
+    },
+    {
+        'label': 'Special/门店',
+        'keywords': ('special', 'store', 'huaweistore', 'oppostore'),
+        'description': '定制门店/特定环境',
+        'purpose': '针对华为/OPPO 等门店暖光进行减权',
+        'note_absent': True,
+    },
+    {
+        'label': 'ExtremeLow',
+        'keywords': ('extremelow', 'extreme_low'),
+        'description': '极低色温场景',
+        'purpose': '保护极低色温木质/暖光场景',
+        'note_absent': True,
+    },
+    {
+        'label': 'BlueMoment',
+        'keywords': ('bluemoment',),
+        'description': '蓝调/暮光场景',
+        'purpose': '控制蓝调时刻的偏蓝拉动',
+        'note_absent': True,
+    },
+    {
+        'label': 'Pure 色块',
+        'keywords': ('pureyellow', 'pureblue'),
+        'description': '纯色块/广告屏',
+        'purpose': '压制纯色广告屏等极端色块',
+        'note_absent': True,
+    },
+    {
+        'label': 'Sunset',
+        'keywords': ('sunset',),
+        'description': '日落暖色段',
+        'purpose': '限制日落暖光偏红',
+        'note_absent': True,
+    },
+    {
+        'label': 'BlueSky',
+        'keywords': ('bluesky', 'blue_sky'),
+        'description': '蓝天高色温',
+        'purpose': '约束蓝天高色温拉动',
+        'note_absent': True,
+    },
+    {
+        'label': 'BrightOutdoor',
+        'keywords': ('brightoutdoor', 'bightoutdoor', 'bright_outdoor'),
+        'description': '高亮户外',
+        'purpose': '在户外高亮场景维持白点稳定',
+        'note_absent': True,
+    },
+    {
+        'label': 'OutdoorScene',
+        'keywords': ('outdoorscene', 'outdoor_scene', 'outdoor'),
+        'description': '泛户外场景',
+        'purpose': '泛化户外光源的减权基线',
+        'note_absent': True,
+    },
+    {
+        'label': 'Starbucks',
+        'keywords': ('starbucks',),
+        'description': '咖啡店/Starbucks',
+        'purpose': '应对咖啡店暖光',
+        'note_absent': True,
+    },
+    {
+        'label': 'Face',
+        'keywords': ('face',),
+        'description': '人像优先条目',
+        'purpose': '与混合光条目配合守护肤色',
+        'note_absent': False,
+    },
+)
+
+
+def _normalize_records(records: Sequence[OffsetMapRecord]) -> List[Dict[str, Any]]:
     normalized: List[Dict[str, Any]] = []
     for record in records:
         normalized.append({
@@ -430,42 +619,293 @@ def _generate_awb_reduce_insights(records: Sequence[OffsetMapRecord], spec: Offs
             'ctemp': _extract_axis_range(record, 'ctemp'),
             'ir': _extract_axis_range(record, 'ir'),
         })
-
-    insights: List[str] = []
-    insights.extend(_build_awb_category_summary(normalized))
-    insights.extend(_build_awb_layout_highlights(normalized, bv_window, ct_window))
-    return insights
+    return normalized
 
 
-def _build_awb_category_summary(normalized: Sequence[Dict[str, Any]]) -> List[str]:
-    if not normalized:
-        return []
+def _collect_awb_category_stats(normalized: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    stats: List[Dict[str, Any]] = []
+    for definition in _CATEGORY_DEFINITIONS:
+        matches = [
+            item
+            for item in normalized
+            if any(keyword in item['alias_lower'] or keyword in item['tag_lower'] for keyword in definition['keywords'])
+        ]
+        records = [item['record'] for item in matches]
+        stats.append({
+            'definition': definition,
+            'label': definition['label'],
+            'description': definition.get('description', ''),
+            'purpose': definition.get('purpose', ''),
+            'keywords': definition['keywords'],
+            'count': len(matches),
+            'records': records,
+            'bv_span': _combine_ranges((item.get('bv') for item in matches)) if matches else (None, None),
+            'ct_span': _combine_ranges((item.get('ctemp') for item in matches)) if matches else (None, None),
+            'ir_span': _combine_ranges((item.get('ir') for item in matches)) if matches else (None, None),
+            'weight_range': _format_weight_range(records),
+            'map_list': _format_map_list(records),
+        })
+    return stats
 
-    category_rules: List[Tuple[str, Tuple[str, ...]]] = [
-        ('Mix/MixLight', ('mix',)),
-        ('Face', ('face',)),
-        ('Special', ('special',)),
-        ('GreenZone', ('greenzone',)),
-    ]
 
-    buckets: List[Tuple[str, int]] = []
-    for label, keywords in category_rules:
-        count = sum(1 for item in normalized if any(keyword in item['alias_lower'] for keyword in keywords))
-        if count:
-            buckets.append((label, count))
+def _build_overlap_summary_line(
+    normalized: Sequence[Dict[str, Any]],
+    bv_window: Optional[RangeWindow],
+    ct_window: Optional[RangeWindow],
+) -> Optional[str]:
+    segments: List[str] = []
+    if bv_window:
+        overlaps = [
+            _overlap_length(item.get('bv', (None, None)), bv_window)
+            for item in normalized
+        ]
+        overlaps = [value for value in overlaps if value > 0]
+        if overlaps:
+            segments.append(
+                f"BV 重叠中位 {_format_number(_median(overlaps))} EV（平均 {_format_number(_mean(overlaps))} EV）"
+            )
+    if ct_window:
+        overlaps = [
+            _overlap_length(item.get('ctemp', (None, None)), ct_window)
+            for item in normalized
+        ]
+        overlaps = [value for value in overlaps if value > 0]
+        if overlaps:
+            segments.append(
+                f"色温重叠中位 {_format_number(_median(overlaps))} K（平均 {_format_number(_mean(overlaps))} K）"
+            )
+    if not segments:
+        return None
+    return "- 区间交集：" + "，".join(segments) + "，说明大部分条目在目标窗口内具备实际重叠。"
 
-    buckets.sort(key=lambda pair: pair[1], reverse=True)
-    store_count = sum(1 for item in normalized if 'store' in item['alias_lower'])
 
-    if not buckets and not store_count:
-        return []
+def _build_category_overview_line(category_stats: Sequence[Dict[str, Any]]) -> Optional[str]:
+    entries = [f"{stat['label']} {stat['count']} 条" for stat in category_stats if stat.get('count')]
+    if not entries:
+        return None
+    return "- 类型覆盖：" + "、".join(entries) + "。"
 
-    segments = ['{} {} 条'.format(label, count) for label, count in buckets[:4]]
-    line = '- 类别分布：' + ('，'.join(segments) if segments else '无显著类别')
-    if store_count:
-        line += f'；其中 {store_count} 条别名含 store 的门店场景'
+
+def _build_awb_reduce_highlights(
+    normalized: Sequence[Dict[str, Any]],
+    category_stats: Sequence[Dict[str, Any]],
+    bv_window: Optional[RangeWindow],
+    ct_window: Optional[RangeWindow],
+    ct_full: Sequence[OffsetMapRecord],
+    bv_full: Sequence[OffsetMapRecord],
+) -> List[str]:
+    lines: List[str] = []
+    counts = {stat['label']: stat['count'] for stat in category_stats}
+
+    mix_labels = ['MixLight', 'HiMixLow', 'MidMixLow', 'LowMixHigh']
+    mix_breakdown = [f"{label} {counts.get(label, 0)} 条" for label in mix_labels if counts.get(label, 0)]
+    store_labels = ['Special/门店', 'Starbucks']
+    store_breakdown = [f"{label} {counts.get(label, 0)} 条" for label in store_labels if counts.get(label, 0)]
+    color_labels = ['BlueMoment', 'Pure 色块', 'Sunset', 'BlueSky', 'BrightOutdoor', 'OutdoorScene', 'ExtremeLow']
+    color_breakdown = [f"{label} {counts.get(label, 0)} 条" for label in color_labels if counts.get(label, 0)]
+    greenzone_count = counts.get('GreenZone', 0)
+    face_count = counts.get('Face', 0)
+
+    strategy_segments: List[str] = []
+    if mix_breakdown:
+        strategy_segments.append("混合光类 " + "、".join(mix_breakdown))
+    if greenzone_count:
+        strategy_segments.append(f"GreenZone {greenzone_count} 条")
+    if face_count:
+        strategy_segments.append(f"Face {face_count} 条")
+    if store_breakdown:
+        strategy_segments.append("门店/特定场景 " + "、".join(store_breakdown))
+    if color_breakdown:
+        strategy_segments.append("色彩极端 " + "、".join(color_breakdown))
+
+    if strategy_segments:
+        lines.append(
+            "- 组合策略：" + "，".join(strategy_segments) + "，协同限制暖光、冷光与高 IR 场景的偏色干扰。"
+        )
+
+    if ct_window:
+        full_count = len(ct_full)
+        partial_overlaps = _collect_partial_overlaps(
+            normalized,
+            'ctemp',
+            ct_window,
+            {record.tag for record in ct_full},
+        )
+        coverage_parts: List[str] = []
+        if full_count:
+            coverage_parts.append(
+                f"{full_count} 条（{_format_map_list(ct_full)}）完全覆盖 {_format_number(ct_window.lower)}–{_format_number(ct_window.upper)} K"
+            )
+        if partial_overlaps:
+            coverage_parts.append(
+                f"其余 {len(partial_overlaps)} 条色温重叠 {_format_overlap_range(partial_overlaps)} K"
+            )
+        if coverage_parts:
+            lines.append(
+                "- 色温覆盖：" + '；'.join(coverage_parts) + "，保证目标窗口内既有全段覆盖也有细粒度补充。"
+            )
+
+    if bv_window:
+        full_count = len(bv_full)
+        partial_overlaps = _collect_partial_overlaps(
+            normalized,
+            'bv',
+            bv_window,
+            {record.tag for record in bv_full},
+        )
+        coverage_parts: List[str] = []
+        if full_count:
+            coverage_parts.append(
+                f"{full_count} 条（{_format_map_list(bv_full)}）完全覆盖 {_format_number(bv_window.lower)}–{_format_number(bv_window.upper)}"
+            )
+        if partial_overlaps:
+            coverage_parts.append(
+                f"其余 {len(partial_overlaps)} 条 BV 重叠 {_format_overlap_range(partial_overlaps)} EV"
+            )
+        if coverage_parts:
+            lines.append(
+                "- BV 覆盖：" + '；'.join(coverage_parts) + "，覆盖局部与全局亮度带的减权需求。"
+            )
+
+    absence_line = _build_category_absence_line(category_stats)
+    if absence_line:
+        lines.append(absence_line)
+
+    return lines
+
+
+def _describe_category_stat(
+    stat: Dict[str, Any],
+    bv_window: Optional[RangeWindow],
+    ct_window: Optional[RangeWindow],
+) -> Optional[str]:
+    records = stat.get('records') or []
+    if not records:
+        return None
+
+    label = stat.get('label', '')
+    description = stat.get('description') or ''
+    purpose = stat.get('purpose') or '削弱该类场景的偏色统计点'
+    map_desc = _format_limited_map_list(records)
+
+    line = f"- {label}"
+    if description:
+        line += f"（{description}）"
+    if map_desc:
+        line += f"：{map_desc}（共 {stat.get('count', len(records))} 条）"
+    else:
+        line += f"：共 {stat.get('count', len(records))} 条"
+
+    weight_range = stat.get('weight_range') or '-'
+    line += f"；权重 {weight_range}"
+
+    span_parts = _format_category_span_parts(stat, bv_window, ct_window)
+    if span_parts:
+        line += '；' + '；'.join(span_parts)
+
+    if purpose:
+        line += f"；用于{purpose}"
+
     line += '。'
-    return [line]
+    return line
+
+
+def _format_category_span_parts(
+    stat: Dict[str, Any],
+    bv_window: Optional[RangeWindow],
+    ct_window: Optional[RangeWindow],
+) -> List[str]:
+    parts: List[str] = []
+    bv_span = stat.get('bv_span')
+    if bv_span and bv_span[0] is not None and bv_span[1] is not None:
+        text = f"BV {_format_range_descriptor(bv_span)}"
+        if bv_window:
+            overlap = _overlap_length(bv_span, bv_window)
+            if overlap > 0:
+                text += f"（与目标重叠 {_format_number(overlap)} EV）"
+        parts.append(text)
+
+    ct_span = stat.get('ct_span')
+    if ct_span and ct_span[0] is not None and ct_span[1] is not None:
+        text = f"色温 {_format_range_descriptor(ct_span, 'K')}"
+        if ct_window:
+            overlap = _overlap_length(ct_span, ct_window)
+            if overlap > 0:
+                text += f"（与目标重叠 {_format_number(overlap)} K）"
+        parts.append(text)
+
+    ir_span = stat.get('ir_span')
+    if ir_span and (ir_span[0] is not None or ir_span[1] is not None):
+        parts.append(_format_ir_descriptor(ir_span))
+
+    return parts
+
+
+def _format_limited_map_list(records: Sequence[OffsetMapRecord], limit: int = 6) -> str:
+    sorted_records = _sort_records(records)
+    tags = [record.tag for record in sorted_records]
+    if not tags:
+        return ''
+    if len(tags) > limit:
+        return '、'.join(tags[:limit]) + f' 等 {len(tags)} 条'
+    return '、'.join(tags)
+
+
+def _build_category_absence_line(category_stats: Sequence[Dict[str, Any]]) -> Optional[str]:
+    missing = [
+        stat['label']
+        for stat in category_stats
+        if not stat.get('count') and stat.get('definition', {}).get('note_absent')
+    ]
+    if not missing:
+        return None
+    return "- 类型缺口：" + "、".join(missing) + " 类型在该窗口内暂未出现减权映射。"
+
+
+def _collect_partial_overlaps(
+    normalized: Sequence[Dict[str, Any]],
+    axis: str,
+    window: RangeWindow,
+    exclude_tags: Sequence[str],
+) -> List[float]:
+    exclude = set(exclude_tags)
+    overlaps: List[float] = []
+    for item in normalized:
+        record = item.get('record')
+        tag = getattr(record, 'tag', None) if record else None
+        if tag in exclude:
+            continue
+        bounds = item.get(axis, (None, None))
+        overlap = _overlap_length(bounds, window)
+        if overlap > 0:
+            overlaps.append(overlap)
+    return overlaps
+
+
+def _format_overlap_range(values: Sequence[float]) -> str:
+    if not values:
+        return '-'
+    lower = min(values)
+    upper = max(values)
+    if math.isclose(lower, upper, rel_tol=1e-6, abs_tol=1e-6):
+        return _format_number(lower)
+    return f"{_format_number(lower)}–{_format_number(upper)}"
+
+
+def _mean(values: Sequence[float]) -> float:
+    if not values:
+        return 0.0
+    return sum(values) / len(values)
+
+
+def _median(values: Sequence[float]) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(values)
+    mid = len(ordered) // 2
+    if len(ordered) % 2:
+        return ordered[mid]
+    return (ordered[mid - 1] + ordered[mid]) / 2.0
 
 
 def _build_awb_enhance_category_line(records: Sequence[OffsetMapRecord]) -> Optional[str]:
@@ -496,88 +936,22 @@ def _build_awb_enhance_category_line(records: Sequence[OffsetMapRecord]) -> Opti
     )
 
 
-def _build_awb_layout_highlights(normalized: Sequence[Dict[str, Any]],
-                                 bv_window: Optional[RangeWindow],
-                                 ct_window: Optional[RangeWindow]) -> List[str]:
+def _build_awb_layout_highlights(
+    normalized: Sequence[Dict[str, Any]],
+    bv_window: Optional[RangeWindow],
+    ct_window: Optional[RangeWindow],
+    category_stats: Sequence[Dict[str, Any]],
+) -> List[str]:
     if not normalized:
         return []
 
     insights: List[str] = []
-
-    def select(filter_fn: Callable[[Dict[str, Any]], bool],
-               score_fn: Callable[[Dict[str, Any]], Tuple[Any, ...]]) -> Optional[Dict[str, Any]]:
-        candidates = [item for item in normalized if filter_fn(item)]
-        if not candidates:
-            return None
-        return max(candidates, key=score_fn)
-
-    def overlap(item: Dict[str, Any], axis: str, window: Optional[RangeWindow]) -> float:
-        return _overlap_length(item.get(axis, (None, None)), window)
-
-    green = select(
-        lambda item: 'greenzone' in item['alias_lower'],
-        lambda item: (
-            overlap(item, 'bv', bv_window),
-            overlap(item, 'ctemp', ct_window),
-            item['weight'],
-        ),
-    )
-    if green:
-        record = green['record']
-        line = (
-            f"- GreenZone 布局：{_format_record_brief(record)} 覆盖 BV {_format_range_descriptor(green['bv'])}、"
-            f"色温 {_format_range_descriptor(green['ctemp'], 'K')}，{_format_ir_descriptor(green['ir'])}，权重 {record.format_weight()}"
-        )
-        if bv_window:
-            bv_overlap = overlap(green, 'bv', bv_window)
-            if bv_overlap > 0:
-                line += (
-                    f"；与目标 BV({_format_number(bv_window.lower)}–{_format_number(bv_window.upper)}) 重叠 {_format_number(bv_overlap)} EV"
-                )
-        if ct_window:
-            ct_overlap = overlap(green, 'ctemp', ct_window)
-            if ct_overlap > 0:
-                line += f"，色温重叠 {_format_number(ct_overlap)} K"
-        line += '。'
-        insights.append(line)
-
-    mix = select(
-        lambda item: 'mix' in item['alias_lower'],
-        lambda item: (
-            item['weight'],
-            overlap(item, 'bv', bv_window),
-            overlap(item, 'ctemp', ct_window),
-        ),
-    )
-    if mix:
-        record = mix['record']
-        line = (
-            f"- Mix 场景抑制：{_format_record_brief(record)} 覆盖 BV {_format_range_descriptor(mix['bv'])}、"
-            f"色温 {_format_range_descriptor(mix['ctemp'], 'K')}，{_format_ir_descriptor(mix['ir'])}，权重 {record.format_weight()}"
-        )
-        if bv_window:
-            bv_overlap = overlap(mix, 'bv', bv_window)
-            if bv_overlap > 0:
-                line += (
-                    f"；与目标 BV({_format_number(bv_window.lower)}–{_format_number(bv_window.upper)}) 重叠 {_format_number(bv_overlap)} EV"
-                )
-        if ct_window:
-            ct_overlap = overlap(mix, 'ctemp', ct_window)
-            if ct_overlap > 0:
-                line += f"，色温重叠 {_format_number(ct_overlap)} K"
-        line += '。'
-        insights.append(line)
-
-    store_items = [item for item in normalized if 'store' in item['alias_lower']]
-    if store_items:
-        store_records = [item['record'] for item in store_items]
-        bv_span = _combine_ranges(item.get('bv') for item in store_items)
-        ct_span = _combine_ranges(item.get('ctemp') for item in store_items)
-        line = (
-            f"- 门店场景：{_format_map_list(store_records)} 覆盖 BV {_format_range_descriptor(bv_span)}、"
-            f"色温 {_format_range_descriptor(ct_span, 'K')}，权重 {_format_weight_range(store_records)}，集中削弱门店别名统计点。"
-        )
-        insights.append(line)
+    for stat in category_stats:
+        if not stat.get('count'):
+            continue
+        line = _describe_category_stat(stat, bv_window, ct_window)
+        if line:
+            insights.append(line)
 
     return insights
 
