@@ -41,7 +41,7 @@ MANIFEST
 project_document/
 output/
 docs/
-AGENTS.md
+
 
 # IDE编辑器文件
 *.swp
