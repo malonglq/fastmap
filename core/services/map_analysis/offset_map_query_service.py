@@ -257,6 +257,7 @@ def _build_awb_reduce_section(result: OffsetMapQueryResult) -> Dict[str, Any]:
     if category_line:
         overview_lines.append(category_line)
 
+
     table = _build_table_payload(matched, spec, default_axes=['bv', 'ctemp'])
 
     methodology = spec.metadata.get('methodology_lines') or [
@@ -278,6 +279,7 @@ def _build_awb_reduce_section(result: OffsetMapQueryResult) -> Dict[str, Any]:
         ct_full,
         bv_full,
     )
+
 
     return {
         'title': spec.title or spec.name,
@@ -432,6 +434,7 @@ def _generate_awb_reduce_insights(
     normalized: Optional[Sequence[Dict[str, Any]]] = None,
     category_stats: Optional[Sequence[Dict[str, Any]]] = None,
 ) -> List[str]:
+
     if not records:
         return []
 
@@ -908,6 +911,7 @@ def _median(values: Sequence[float]) -> float:
     return (ordered[mid - 1] + ordered[mid]) / 2.0
 
 
+
 def _build_awb_enhance_category_line(records: Sequence[OffsetMapRecord]) -> Optional[str]:
     if not records:
         return None
@@ -952,6 +956,7 @@ def _build_awb_layout_highlights(
         line = _describe_category_stat(stat, bv_window, ct_window)
         if line:
             insights.append(line)
+
 
     return insights
 
