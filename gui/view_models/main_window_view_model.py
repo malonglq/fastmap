@@ -267,11 +267,19 @@ class MainWindowViewModel(BaseViewModel):
                 logger.warning("==liuq debug== 加载场景分类配置失败，使用默认配置: %s", exc)
                 classification_config = SceneClassificationConfig()
 
+            awb_options = {
+                'enabled': True,
+                'default_title': 'BV(2,6) × 色温1500–3800 减权统计',
+                'enhance_title': 'BV(2,6) 强拉映射统计',
+            }
+
             report_path = self._map_report_generator.generate({
                 'map_configuration': self._map_configuration,
                 'include_multi_dimensional': True,
                 'classification_config': classification_config,
-                'template_name': 'reporting/domains/map/report.html'
+                'template_name': 'reporting/domains/map/report.html',
+                'include_awb_reduce_analysis': True,
+                'offset_query_options': awb_options,
             })
             return report_path
 
