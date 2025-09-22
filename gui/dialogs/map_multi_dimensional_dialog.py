@@ -76,6 +76,7 @@ class MapMultiDimensionalDialog(BaseAnalysisDialog):
         self.map_configuration = map_configuration
         self.generator = MapMultiDimensionalReportGenerator()
         self.classification_config = SceneClassificationConfig()
+        self.include_awb_reduce_cb: Optional[QCheckBox] = None
 
         super().__init__(parent, "Map多维度分析配置", (800, 600))
 
@@ -172,6 +173,11 @@ class MapMultiDimensionalDialog(BaseAnalysisDialog):
         self.include_multi_dimensional_cb.setChecked(True)
         self.include_multi_dimensional_cb.stateChanged.connect(self.on_multi_dimensional_changed)
         analysis_layout.addWidget(self.include_multi_dimensional_cb)
+
+        self.include_awb_reduce_cb = QCheckBox("包含 AWB 减权/强拉概览")
+        self.include_awb_reduce_cb.setChecked(True)
+        self.include_awb_reduce_cb.setToolTip("勾选后将在报告中附加 BV(2,6) 的 AWB 减权与强拉策略概览")
+        analysis_layout.addWidget(self.include_awb_reduce_cb)
 
         info_label = QLabel("多维度分析将提供详细的场景分类统计和参数分布信息")
         info_label.setStyleSheet("color: gray; font-style: italic;")
@@ -408,12 +414,24 @@ class MapMultiDimensionalDialog(BaseAnalysisDialog):
 
     def get_configuration(self) -> Dict[str, Any]:
         """获取配置信息"""
+        include_awb_reduce = bool(self.include_awb_reduce_cb.isChecked()) if self.include_awb_reduce_cb else False
+        offset_query_options = {
+            'enabled': include_awb_reduce,
+        }
+        if include_awb_reduce:
+            offset_query_options.update({
+                'default_title': 'BV(2,6) × 色温1500–3800 减权统计',
+                'enhance_title': 'BV(2,6) 强拉映射统计',
+            })
+
         return {
             'map_configuration': self.map_configuration,
             'include_multi_dimensional': self.include_multi_dimensional_cb.isChecked(),
             'classification_config': self.get_classification_config() if self.include_multi_dimensional_cb.isChecked() else None,
             'output_path': self.output_path_edit.text().strip() or None,
-            'template_name': self.template_combo.currentText()
+            'template_name': self.template_combo.currentText(),
+            'include_awb_reduce_analysis': include_awb_reduce,
+            'offset_query_options': offset_query_options,
         }
 
 

@@ -13,6 +13,7 @@ Map多维度分析报告生成器（重构版）
 import logging
 import json
 from collections import defaultdict
+from dataclasses import replace
 from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime
 from pathlib import Path
@@ -20,6 +21,12 @@ from pathlib import Path
 from core.interfaces.report_generator import IReportGenerator, ReportType
 from core.services.map_analysis.map_analyzer import MapAnalyzer
 from core.services.map_analysis.multi_dimensional_analyzer import MultiDimensionalAnalyzer
+from core.services.map_analysis.offset_map_query_service import (
+    OffsetMapQueryService,
+    OffsetMapQuerySpec,
+    RangeWindow,
+    build_report_section,
+)
 from core.services.reporting.engine.report_engine import ReportGenerator, ReportConfig
 from core.services.reporting.infrastructure import ReportData
 from core.models.map_data import MapConfiguration, MapPoint, MapType, SceneType
@@ -67,6 +74,8 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
             map_configuration = data['map_configuration']
             include_multi_dimensional = data.get('include_multi_dimensional', True)
             classification_config = data.get('classification_config', None)
+            offset_query_options = data.get('offset_query_options', {}) or {}
+            include_awb_reduce = data.get('include_awb_reduce_analysis')
             output_path = data.get('output_path', None)
             template_name = data.get('template_name', 'reporting/domains/map/report.html')
             
@@ -77,6 +86,7 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
             # 步骤2: 创建多维度分析器（如果需要）
             multi_dimensional_analyzer = None
             multi_dimensional_result: Dict[str, Any] = {}
+            offset_query_sections: List[Dict[str, Any]] = []
             if include_multi_dimensional:
                 logger.info("==liuq debug== 步骤2: 创建多维度分析器")
                 if classification_config is None:
@@ -95,6 +105,15 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
                     multi_dimensional_result = {}
             else:
                 multi_dimensional_result = {}
+
+            include_offset_queries = bool(offset_query_options.get('enabled'))
+            if include_awb_reduce is not None:
+                include_offset_queries = include_offset_queries or bool(include_awb_reduce)
+            if include_offset_queries:
+                offset_query_sections = self._build_offset_query_sections(
+                    map_configuration,
+                    offset_query_options,
+                )
             # 步骤3: 准备报告数据
             logger.info("==liuq debug== 步骤3: 准备报告数据")
             report_data = self._prepare_report_data(
@@ -105,7 +124,8 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
             )
             legacy_context = self._build_legacy_context(
                 map_configuration,
-                multi_dimensional_result
+                multi_dimensional_result,
+                offset_query_sections
             )
             
             # 步骤4: 生成报告
@@ -126,7 +146,7 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
             html_content = self.report_generator.generate_report(report_config)
             logger.info(f"==liuq debug== Map多维度分析报告生成完成 {report_config.output_path}")
             return report_config.output_path
-            
+
         except Exception as e:
             logger.error(f"==liuq debug== Map多维度分析报告生成失败: {e}")
             raise RuntimeError(f"Map多维度分析报告生成失败: {e}")
@@ -203,7 +223,7 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
             return default_template
         return template_name
 
-    def _prepare_report_data(self, map_configuration: MapConfiguration, 
+    def _prepare_report_data(self, map_configuration: MapConfiguration,
                            map_analyzer: MapAnalyzer,
                            multi_dimensional_analyzer: Optional[MultiDimensionalAnalyzer],
                            include_multi_dimensional: bool) -> ReportData:
@@ -219,7 +239,8 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
         )
 
     def _build_legacy_context(self, map_configuration: MapConfiguration,
-                              multi_dimensional_result: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+                              multi_dimensional_result: Optional[Dict[str, Any]],
+                              offset_query_sections: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         map_points: List[MapPoint] = list(getattr(map_configuration, 'map_points', []) or [])
         temperature_span = {}
         temperature_span_analysis = {}
@@ -313,7 +334,70 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
             'bv_order': bv_order,
             'cct_order': cct_order,
             'temperature_span_analysis': temperature_span_analysis,
+            'offset_query_sections': offset_query_sections or [],
         }
+
+    def _build_offset_query_sections(self,
+                                     map_configuration: MapConfiguration,
+                                     options: Dict[str, Any]) -> List[Dict[str, Any]]:
+        map_points = getattr(map_configuration, 'map_points', []) or []
+        service = OffsetMapQueryService(map_points)
+
+        specs_payload = options.get('queries') or []
+        specs: List[OffsetMapQuerySpec] = []
+        for payload in specs_payload:
+            if isinstance(payload, OffsetMapQuerySpec):
+                specs.append(payload)
+            elif isinstance(payload, dict):
+                specs.append(OffsetMapQuerySpec.from_dict(payload))
+
+        if not specs:
+            reduce_metadata: Dict[str, Any] = {'narrative_id': 'awb_reduce_default'}
+            custom_methodology = options.get('methodology_lines')
+            if custom_methodology:
+                reduce_metadata['methodology_lines'] = custom_methodology
+            default_title = options.get('default_title', 'BV(2,6) × 色温1500–3800 减权统计')
+            specs.append(
+                OffsetMapQuerySpec(
+                    name='reduce_bv2_ct1500',
+                    title=default_title,
+                    ml=65535,
+                    range_windows={
+                        'bv': RangeWindow(key='bv', lower=2.0, upper=6.0, label='BV', description='BV ∈ (2, 6)'),
+                        'ctemp': RangeWindow(key='ctemp', lower=1500.0, upper=3800.0, label='色温', description='色温段与 1500–3800 K 有交集'),
+                    },
+                    metadata=reduce_metadata,
+                )
+            )
+
+            enhance_metadata: Dict[str, Any] = {'narrative_id': 'awb_enhance_default'}
+            enhance_title = options.get('enhance_title', 'BV(2,6) 强拉映射统计')
+            specs.append(
+                OffsetMapQuerySpec(
+                    name='enhance_bv2',
+                    title=enhance_title,
+                    ml=65471,
+                    range_windows={
+                        'bv': RangeWindow(key='bv', lower=2.0, upper=6.0, label='BV', description='BV ∈ (2, 6)'),
+                    },
+                    metadata=enhance_metadata,
+                )
+            )
+
+        enriched_specs: List[OffsetMapQuerySpec] = []
+        for spec in specs:
+            metadata = dict(spec.metadata or {})
+            metadata.setdefault('shared_records', service.records)
+            enriched_specs.append(replace(spec, metadata=metadata))
+
+        results = service.run_queries(enriched_specs)
+        show_empty = bool(options.get('show_empty', False))
+        sections: List[Dict[str, Any]] = []
+        for result in results:
+            section = build_report_section(result)
+            if section.get('has_matches') or show_empty:
+                sections.append(section)
+        return sections
 
     def _resolve_ml_label(self, map_point: MapPoint) -> Tuple[str, int]:
         ml_raw = 0
