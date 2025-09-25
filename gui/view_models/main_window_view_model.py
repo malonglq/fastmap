@@ -280,6 +280,10 @@ class MainWindowViewModel(BaseViewModel):
                 'template_name': 'reporting/domains/map/report.html',
                 'include_awb_reduce_analysis': True,
                 'offset_query_options': awb_options,
+                'include_awb_offset_analysis': True,
+                'awb_offset_analysis_options': {
+                    'title': 'AWB Offset Map 多维度分析',
+                },
             })
             return report_path
 

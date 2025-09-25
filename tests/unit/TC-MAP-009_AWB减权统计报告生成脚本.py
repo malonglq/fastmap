@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 def generate_report(output_dir: Path | None = None) -> Path:
-    xml_path = project_root / 'tests' / 'test_data' / 'awb_scenario.xml'
+    xml_path = project_root / 'tests' / 'test_data' / 'awb_scenario_1x.xml'
     if output_dir is None:
         output_dir = project_root / 'data' / 'reports'
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -46,6 +46,12 @@ def generate_report(output_dir: Path | None = None) -> Path:
         'include_awb_reduce_analysis': True,
         'offset_query_options': {
             'default_title': 'BV(2,6) × 色温1500–3800 减权统计',
+        },
+        'include_awb_offset_analysis': True,
+        'awb_offset_analysis_options': {
+            'title': 'AWB Offset Map 多维度分析',
+            'xml_path': str(xml_path),
+            'top_entry_count': 8,
         },
     }
 
@@ -71,6 +77,9 @@ def verify_section(report_path: Path) -> None:
         'ml=65471',
         '高 IR 门限主要用于强拉',
         '结论：在 BV 2–6 的亮度带上',
+        'AWB Offset Map 多维度分析',
+        '场景大类拆解',
+        '重点 Map 列表',
     ]
     for snippet in required_snippets:
         if snippet not in content:
