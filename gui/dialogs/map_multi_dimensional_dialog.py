@@ -432,6 +432,10 @@ class MapMultiDimensionalDialog(BaseAnalysisDialog):
             'template_name': self.template_combo.currentText(),
             'include_awb_reduce_analysis': include_awb_reduce,
             'offset_query_options': offset_query_options,
+            'include_awb_offset_analysis': include_awb_reduce,
+            'awb_offset_analysis_options': {
+                'title': 'AWB Offset Map 多维度分析',
+            },
         }
 
 

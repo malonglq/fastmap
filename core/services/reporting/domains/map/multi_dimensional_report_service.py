@@ -12,9 +12,10 @@ Map多维度分析报告生成器（重构版）
 
 import logging
 import json
-from collections import defaultdict
+import math
+from collections import Counter, defaultdict
 from dataclasses import replace
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional, Sequence, Tuple
 from datetime import datetime
 from pathlib import Path
 
@@ -26,6 +27,13 @@ from core.services.map_analysis.offset_map_query_service import (
     OffsetMapQuerySpec,
     RangeWindow,
     build_report_section,
+)
+from core.services.map_analysis.awb_offset_map_analysis_service import (
+    AwbOffsetMapAnalysisService,
+    AwbOffsetMapReport,
+    OffsetMapAnalysisEntry,
+    SceneSummary,
+    PrimaryClassSummary,
 )
 from core.services.reporting.engine.report_engine import ReportGenerator, ReportConfig
 from core.services.reporting.infrastructure import ReportData
@@ -114,6 +122,20 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
                     map_configuration,
                     offset_query_options,
                 )
+
+            include_awb_offset = data.get('include_awb_offset_analysis')
+            awb_offset_options = data.get('awb_offset_analysis_options') or {}
+            if include_awb_offset is None:
+                include_awb_offset = bool(awb_offset_options)
+            else:
+                include_awb_offset = bool(include_awb_offset)
+
+            awb_offset_analysis = None
+            if include_awb_offset:
+                awb_offset_analysis = self._build_awb_offset_analysis_context(
+                    map_configuration,
+                    awb_offset_options,
+                )
             # 步骤3: 准备报告数据
             logger.info("==liuq debug== 步骤3: 准备报告数据")
             report_data = self._prepare_report_data(
@@ -125,7 +147,8 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
             legacy_context = self._build_legacy_context(
                 map_configuration,
                 multi_dimensional_result,
-                offset_query_sections
+                offset_query_sections,
+                awb_offset_analysis,
             )
             
             # 步骤4: 生成报告
@@ -240,7 +263,8 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
 
     def _build_legacy_context(self, map_configuration: MapConfiguration,
                               multi_dimensional_result: Optional[Dict[str, Any]],
-                              offset_query_sections: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+                              offset_query_sections: Optional[List[Dict[str, Any]]] = None,
+                              awb_offset_analysis: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         map_points: List[MapPoint] = list(getattr(map_configuration, 'map_points', []) or [])
         temperature_span = {}
         temperature_span_analysis = {}
@@ -335,6 +359,7 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
             'cct_order': cct_order,
             'temperature_span_analysis': temperature_span_analysis,
             'offset_query_sections': offset_query_sections or [],
+            'awb_offset_analysis': awb_offset_analysis,
         }
 
     def _build_offset_query_sections(self,
@@ -398,6 +423,302 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
             if section.get('has_matches') or show_empty:
                 sections.append(section)
         return sections
+
+    def _build_awb_offset_analysis_context(self,
+                                           map_configuration: MapConfiguration,
+                                           options: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        metadata = getattr(map_configuration, 'metadata', {}) or {}
+        xml_path_value = options.get('xml_path') or metadata.get('source_file')
+        if not xml_path_value:
+            logger.warning('==liuq debug== 无法确定AWB offset分析的源XML路径，跳过该章节')
+            return None
+
+        xml_path = Path(xml_path_value)
+        if not xml_path.exists():
+            logger.warning('==liuq debug== AWB offset分析源文件不存在: %s', xml_path)
+            return None
+
+        reference_points = options.get('reference_points')
+        service = AwbOffsetMapAnalysisService(reference_points=reference_points)
+        try:
+            report = service.analyze(xml_path)
+        except Exception as exc:  # pragma: no cover - 防御性日志
+            logger.warning('==liuq debug== AWB offset分析执行失败，将跳过该章节: %s', exc)
+            return None
+
+        return self._serialize_awb_offset_report(report, options)
+
+    def _serialize_awb_offset_report(self, report: AwbOffsetMapReport,
+                                     options: Dict[str, Any]) -> Dict[str, Any]:
+        entries: List[OffsetMapAnalysisEntry] = list(getattr(report, 'entries', []) or [])
+        total_maps = len(entries)
+        enabled_maps = sum(1 for entry in entries if entry.map_enabled)
+        disabled_maps = total_maps - enabled_maps
+
+        ml_counter = Counter(entry.ml for entry in entries if entry.ml is not None)
+        reference_counter = Counter(
+            entry.nearest_reference for entry in entries if entry.nearest_reference
+        )
+        scene_counter = Counter(entry.scene_group for entry in entries if entry.scene_group)
+        primary_counter = Counter(
+            entry.primary_class for entry in entries if entry.primary_class
+        )
+
+        overview: List[str] = []
+        source_name = getattr(report.xml_path, 'name', None)
+        if source_name:
+            overview.append(f'数据来源：{source_name}')
+        overview.append(
+            f'Offset map 总数：{total_maps}（启用 {enabled_maps}，禁用 {disabled_maps}）'
+        )
+
+        ml_text = self._format_counter(ml_counter, {65471: 'ml=65471', 65535: 'ml=65535'})
+        if ml_text:
+            overview.append(f'映射方式分布：{ml_text}')
+
+        ref_text = self._format_counter(reference_counter)
+        if ref_text:
+            overview.append(f'主要参考白点：{ref_text}')
+
+        scene_text = self._format_counter(scene_counter)
+        if scene_text:
+            overview.append(f'场景分布：{scene_text}')
+
+        primary_text = self._format_counter(primary_counter)
+        if primary_text:
+            overview.append(f'主类分布：{primary_text}')
+
+        scene_limit = int(options.get('scene_map_display_limit', 12) or 12)
+        class_limit = int(options.get('class_map_display_limit', 10) or 10)
+
+        scene_summaries: Sequence[SceneSummary] = (
+            getattr(report, 'scene_summaries', []) or []
+        )
+        scene_summaries_payload: List[Dict[str, Any]] = []
+        for summary in scene_summaries:
+            scene_summaries_payload.append({
+                'scene_group': summary.scene_group,
+                'count': summary.count,
+                'map_list': self._format_map_list(summary.map_tags, scene_limit),
+                'primary_distribution': self._format_counter(summary.primary_counter),
+                'ml_distribution': self._format_counter(
+                    summary.ml_counter, {65471: 'ml=65471', 65535: 'ml=65535'}
+                ),
+                'reference_distribution': self._format_counter(summary.reference_counter),
+                'weight_stats': self._calc_weight_stats(summary.weights),
+                'bv_span': self._format_span(summary.bv_accumulator.span),
+                'ct_span': self._format_span(summary.ct_accumulator.span),
+                'ir_span': self._format_span(summary.ir_accumulator.span),
+            })
+
+        class_summaries: Sequence[PrimaryClassSummary] = (
+            getattr(report, 'class_summaries', []) or []
+        )
+        class_summaries_payload: List[Dict[str, Any]] = []
+        for summary in class_summaries:
+            class_summaries_payload.append({
+                'primary_class': summary.primary_class,
+                'count': summary.count,
+                'map_list': self._format_map_list(summary.map_tags, class_limit),
+                'scene_distribution': self._format_counter(summary.scene_counter),
+                'ml_distribution': self._format_counter(
+                    summary.ml_counter, {65471: 'ml=65471', 65535: 'ml=65535'}
+                ),
+                'reference_distribution': self._format_counter(summary.reference_counter),
+                'weight_stats': self._calc_weight_stats(summary.weights),
+                'bv_span': self._format_span(summary.bv_accumulator.span),
+                'ct_span': self._format_span(summary.ct_accumulator.span),
+                'ir_span': self._format_span(summary.ir_accumulator.span),
+            })
+
+        include_disabled = bool(options.get('include_disabled', False))
+        top_entry_limit = int(options.get('top_entry_count', 12) or 12)
+        top_entries_payload: List[Dict[str, Any]] = []
+        highlight_note_added = False
+        if top_entry_limit > 0:
+            filtered_entries = [
+                entry for entry in entries if include_disabled or entry.map_enabled
+            ]
+            ranked_entries = self._rank_top_entries(filtered_entries)
+            for ranked in ranked_entries[:top_entry_limit]:
+                entry = ranked["entry"]
+                top_entries_payload.append({
+                    'tag': entry.tag,
+                    'alias': entry.alias,
+                    'scene_group': entry.scene_group,
+                    'primary_class': entry.primary_class,
+                    'strategy': entry.mapping_label or (
+                        f'ml={entry.ml}' if entry.ml is not None else '-'
+                    ),
+                    'reference': entry.nearest_reference or '-',
+                    'weight': self._format_float(entry.weight, digits=3),
+                    'offset': self._format_coord_pair(entry.offset),
+                    'bv': self._format_span(entry.ranges.get('bv')),
+                    'ct': self._format_span(
+                        entry.ranges.get('ctemp') or entry.ranges.get('colorCCT')
+                    ),
+                    'ir': self._format_span(entry.ranges.get('ir')),
+                    'count': self._format_span(entry.ranges.get('count')),
+                    'reason': ranked['reason'],
+                })
+            if top_entries_payload and not highlight_note_added:
+                overview.append(
+                    '重点 Map 通过“影响力评分”选出：以权重排序为基础，叠加映射策略和触发区间覆盖度等因素，优先展示排名靠前的条目。'
+                )
+                highlight_note_added = True
+
+        top_headers = [
+            'Map', '别名', '场景', '主类', '策略', '参考白点', '权重',
+            '目标坐标', 'BV区间', 'CT区间', 'IR区间', 'Count区间', '入选依据'
+        ] if top_entries_payload else []
+
+        return {
+            'title': options.get('title', 'AWB Offset Map 多维度分析'),
+            'overview': overview,
+            'scene_summaries': scene_summaries_payload,
+            'class_summaries': class_summaries_payload,
+            'top_entries_headers': top_headers,
+            'top_entries': top_entries_payload,
+        }
+
+    def _rank_top_entries(self, entries: Sequence[OffsetMapAnalysisEntry]) -> List[Dict[str, Any]]:
+        ranked: List[Dict[str, Any]] = []
+        for entry in entries:
+            score, reason = self._calculate_highlight_score(entry)
+            ranked.append({
+                'entry': entry,
+                'score': score,
+                'reason': reason,
+            })
+        ranked.sort(key=lambda item: (item['score'], item['entry'].weight, -item['entry'].index), reverse=True)
+        return ranked
+
+    def _calculate_highlight_score(self, entry: OffsetMapAnalysisEntry) -> Tuple[float, str]:
+        weight = float(entry.weight or 0.0)
+        score = weight
+        reasons: List[str] = []
+
+        formatted_weight = self._format_float(weight, digits=3)
+        if weight >= 0.5:
+            score += 0.2
+            reasons.append(f'权重 {formatted_weight} 位于高影响策略')
+        elif weight >= 0.3:
+            score += 0.1
+            reasons.append(f'权重 {formatted_weight} 属于核心范围')
+        else:
+            reasons.append(f'权重 {formatted_weight} 相对较低')
+
+        if entry.ml == 65471:
+            score += 0.12
+            reasons.append('ml=65471 强拉单点，快速锁定白点')
+        elif entry.ml == 65535:
+            score += 0.08
+            reasons.append('ml=65535 整体位移，保持统计形状')
+
+        offset_x, offset_y = entry.offset
+        if not math.isclose(offset_x, 0.0, abs_tol=1e-6) or not math.isclose(offset_y, 0.0, abs_tol=1e-6):
+            score += 0.05
+            reasons.append(f'offset={self._format_coord_pair(entry.offset)} 指向 {entry.nearest_reference or "灰区"}')
+
+        count_span = entry.ranges.get('count')
+        if count_span and all(value is not None for value in count_span):
+            lower, upper = count_span
+            span_width = upper - lower
+            if span_width >= 500:
+                score += 0.06
+                reasons.append(f'count 覆盖范围宽（{self._format_span(count_span)}）')
+            elif lower >= 800:
+                score += 0.04
+                reasons.append(f'count 下限高（≥{int(lower)}）需大面积触发')
+
+        if entry.scene_group in ('室外', '夜景'):
+            score += 0.03
+            reasons.append(f'{entry.scene_group} 场景对整体白平衡影响大')
+
+        if entry.nearest_reference:
+            reasons.append(f'目标靠近 {entry.nearest_reference} 参考点')
+
+        reason_text = '；'.join(reasons) if reasons else '按照权重排序入选'
+        return score, reason_text
+
+    @staticmethod
+    def _format_float(value: Optional[float], digits: int = 4) -> str:
+        if value is None:
+            return '-'
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return '-'
+        if not math.isfinite(numeric):
+            return '-'
+        if abs(numeric) >= 1000 or float(numeric).is_integer():
+            return str(int(round(numeric)))
+        formatted = f'{numeric:.{digits}f}'.rstrip('0').rstrip('.')
+        return formatted or '0'
+
+    @classmethod
+    def _format_span(cls, span: Optional[Tuple[Optional[float], Optional[float]]]) -> str:
+        if not span:
+            return '-'
+        lower, upper = span
+        lower_text = cls._format_float(lower, digits=3) if lower is not None else '-'
+        upper_text = cls._format_float(upper, digits=3) if upper is not None else '-'
+        if lower_text == '-' and upper_text == '-':
+            return '-'
+        return f'{lower_text}–{upper_text}'
+
+    @staticmethod
+    def _format_counter(counter: Counter, label_map: Optional[Dict[Any, str]] = None) -> str:
+        if not counter:
+            return ''
+        segments: List[str] = []
+        for key, count in counter.most_common():
+            label: Any
+            if label_map and key in label_map:
+                label = label_map[key]
+            elif key in (None, ''):
+                label = '未知'
+            else:
+                label = key
+            segments.append(f'{label}×{count}')
+        return '、'.join(str(segment) for segment in segments)
+
+    @classmethod
+    def _calc_weight_stats(cls, weights: Sequence[float]) -> str:
+        if not weights:
+            return ''
+        try:
+            minimum = min(weights)
+            maximum = max(weights)
+            average = sum(weights) / len(weights)
+        except (TypeError, ValueError):
+            return ''
+
+        if math.isclose(minimum, maximum, rel_tol=1e-6, abs_tol=1e-6):
+            range_text = cls._format_float(minimum, digits=3)
+        else:
+            range_text = f'{cls._format_float(minimum, digits=3)}–{cls._format_float(maximum, digits=3)}'
+        return f'范围 {range_text}；平均≈{cls._format_float(average, digits=3)}'
+
+    @staticmethod
+    def _format_map_list(map_tags: Sequence[str], limit: int) -> str:
+        tags = list(map_tags or [])
+        if not tags:
+            return '-'
+        if limit and limit > 0 and len(tags) > limit:
+            head = '、'.join(tags[:limit])
+            return f'{head} 等{len(tags)}张'
+        if limit == 0:
+            return f'共 {len(tags)} 张'
+        return '、'.join(tags)
+
+    @classmethod
+    def _format_coord_pair(cls, offset: Tuple[float, float]) -> str:
+        try:
+            x, y = offset
+        except (TypeError, ValueError):
+            return '-'
+        return f'({cls._format_float(x, digits=4)}, {cls._format_float(y, digits=4)})'
 
     def _resolve_ml_label(self, map_point: MapPoint) -> Tuple[str, int]:
         ml_raw = 0

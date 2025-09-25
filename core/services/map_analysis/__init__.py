@@ -27,6 +27,13 @@ from .offset_map_query_service import (
     RangeSpan,
     build_report_section,
 )
+from .awb_offset_map_analysis_service import (
+    AwbOffsetMapAnalysisService,
+    AwbOffsetMapReport,
+    OffsetMapAnalysisEntry,
+    SceneSummary,
+    PrimaryClassSummary,
+)
 
 __all__ = [
     'XMLParserService',
@@ -43,4 +50,9 @@ __all__ = [
     'RangeWindow',
     'RangeSpan',
     'build_report_section',
+    'AwbOffsetMapAnalysisService',
+    'AwbOffsetMapReport',
+    'OffsetMapAnalysisEntry',
+    'SceneSummary',
+    'PrimaryClassSummary',
 ]

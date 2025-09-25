@@ -141,6 +141,12 @@ def generate_map_analysis_report_from_xml(xml_file_path, output_file_path=None):
             'offset_query_options': {
                 'enabled': True,
             },
+            'include_awb_offset_analysis': True,
+            'awb_offset_analysis_options': {
+                'title': 'AWB Offset Map 多维度分析',
+                'xml_path': str(xml_file_path),
+                'top_entry_count': 8,
+            },
         }
 
         # 生成报告
@@ -196,7 +202,7 @@ def main():
     logger.info("=== Map分析报告生成脚本启动 ===")
 
     # 设置XML文件路径
-    xml_file_path = project_root / 'tests' / 'test_data' / 'awb_scenario.xml'
+    xml_file_path = project_root / 'tests' / 'test_data' / 'awb_scenario_1x.xml'
 
     # 检查XML文件
     if not xml_file_path.exists():
