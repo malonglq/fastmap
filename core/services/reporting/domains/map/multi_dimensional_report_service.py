@@ -153,6 +153,12 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
             
             # 步骤4: 生成报告
             logger.info("==liuq debug== 步骤4: 生成报告")
+            # 可选嵌入开关（默认开启）
+            options = {
+                'embed_awb_overview': bool(data.get('embed_awb_overview', True)),
+                'embed_awb_strategy': bool(data.get('embed_awb_strategy', True)),
+            }
+
             report_config = ReportConfig(
                 title="Map多维度分析报告",
                 output_path=output_path or f"output/map_analysis_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
@@ -162,7 +168,8 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
                     'include_multi_dimensional': include_multi_dimensional,
                     'generation_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     'analyzer_data': report_data,
-                    'legacy_context': legacy_context
+                    'legacy_context': legacy_context,
+                    'options': options,
                 }
             )
             
@@ -573,7 +580,7 @@ class MapMultiDimensionalReportGenerator(IReportGenerator):
         ] if top_entries_payload else []
 
         return {
-            'title': options.get('title', 'AWB Offset Map 多维度分析'),
+            'title': options.get('title', 'AWB Offset Map概述'),
             'overview': overview,
             'scene_summaries': scene_summaries_payload,
             'class_summaries': class_summaries_payload,

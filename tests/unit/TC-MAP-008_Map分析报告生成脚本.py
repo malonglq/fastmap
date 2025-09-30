@@ -143,7 +143,7 @@ def generate_map_analysis_report_from_xml(xml_file_path, output_file_path=None):
             },
             'include_awb_offset_analysis': True,
             'awb_offset_analysis_options': {
-                'title': 'AWB Offset Map 多维度分析',
+                'title': 'AWB Offset Map概述',
                 'xml_path': str(xml_file_path),
                 'top_entry_count': 8,
             },

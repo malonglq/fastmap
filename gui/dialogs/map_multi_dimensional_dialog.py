@@ -169,17 +169,18 @@ class MapMultiDimensionalDialog(BaseAnalysisDialog):
         analysis_group = QGroupBox("分析选项")
         analysis_layout = QVBoxLayout(analysis_group)
 
-        self.include_multi_dimensional_cb = QCheckBox("包含多维度场景分析")
-        self.include_multi_dimensional_cb.setChecked(True)
-        self.include_multi_dimensional_cb.stateChanged.connect(self.on_multi_dimensional_changed)
-        analysis_layout.addWidget(self.include_multi_dimensional_cb)
+        # 改为直接控制两块子页面的嵌入
+        self.embed_awb_overview_cb = QCheckBox("嵌入 AWB Offset Map概述 (_awb_offset_overview.html)")
+        self.embed_awb_overview_cb.setChecked(True)
+        self.embed_awb_overview_cb.setToolTip("在报告中嵌入 AWB Offset Map 概述子页面")
+        analysis_layout.addWidget(self.embed_awb_overview_cb)
 
-        self.include_awb_reduce_cb = QCheckBox("包含 AWB 减权/强拉概览")
-        self.include_awb_reduce_cb.setChecked(True)
-        self.include_awb_reduce_cb.setToolTip("勾选后将在报告中附加 BV(2,6) 的 AWB 减权与强拉策略概览")
-        analysis_layout.addWidget(self.include_awb_reduce_cb)
+        self.embed_awb_strategy_cb = QCheckBox("嵌入 AWB Offset Map策略分析 (_awb_offset_strategy.html)")
+        self.embed_awb_strategy_cb.setChecked(True)
+        self.embed_awb_strategy_cb.setToolTip("在报告中嵌入包含 减权/强拉 统计的策略分析子页面")
+        analysis_layout.addWidget(self.embed_awb_strategy_cb)
 
-        info_label = QLabel("多维度分析将提供详细的场景分类统计和参数分布信息")
+        info_label = QLabel("勾选后将在报告中插入对应 AWB Offset Map 子页面")
         info_label.setStyleSheet("color: gray; font-style: italic;")
         analysis_layout.addWidget(info_label)
 
@@ -211,19 +212,7 @@ class MapMultiDimensionalDialog(BaseAnalysisDialog):
 
         layout.addWidget(self.classification_group)
 
-        # 高级选项
-        advanced_group = QGroupBox("高级选项")
-        advanced_layout = QFormLayout(advanced_group)
-
-        self.enable_accuracy_analysis_cb = QCheckBox("启用分类准确性分析")
-        self.enable_accuracy_analysis_cb.setChecked(True)
-        advanced_layout.addRow("", self.enable_accuracy_analysis_cb)
-
-        self.enable_parameter_distribution_cb = QCheckBox("启用参数分布分析")
-        self.enable_parameter_distribution_cb.setChecked(True)
-        advanced_layout.addRow("", self.enable_parameter_distribution_cb)
-
-        layout.addWidget(advanced_group)
+        # 移除高级选项（这些选项未输出到报告，避免误导）
 
         layout.addStretch()
         return tab
@@ -318,10 +307,8 @@ class MapMultiDimensionalDialog(BaseAnalysisDialog):
             logger.error(f"==liuq debug== 加载Map数据概览失败: {e}")
             QMessageBox.warning(self, "加载错误", f"加载Map数据概览失败:\n{e}")
 
-    def on_multi_dimensional_changed(self):
-        """多维度分析选项变化"""
-        enabled = self.include_multi_dimensional_cb.isChecked()
-        self.classification_group.setEnabled(enabled)
+    # （已移除多维度开关复选框）
+    # 原 on_multi_dimensional_changed 方法删除，分类配置始终可用
 
     def browse_output_path(self):
         """浏览输出路径"""
@@ -340,9 +327,9 @@ class MapMultiDimensionalDialog(BaseAnalysisDialog):
         try:
             self.preview_text.setPlainText("正在预览分析范围，请稍候...")
 
-            # 获取当前配置
-            include_multi_dimensional = self.include_multi_dimensional_cb.isChecked()
-            classification_config = self.get_classification_config() if include_multi_dimensional else None
+            # 获取当前配置（始终进行多维度分析）
+            include_multi_dimensional = True
+            classification_config = self.get_classification_config()
 
             # 创建预览工作线程
             worker = AnalysisPreviewWorker(
@@ -414,11 +401,13 @@ class MapMultiDimensionalDialog(BaseAnalysisDialog):
 
     def get_configuration(self) -> Dict[str, Any]:
         """获取配置信息"""
-        include_awb_reduce = bool(self.include_awb_reduce_cb.isChecked()) if self.include_awb_reduce_cb else False
-        offset_query_options = {
-            'enabled': include_awb_reduce,
-        }
-        if include_awb_reduce:
+        # 由两个子页面复选框控制对应章节
+        embed_overview = bool(self.embed_awb_overview_cb.isChecked()) if hasattr(self, 'embed_awb_overview_cb') else True
+        embed_strategy = bool(self.embed_awb_strategy_cb.isChecked()) if hasattr(self, 'embed_awb_strategy_cb') else True
+
+        # 策略分析需要 offset 查询结果
+        offset_query_options = { 'enabled': embed_strategy }
+        if embed_strategy:
             offset_query_options.update({
                 'default_title': 'BV(2,6) × 色温1500–3800 减权统计',
                 'enhance_title': 'BV(2,6) 强拉映射统计',
@@ -426,16 +415,20 @@ class MapMultiDimensionalDialog(BaseAnalysisDialog):
 
         return {
             'map_configuration': self.map_configuration,
-            'include_multi_dimensional': self.include_multi_dimensional_cb.isChecked(),
-            'classification_config': self.get_classification_config() if self.include_multi_dimensional_cb.isChecked() else None,
+            # 始终包含多维度分析（原复选框已移除）
+            'include_multi_dimensional': True,
+            'classification_config': self.get_classification_config(),
             'output_path': self.output_path_edit.text().strip() or None,
             'template_name': self.template_combo.currentText(),
-            'include_awb_reduce_analysis': include_awb_reduce,
+            'include_awb_reduce_analysis': embed_strategy,
             'offset_query_options': offset_query_options,
-            'include_awb_offset_analysis': include_awb_reduce,
+            'include_awb_offset_analysis': embed_overview,
             'awb_offset_analysis_options': {
-                'title': 'AWB Offset Map 多维度分析',
+                'title': 'AWB Offset Map概述',
             },
+            # 嵌入选项
+            'embed_awb_overview': embed_overview,
+            'embed_awb_strategy': embed_strategy,
         }
 
 

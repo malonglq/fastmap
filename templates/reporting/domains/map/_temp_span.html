@@ -1,0 +1,55 @@
+<!-- 色温段跨度统计模块 -->
+<div id="temp-span-stats" class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">色温段跨度统计（Top 20）</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>排名</th>
+                                <th>Map点名称</th>
+                                <th>跨越色温段</th>
+                                <th>跨度数量</th>
+                                <th>坐标(RpG, BpG)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% set temp_span_data = config.metadata.legacy_context.temperature_span_analysis if config and config.metadata and config.metadata.legacy_context else {} %}
+                            {% set top20_data = temp_span_data.top20 if temp_span_data else [] %}
+
+                            {% for item in top20_data %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ item.alias_name }}</td>
+                                <td>
+                                    {% for interval_name in item.interval_names %}
+                                    <small class="d-block">{{ interval_name }}</small>
+                                    {% endfor %}
+                                </td>
+                                <td>{{ item.count }}</td>
+                                <td>
+                                    {% if item.coords %}
+                                    <small>({{ "%.3f"|format(item.coords[0]) }}, {{ "%.3f"|format(item.coords[1]) }})</small>
+                                    {% else %}
+                                    <small>-</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">
+                                    暂无色温段跨度数据
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

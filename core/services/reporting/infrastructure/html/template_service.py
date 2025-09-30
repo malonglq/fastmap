@@ -117,6 +117,9 @@ class HTMLTemplateService:
     def _load_builtin_templates(self) -> Dict[str, str]:
         mapping = {
             'reporting/domains/map/report.html': self.templates_root / 'domains' / 'map' / 'report.html',
+            'reporting/domains/map/_awb_offset_overview.html': self.templates_root / 'domains' / 'map' / '_awb_offset_overview.html',
+            'reporting/domains/map/_awb_offset_strategy.html': self.templates_root / 'domains' / 'map' / '_awb_offset_strategy.html',
+            'reporting/domains/map/_temp_span.html': self.templates_root / 'domains' / 'map' / '_temp_span.html',
             'reporting/domains/exif/new_report.html': self.templates_root / 'domains' / 'exif' / 'new_report.html',
         }
         templates: Dict[str, str] = {}

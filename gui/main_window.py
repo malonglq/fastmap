@@ -1101,6 +1101,16 @@ class MainWindow(QMainWindow):
             if not p.lower().endswith(('.jpg', '.jpeg')):
                 QMessageBox.warning(self, "提示", "仅支持 .jpg/.jpeg 文件")
                 return
+            # 叠加绘制统计点到右侧“Base Boundary”区域
+            try:
+                from utils.awb_stats_tools import get_stats_points
+                sps = get_stats_points(p)
+                if sps and hasattr(self, 'map_shape_viewer') and self.map_shape_viewer:
+                    pts = sps.to_xy(corrected=True)
+                    self.map_shape_viewer.show_stats_points(pts, clear_existing=True)
+                    self.status_message.emit(f"已加载统计点: {len(pts)}")
+            except Exception as _e:
+                logger.info("==liuq debug== 统计点叠加失败(忽略): %s", _e)
             from gui.dialogs.exif_quick_view_dialog import ExifQuickViewDialog
             dlg = ExifQuickViewDialog(Path(p), self)
             dlg.exec_()
@@ -1156,6 +1166,16 @@ class MainWindow(QMainWindow):
             if not p or not p.lower().endswith(('.jpg', '.jpeg')):
                 QMessageBox.warning(self, "提示", "仅支持 .jpg/.jpeg 文件")
                 return
+            # 叠加绘制统计点到右侧“Base Boundary”区域
+            try:
+                from utils.awb_stats_tools import get_stats_points
+                sps = get_stats_points(p)
+                if sps and hasattr(self, 'map_shape_viewer') and self.map_shape_viewer:
+                    pts = sps.to_xy(corrected=True)
+                    self.map_shape_viewer.show_stats_points(pts, clear_existing=True)
+                    self.status_message.emit(f"已加载统计点: {len(pts)}")
+            except Exception as _e:
+                logger.info("==liuq debug== 统计点叠加失败(忽略): %s", _e)
             from gui.dialogs.exif_quick_view_dialog import ExifQuickViewDialog
             dlg = ExifQuickViewDialog(Path(p), self)
             dlg.exec_()

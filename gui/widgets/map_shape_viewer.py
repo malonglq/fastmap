@@ -89,6 +89,15 @@ class MapShapeViewer(QWidget):
         self.xml_white_points: Optional[dict] = None
         # 运行期锚点（可由XML白点校准），默认拷贝 TEMPERATURE_ANCHORS
         self.runtime_anchors = dict(TEMPERATURE_ANCHORS)
+        # 叠加：统计散点 (RpG,BpG)
+        self._stats_points: Optional[list] = None
+        self._stats_style = {
+            'color': "#0feb84",  # 绿
+            'size': 8,
+            'alpha': 0.65,
+            'edgecolor': 'none',
+            'zorder': 60,
+        }
 
 
         self.setup_ui()
@@ -255,6 +264,12 @@ class MapShapeViewer(QWidget):
                 self._draw_white_points()
             except Exception as _e2:
                 logger.warning(f"==liuq debug== 绘制白点失败: {_e2}")
+
+            # 叠加统计散点
+            try:
+                self._draw_stats_points()
+            except Exception as _e3:
+                logger.warning(f"==liuq debug== 绘制统计点失败: {_e3}")
 
             # 更新画布（立即重绘，避免draw_idle导致的延迟）
             self.canvas.draw()
@@ -534,6 +549,62 @@ class MapShapeViewer(QWidget):
                                  bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.6))
         except Exception as e:
             logger.warning(f"==liuq debug== 绘制白点参考点失败: {e}")
+
+    # === Stats 散点叠加 ===
+    def show_stats_points(self, points: list[tuple[float, float]], *, clear_existing: bool = True,
+                          color: Optional[str] = None, size: Optional[int] = None, alpha: Optional[float] = None):
+        """设置要叠加绘制的统计散点坐标。
+
+        Args:
+            points: [(RpG, BpG), ...]
+            clear_existing: True 则替换旧数据；False 则追加
+            color/size/alpha: 可临时覆盖默认样式
+        """
+        if points is None:
+            self._stats_points = None
+        else:
+            if clear_existing or self._stats_points is None:
+                self._stats_points = list(points)
+            else:
+                self._stats_points.extend(points)
+        if color is not None:
+            self._stats_style['color'] = color
+        if size is not None:
+            self._stats_style['size'] = size
+        if alpha is not None:
+            self._stats_style['alpha'] = alpha
+        # 立即重绘
+        try:
+            self._redraw_all_layers()
+        except Exception as e:
+            logger.warning("==liuq debug== show_stats_points 重绘失败: %s", e)
+
+    def clear_stats_points(self):
+        self._stats_points = None
+        try:
+            self._redraw_all_layers()
+        except Exception:
+            pass
+
+    def _draw_stats_points(self):
+        pts = self._stats_points
+        if not pts:
+            return
+        try:
+            xs = [float(x) for x, _ in pts]
+            ys = [float(y) for _, y in pts]
+            self.ax.scatter(
+                xs, ys,
+                c=self._stats_style.get('color', '#d9534f'),
+                s=self._stats_style.get('size', 8),
+                alpha=self._stats_style.get('alpha', 0.65),
+                edgecolors=self._stats_style.get('edgecolor', 'none'),
+                zorder=int(self._stats_style.get('zorder', 60)),
+                marker='o',
+                linewidths=0.0,
+            )
+        except Exception as e:
+            logger.debug("==liuq debug== 绘制统计散点异常: %s", e)
 
     def clear_current_selections(self):
         """清空当前选择"""
@@ -890,5 +961,4 @@ class MapShapeViewer(QWidget):
     def get_current_map_point(self) -> Optional[MapPoint]:
         """获取当前显示的Map点"""
         return self.current_map_point
-
 

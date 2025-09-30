@@ -1,0 +1,85 @@
+{% set analysis = ctx.awb_offset_analysis %}
+{% if analysis %}
+  <h2>{{ analysis.title }}</h2>
+  <div class="panel">
+    {% if analysis.overview %}
+      <h3>概览</h3>
+      <ul>
+        {% for line in analysis.overview %}
+          <li>{{ line }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if analysis.scene_summaries %}
+      <h3>场景大类拆解</h3>
+      {% for summary in analysis.scene_summaries %}
+        <div class="panel inner-panel">
+          <strong>{{ summary.scene_group }}</strong>
+          <ul>
+            <li>Map 数量：{{ summary.count }}（{{ summary.map_list }}）</li>
+            {% if summary.primary_distribution %}<li>主类覆盖：{{ summary.primary_distribution }}</li>{% endif %}
+            {% if summary.ml_distribution %}<li>映射策略：{{ summary.ml_distribution }}</li>{% endif %}
+            {% if summary.reference_distribution %}<li>参考白点：{{ summary.reference_distribution }}</li>{% endif %}
+            {% if summary.weight_stats %}<li>权重概览：{{ summary.weight_stats }}</li>{% endif %}
+            <li>触发范围：BV{{ summary.bv_span }}；CT{{ summary.ct_span }}；IR{{ summary.ir_span }}</li>
+          </ul>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    {% if analysis.class_summaries %}
+      <h3>主类统计</h3>
+      <div class="panel inner-panel">
+        {% for summary in analysis.class_summaries %}
+          <div style="margin-bottom:12px;">
+            <strong>{{ summary.primary_class }}</strong>
+            <ul>
+              <li>Map 数量：{{ summary.count }}（{{ summary.map_list }}）</li>
+              {% if summary.scene_distribution %}<li>场景分布：{{ summary.scene_distribution }}</li>{% endif %}
+              {% if summary.ml_distribution %}<li>映射策略：{{ summary.ml_distribution }}</li>{% endif %}
+              {% if summary.reference_distribution %}<li>参考白点：{{ summary.reference_distribution }}</li>{% endif %}
+              {% if summary.weight_stats %}<li>权重概览：{{ summary.weight_stats }}</li>{% endif %}
+              <li>触发范围：BV{{ summary.bv_span }}；CT{{ summary.ct_span }}；IR{{ summary.ir_span }}</li>
+            </ul>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if analysis.top_entries %}
+      <h3>重点 Map 列表</h3>
+      <div class="panel inner-panel">
+        <table>
+          <thead>
+            <tr>
+              {% for header in analysis.top_entries_headers %}
+                <th>{{ header }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in analysis.top_entries %}
+              <tr>
+                <td>{{ row.tag }}</td>
+                <td>{{ row.alias }}</td>
+                <td>{{ row.scene_group }}</td>
+                <td>{{ row.primary_class }}</td>
+                <td>{{ row.strategy }}</td>
+                <td>{{ row.reference }}</td>
+                <td>{{ row.weight }}</td>
+                <td>{{ row.offset }}</td>
+                <td>{{ row.bv }}</td>
+                <td>{{ row.ct }}</td>
+                <td>{{ row.ir }}</td>
+                <td>{{ row.count }}</td>
+                <td>{{ row.reason }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </div>
+{% endif %}
+

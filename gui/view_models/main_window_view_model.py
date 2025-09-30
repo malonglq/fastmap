@@ -282,8 +282,10 @@ class MainWindowViewModel(BaseViewModel):
                 'offset_query_options': awb_options,
                 'include_awb_offset_analysis': True,
                 'awb_offset_analysis_options': {
-                    'title': 'AWB Offset Map 多维度分析',
+                    'title': 'AWB Offset Map概述',
                 },
+                'embed_awb_overview': True,
+                'embed_awb_strategy': True,
             })
             return report_path
 

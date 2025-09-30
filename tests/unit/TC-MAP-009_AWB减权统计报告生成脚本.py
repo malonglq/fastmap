@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from __future__ import annotations
 """TC-MAP-009: 生成包含 AWB 减权统计章节的离线报告."""
 
 import sys
@@ -49,7 +50,7 @@ def generate_report(output_dir: Path | None = None) -> Path:
         },
         'include_awb_offset_analysis': True,
         'awb_offset_analysis_options': {
-            'title': 'AWB Offset Map 多维度分析',
+            'title': 'AWB Offset Map概述',
             'xml_path': str(xml_path),
             'top_entry_count': 8,
         },
@@ -77,7 +78,8 @@ def verify_section(report_path: Path) -> None:
         'ml=65471',
         '高 IR 门限主要用于强拉',
         '结论：在 BV 2–6 的亮度带上',
-        'AWB Offset Map 多维度分析',
+        'AWB Offset Map概述',
+        'AWB Offset Map策略分析',
         '场景大类拆解',
         '重点 Map 列表',
     ]

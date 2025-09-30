@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   {% set ctx = config.metadata.legacy_context if config and config.metadata else {} %}
+  {% set options = config.metadata.options if config and config.metadata and config.metadata.options else {} %}
   <title>{{ (ctx.title or report.title) | default('Map 分类特性报告（离线版）') }}</title>
   <style>
     body {
@@ -165,159 +166,12 @@
     </table>
   </div>
 
-  {% if ctx.offset_query_sections %}
-    {% for query in ctx.offset_query_sections %}
-      <h2>{{ query.title }}</h2>
-      <div class="panel">
-        {% if query.methodology %}
-          <h3>统计方法</h3>
-          <ul>
-            {% for line in query.methodology %}
-              <li>{{ line|safe }}</li>
-            {% endfor %}
-          </ul>
-        {% endif %}
-
-        {% if query.overview %}
-          <h3>统计概览</h3>
-          <ul>
-            {% for line in query.overview %}
-              <li>{{ line|safe }}</li>
-            {% endfor %}
-          </ul>
-        {% endif %}
-
-        {% if query.insights %}
-          <h3>策略洞察</h3>
-          <ul>
-            {% for line in query.insights %}
-              <li>{{ line|safe }}</li>
-            {% endfor %}
-          </ul>
-        {% endif %}
-
-        {% if query.table and query.table.rows %}
-          <div class="panel inner-panel" style="margin:12px 0 20px;">
-            <table>
-              <thead>
-                <tr>
-                  {% for header in query.table.headers %}
-                    <th>{{ header }}</th>
-                  {% endfor %}
-                </tr>
-              </thead>
-              <tbody>
-                {% for row in query.table.rows %}
-                  <tr>
-                    <td>{{ row.tag }}</td>
-                    <td>{{ row.alias }}</td>
-                    <td>{{ row.weight }}</td>
-                    {% for axis, value in row.ranges.items() %}
-                      <td>{{ value }}</td>
-                    {% endfor %}
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        {% else %}
-          <div class="panel inner-panel" style="margin:12px 0 20px;">暂无符合条件的 offset_map 条目。</div>
-        {% endif %}
-
-        {% if query.highlights %}
-          <h3>重点说明</h3>
-          <ul>
-            {% for line in query.highlights %}
-              <li>{{ line|safe }}</li>
-            {% endfor %}
-          </ul>
-        {% endif %}
-      </div>
-    {% endfor %}
+  {% if ctx.offset_query_sections and (options.embed_awb_strategy is not defined or options.embed_awb_strategy) %}
+    {% include 'reporting/domains/map/_awb_offset_strategy.html' %}
   {% endif %}
 
-  {% if ctx.awb_offset_analysis %}
-    <h2>{{ ctx.awb_offset_analysis.title }}</h2>
-    <div class="panel">
-      {% if ctx.awb_offset_analysis.overview %}
-        <h3>概览</h3>
-        <ul>
-          {% for line in ctx.awb_offset_analysis.overview %}
-            <li>{{ line }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-
-      {% if ctx.awb_offset_analysis.scene_summaries %}
-        <h3>场景大类拆解</h3>
-        {% for summary in ctx.awb_offset_analysis.scene_summaries %}
-          <div class="panel inner-panel">
-            <strong>{{ summary.scene_group }}</strong>
-            <ul>
-              <li>Map 数量：{{ summary.count }}（{{ summary.map_list }}）</li>
-              {% if summary.primary_distribution %}<li>主类覆盖：{{ summary.primary_distribution }}</li>{% endif %}
-              {% if summary.ml_distribution %}<li>映射策略：{{ summary.ml_distribution }}</li>{% endif %}
-              {% if summary.reference_distribution %}<li>参考白点：{{ summary.reference_distribution }}</li>{% endif %}
-              {% if summary.weight_stats %}<li>权重概览：{{ summary.weight_stats }}</li>{% endif %}
-              <li>触发范围：BV{{ summary.bv_span }}；CT{{ summary.ct_span }}；IR{{ summary.ir_span }}</li>
-            </ul>
-          </div>
-        {% endfor %}
-      {% endif %}
-
-      {% if ctx.awb_offset_analysis.class_summaries %}
-        <h3>主类统计</h3>
-        <div class="panel inner-panel">
-          {% for summary in ctx.awb_offset_analysis.class_summaries %}
-            <div style="margin-bottom:12px;">
-              <strong>{{ summary.primary_class }}</strong>
-              <ul>
-                <li>Map 数量：{{ summary.count }}（{{ summary.map_list }}）</li>
-                {% if summary.scene_distribution %}<li>场景分布：{{ summary.scene_distribution }}</li>{% endif %}
-                {% if summary.ml_distribution %}<li>映射策略：{{ summary.ml_distribution }}</li>{% endif %}
-                {% if summary.reference_distribution %}<li>参考白点：{{ summary.reference_distribution }}</li>{% endif %}
-                {% if summary.weight_stats %}<li>权重概览：{{ summary.weight_stats }}</li>{% endif %}
-                <li>触发范围：BV{{ summary.bv_span }}；CT{{ summary.ct_span }}；IR{{ summary.ir_span }}</li>
-              </ul>
-            </div>
-          {% endfor %}
-        </div>
-      {% endif %}
-
-      {% if ctx.awb_offset_analysis.top_entries %}
-        <h3>重点 Map 列表</h3>
-        <div class="panel inner-panel">
-          <table>
-            <thead>
-              <tr>
-                {% for header in ctx.awb_offset_analysis.top_entries_headers %}
-                  <th>{{ header }}</th>
-                {% endfor %}
-              </tr>
-            </thead>
-            <tbody>
-              {% for row in ctx.awb_offset_analysis.top_entries %}
-                <tr>
-                  <td>{{ row.tag }}</td>
-                  <td>{{ row.alias }}</td>
-                  <td>{{ row.scene_group }}</td>
-                  <td>{{ row.primary_class }}</td>
-                  <td>{{ row.strategy }}</td>
-                  <td>{{ row.reference }}</td>
-                  <td>{{ row.weight }}</td>
-                  <td>{{ row.offset }}</td>
-                  <td>{{ row.bv }}</td>
-                  <td>{{ row.ct }}</td>
-                  <td>{{ row.ir }}</td>
-                  <td>{{ row.count }}</td>
-                  <td>{{ row.reason }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      {% endif %}
-    </div>
+  {% if ctx.awb_offset_analysis and (options.embed_awb_overview is not defined or options.embed_awb_overview) %}
+    {% include 'reporting/domains/map/_awb_offset_overview.html' %}
   {% endif %}
 
   <div id="sections">
