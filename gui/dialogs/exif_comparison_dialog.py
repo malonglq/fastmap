@@ -69,6 +69,11 @@ class ExifComparisonDialog(BaseAnalysisDialog):
         self.test_field_info = None
         self.reference_field_info = None
         self.selected_fields = []
+        self.shape_analysis_checkbox = None
+        self.shape_test_image_edit = None
+        self.shape_reference_image_edit = None
+        self.shape_analysis_hint = None
+        self.sort_by_similarity_checkbox = None
         # 状态持久化
         self._state_file = Path("data/configs/exif_comparison_last_state.json")
         self._pending_select_fields: Optional[List[str]] = None
@@ -325,7 +330,64 @@ class ExifComparisonDialog(BaseAnalysisDialog):
         max_fields_layout.addStretch()
         analysis_layout.addLayout(max_fields_layout)
 
+        sort_layout = QHBoxLayout()
+        self.sort_by_similarity_checkbox = QCheckBox("按相似度从高到低排序匹配结果")
+        self.sort_by_similarity_checkbox.setChecked(True)
+        sort_layout.addWidget(self.sort_by_similarity_checkbox)
+        sort_layout.addStretch()
+        analysis_layout.addLayout(sort_layout)
+
         layout.addWidget(analysis_group)
+
+        # 统计点形状分析
+        shape_group = QGroupBox("统计点形状分析")
+        shape_layout = QVBoxLayout(shape_group)
+
+        header_layout = QHBoxLayout()
+        self.shape_analysis_checkbox = QCheckBox("启用统计点形状分析")
+        self.shape_analysis_checkbox.setChecked(False)
+        self.shape_analysis_checkbox.toggled.connect(self.update_shape_analysis_ui)
+        header_layout.addWidget(self.shape_analysis_checkbox)
+        header_layout.addStretch()
+        shape_layout.addLayout(header_layout)
+
+        # 测试机图片路径
+        shape_test_layout = QHBoxLayout()
+        shape_test_layout.addWidget(QLabel("测试机图片:"))
+        self.shape_test_image_edit = QLineEdit()
+        self.shape_test_image_edit.setPlaceholderText("选择用于形状分析的测试机图片（JPG/JSON）...")
+        shape_test_layout.addWidget(self.shape_test_image_edit)
+        self.shape_test_image_browse = QPushButton("浏览")
+        self.shape_test_image_browse.clicked.connect(self.browse_shape_test_image)
+        shape_test_layout.addWidget(self.shape_test_image_browse)
+        shape_layout.addLayout(shape_test_layout)
+
+        # 对比机图片路径
+        shape_ref_layout = QHBoxLayout()
+        shape_ref_layout.addWidget(QLabel("对比机图片:"))
+        self.shape_reference_image_edit = QLineEdit()
+        self.shape_reference_image_edit.setPlaceholderText("选择用于形状分析的对比机图片（JPG/JSON）...")
+        shape_ref_layout.addWidget(self.shape_reference_image_edit)
+        self.shape_reference_image_browse = QPushButton("浏览")
+        self.shape_reference_image_browse.clicked.connect(self.browse_shape_reference_image)
+        shape_ref_layout.addWidget(self.shape_reference_image_browse)
+        shape_layout.addLayout(shape_ref_layout)
+
+        # 默认提示
+        default_test_image = Path("tests/test_data/SZAWBAE1770_1X_25001_S_IMG20250101064624.jpg")
+        default_reference_image = Path("tests/test_data/SZAWBAE1770_1X_24087_S_IMG20250929164322.jpg")
+        if default_test_image.exists() and not self.shape_test_image_edit.text():
+            self.shape_test_image_edit.setText(str(default_test_image.resolve()))
+        if default_reference_image.exists() and not self.shape_reference_image_edit.text():
+            self.shape_reference_image_edit.setText(str(default_reference_image.resolve()))
+
+        self.shape_analysis_hint = QLabel("提示: 启用后将解析两张图片的AWB统计点，计算形状相似度并写入报告。")
+        self.shape_analysis_hint.setStyleSheet("color: gray;")
+        self.shape_analysis_hint.setWordWrap(True)
+        shape_layout.addWidget(self.shape_analysis_hint)
+
+        layout.addWidget(shape_group)
+        self.update_shape_analysis_ui(self.shape_analysis_checkbox.isChecked())
 
         layout.addStretch()
         return tab
@@ -359,6 +421,19 @@ class ExifComparisonDialog(BaseAnalysisDialog):
                 self.similarity_threshold_spin.setValue(float(threshold))
             except Exception:
                 pass
+        sort_flag = state.get('sort_by_similarity')
+        if self.sort_by_similarity_checkbox is not None and sort_flag is not None:
+            try:
+                self.sort_by_similarity_checkbox.setChecked(bool(sort_flag))
+            except Exception:
+                pass
+        shape_state = state.get('shape_analysis') or {}
+        if self.shape_analysis_checkbox:
+            self.shape_analysis_checkbox.setChecked(bool(shape_state.get('enabled')))
+        if self.shape_test_image_edit and shape_state.get('test_image_path'):
+            self.shape_test_image_edit.setText(shape_state.get('test_image_path'))
+        if self.shape_reference_image_edit and shape_state.get('reference_image_path'):
+            self.shape_reference_image_edit.setText(shape_state.get('reference_image_path'))
         # 字段延迟应用（需等表格构建完成）
         self._pending_select_fields = state.get('selected_fields') or []
         # 若路径存在，尝试自动加载字段信息
@@ -377,9 +452,52 @@ class ExifComparisonDialog(BaseAnalysisDialog):
         # 文件路径变化时更新状态
         self.test_file_edit.textChanged.connect(self.update_ui_state)
         self.reference_file_edit.textChanged.connect(self.update_ui_state)
+        if self.shape_test_image_edit:
+            self.shape_test_image_edit.textChanged.connect(self.update_ui_state)
+        if self.shape_reference_image_edit:
+            self.shape_reference_image_edit.textChanged.connect(self.update_ui_state)
+        if self.shape_analysis_checkbox:
+            self.shape_analysis_checkbox.toggled.connect(self.update_ui_state)
+        if self.sort_by_similarity_checkbox:
+            self.sort_by_similarity_checkbox.toggled.connect(self.update_ui_state)
 
         # 字段选择变化时更新状态
         # 这个信号会在populate_field_table中连接
+
+    def update_shape_analysis_ui(self, checked: bool):
+        """根据勾选状态启用/禁用形状分析控件"""
+        try:
+            for widget in (self.shape_test_image_edit, self.shape_test_image_browse,
+                           self.shape_reference_image_edit, self.shape_reference_image_browse):
+                if widget is not None:
+                    widget.setEnabled(bool(checked))
+            if self.shape_analysis_hint is not None:
+                text = "启用后将解析两张图片的AWB统计点，计算形状相似度并写入报告。" if checked else "如需对比统计点形状，请勾选此选项。"
+                self.shape_analysis_hint.setText(text)
+        except Exception as e:
+            logger.warning(f"==liuq debug== 更新形状分析UI状态失败: {e}")
+
+    def browse_shape_test_image(self):
+        """浏览形状分析测试机图片"""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "选择测试机图片或JSON",
+            "",
+            "图像/JSON (*.jpg *.jpeg *.json);;所有文件 (*)"
+        )
+        if file_path:
+            self.shape_test_image_edit.setText(file_path)
+
+    def browse_shape_reference_image(self):
+        """浏览形状分析对比机图片"""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "选择对比机图片或JSON",
+            "",
+            "图像/JSON (*.jpg *.jpeg *.json);;所有文件 (*)"
+        )
+        if file_path:
+            self.shape_reference_image_edit.setText(file_path)
 
     def browse_test_file(self):
         """浏览测试机文件"""
@@ -883,7 +1001,21 @@ class ExifComparisonDialog(BaseAnalysisDialog):
             'selected_fields': self.selected_fields.copy(),
             'output_path': self.output_file_edit.text().strip() or None,
             'match_column': self.match_column_combo.currentText(),
-            'similarity_threshold': self.similarity_threshold_spin.value()
+            'similarity_threshold': self.similarity_threshold_spin.value(),
+            'sort_by_similarity': (
+                self.sort_by_similarity_checkbox.isChecked()
+                if self.sort_by_similarity_checkbox
+                else True
+            ),
+            'shape_analysis': {
+                'enabled': self.shape_analysis_checkbox.isChecked() if self.shape_analysis_checkbox else False,
+                'test_image_path': (
+                    self.shape_test_image_edit.text().strip() if self.shape_test_image_edit else ''
+                ),
+                'reference_image_path': (
+                    self.shape_reference_image_edit.text().strip() if self.shape_reference_image_edit else ''
+                ),
+            }
         }
 
     def _build_match_result_for_export(self) -> Dict[str, Any]:
@@ -946,6 +1078,19 @@ class ExifComparisonDialog(BaseAnalysisDialog):
             # 获取配置
             config = self.get_configuration()
 
+            shape_cfg = config.get('shape_analysis') or {}
+            if shape_cfg.get('enabled'):
+                missing_paths = []
+                test_image = shape_cfg.get('test_image_path')
+                reference_image = shape_cfg.get('reference_image_path')
+                if not test_image or not Path(test_image).exists():
+                    missing_paths.append('测试机图片路径无效')
+                if not reference_image or not Path(reference_image).exists():
+                    missing_paths.append('对比机图片路径无效')
+                if missing_paths:
+                    QMessageBox.warning(self, "警告", "\n".join(missing_paths))
+                    return
+
             # 创建分析工作线程
             worker = ExifAnalysisWorker(config, self.generator)
             self.start_worker(worker, self.analyze_btn)
@@ -961,6 +1106,19 @@ class ExifComparisonDialog(BaseAnalysisDialog):
         try:
             # 获取配置
             config = self.get_configuration()
+
+            shape_cfg = config.get('shape_analysis') or {}
+            if shape_cfg.get('enabled'):
+                test_image = shape_cfg.get('test_image_path')
+                reference_image = shape_cfg.get('reference_image_path')
+                missing_paths = []
+                if not test_image or not Path(test_image).exists():
+                    missing_paths.append('测试机图片路径无效')
+                if not reference_image or not Path(reference_image).exists():
+                    missing_paths.append('对比机图片路径无效')
+                if missing_paths:
+                    QMessageBox.warning(self, "警告", "\n".join(missing_paths))
+                    return
 
             # 验证配置
             if not config.get('test_csv_path') or not config.get('reference_csv_path'):

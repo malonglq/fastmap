@@ -34,11 +34,20 @@ class ExifComparisonReportGenerator(IReportGenerator):
             test_csv_path = data['test_csv_path']
             reference_csv_path = data['reference_csv_path']
             selected_fields = data['selected_fields']
-            output_path = data.get('output_path')
+            output_path_cfg = data.get('output_path')
             match_column = data.get('match_column') or data.get('match_method') or 'image_name'
             similarity_threshold = self._sanitize_similarity_threshold(data.get('similarity_threshold', 0.8))
             include_charts = bool(data.get('include_charts', True))
             template_name = data.get('template_name') or 'reporting/domains/exif/new_report.html'
+            now = datetime.now()
+            if output_path_cfg:
+                output_path_obj = Path(output_path_cfg)
+            else:
+                output_path_obj = Path(f"output/exif_comparison_report_{now.strftime('%Y%m%d_%H%M%S')}.html")
+            output_path_obj.parent.mkdir(parents=True, exist_ok=True)
+            shape_analysis_cfg = data.get('shape_analysis') or {}
+            sort_by_similarity = bool(data.get('sort_by_similarity', True))
+            shape_analysis_result: Optional[Dict[str, Any]] = None
 
             test_df = self._read_csv_file(test_csv_path)
             reference_df = self._read_csv_file(reference_csv_path)
@@ -51,11 +60,45 @@ class ExifComparisonReportGenerator(IReportGenerator):
             )
             self._last_match_result = match_result
 
+            if shape_analysis_cfg.get('enabled'):
+                try:
+                    from core.services.reporting.domains.exif.helpers.shape_analysis import StatsShapeAnalyzer
+
+                    analyzer = StatsShapeAnalyzer()
+                    image_output_path = output_path_obj.with_name(f"{output_path_obj.stem}_shape_analysis.png")
+                    analysis = analyzer.analyze(
+                        test_image_path=shape_analysis_cfg.get('test_image_path'),
+                        reference_image_path=shape_analysis_cfg.get('reference_image_path'),
+                        output_image_path=image_output_path,
+                    )
+                    analysis['enabled'] = True
+                    analysis['image_path'] = str(image_output_path)
+                    analysis['image_filename'] = image_output_path.name
+                    shape_analysis_result = analysis
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning('==liuq debug== 统计点形状分析失败: %s', exc)
+                    shape_analysis_result = {
+                        'enabled': True,
+                        'error': str(exc),
+                        'test_image_path': shape_analysis_cfg.get('test_image_path'),
+                        'reference_image_path': shape_analysis_cfg.get('reference_image_path'),
+                    }
+            else:
+                shape_analysis_result = {
+                    'enabled': False,
+                    'test_image_path': shape_analysis_cfg.get('test_image_path'),
+                    'reference_image_path': shape_analysis_cfg.get('reference_image_path'),
+                }
+
             matched_pairs = match_result['pairs']
             trend_data = self._build_trend_data(selected_fields, matched_pairs)
             statistics_data = self._build_statistics(trend_data)
             kpi_metrics = self._build_kpi_metrics(trend_data)
-            comparison_rows = self._build_comparison_rows(matched_pairs, selected_fields)
+            comparison_rows = self._build_comparison_rows(
+                matched_pairs,
+                selected_fields,
+                sort_by_similarity=sort_by_similarity,
+            )
             trend_charts = self._build_trend_chart_models(trend_data)
             integrated_trend = self._build_integrated_trend(trend_data)
 
@@ -88,12 +131,12 @@ class ExifComparisonReportGenerator(IReportGenerator):
 
             report_config = ReportConfig(
                 title='EXIF Comparison Analysis Report',
-                output_path=output_path or f"output/exif_comparison_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                output_path=str(output_path_obj),
                 template_name=template_name,
                 metadata={
                     'test_file': Path(test_csv_path).name,
                     'reference_file': Path(reference_csv_path).name,
-                    'generation_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                    'generation_time': now.strftime('%Y-%m-%d %H:%M:%S'),
                     'match_column': match_column,
                     'match_method': match_column,
                     'selected_fields': selected_fields,
@@ -104,6 +147,11 @@ class ExifComparisonReportGenerator(IReportGenerator):
                     'reference_csv_path': reference_csv_path,
                     'matched_pairs': matched_pairs,
                     'comparison_rows': comparison_rows,
+                    'comparison_sorting': {
+                        'enabled': sort_by_similarity,
+                        'method': 'similarity',
+                        'order': 'desc',
+                    },
                     'statistics_data': statistics_data,
                     'statistics_rows': statistics_rows,
                     'trend_data': trend_data,
@@ -113,6 +161,7 @@ class ExifComparisonReportGenerator(IReportGenerator):
                     'kpi_metrics': kpi_metrics,
                     'trend_charts': trend_charts,
                     'integrated_trend': integrated_trend,
+                    'shape_analysis': shape_analysis_result,
                 },
             )
 
@@ -158,6 +207,15 @@ class ExifComparisonReportGenerator(IReportGenerator):
         if not isinstance(selected_fields, list) or not selected_fields:
             raise ValueError('selected_fields must be a non-empty list')
 
+        shape_cfg = data.get('shape_analysis') or {}
+        if shape_cfg.get('enabled'):
+            test_image = Path(str(shape_cfg.get('test_image_path', '')).strip())
+            reference_image = Path(str(shape_cfg.get('reference_image_path', '')).strip())
+            if not test_image.exists():
+                raise ValueError(f'Shape analysis test image does not exist: {test_image}')
+            if not reference_image.exists():
+                raise ValueError(f'Shape analysis reference image does not exist: {reference_image}')
+
     def preview_data_matching(
         self,
         test_csv_path: str,
@@ -179,7 +237,12 @@ class ExifComparisonReportGenerator(IReportGenerator):
         self._last_match_result = match_result
 
         sample_matches: List[Dict[str, Any]] = []
-        for pair in match_result['pairs'][:10]:
+        sorted_pairs = sorted(
+            match_result['pairs'],
+            key=lambda item: float(item.get('similarity', 0.0) or 0.0),
+            reverse=True,
+        )
+        for pair in sorted_pairs[:10]:
             sample_matches.append(
                 {
                     'test_name': pair.get('filename1') or pair.get('match_value', ''),
@@ -683,6 +746,8 @@ class ExifComparisonReportGenerator(IReportGenerator):
         self,
         matched_pairs: List[Dict[str, Any]],
         selected_fields: List[str],
+        *,
+        sort_by_similarity: bool = False,
     ) -> List[Dict[str, Any]]:
         rows: List[Dict[str, Any]] = []
         for pair in matched_pairs:
@@ -724,6 +789,18 @@ class ExifComparisonReportGenerator(IReportGenerator):
                 })
 
             rows.append(row)
+
+        if sort_by_similarity:
+            rows.sort(
+                key=lambda item: (
+                    -(item.get('similarity') or 0.0),
+                    str(item.get('filename1', '')),
+                    str(item.get('filename2', '')),
+                )
+            )
+
+        for index, row in enumerate(rows, start=1):
+            row.setdefault('rank', index)
 
         return rows
 

@@ -80,6 +80,18 @@ fastmapv2/
 - [开发状态文档](docs/development-status.md) - 开发进度和任务跟踪
 - [项目结构说明](docs/project-structure.md) - 详细的目录结构和文件组织说明
 
+## 🧪 AWB 调试速记
+- `stats数据计算.cpp` 在解析统计块时，会将 `R/G`、`B/G` 与 OTP 系数相乘并分别保存修正前后的坐标，便于对比调试。
+- `AwbCore.cpp` 的 `CalcWhiteBalanceGain` 仅记录 OTP 系数，最终的 `cnvgWBGain.RGain/BGain` 直接取决于映射后的 `RpG/BpG`（取倒数），函数内部未再次乘上 OTP 系数。
+- `adjust_wbg_rgain`、`adjust_wbg_bgain` 在 `CalcWhiteBalanceGain` 入口处仅用于输出日志，以确认当前帧的 OTP 单位间一致性参数：
+
+  ```cpp
+  CAM_ALGO_LOG_VERBOSE("correctCoefRpG %f, correctCoefBpG %f, enPureColor:%d",
+      m_priv.info.unitDiff.adjustWbg.adjust_wbg_rgain,
+      m_priv.info.unitDiff.adjustWbg.adjust_wbg_bgain,
+      enPureColor);
+  ```
+
 ## 🔧 开发指南
 
 ### 添加新XML字段

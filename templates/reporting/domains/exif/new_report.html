@@ -154,6 +154,21 @@
       box-shadow: 0 14px 28px rgba(103, 126, 234, 0.12);
     }
 
+    .similarity-rank {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .rank-badge {
+      background: rgba(102, 126, 234, 0.18);
+      color: #4c5bd4;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
     .highlight-high { color: #d32f2f; font-weight: 600; }
     .highlight-medium { color: #ef6c00; font-weight: 600; }
 
@@ -317,6 +332,39 @@
 
     {# 核心 KPI 总览暂时隐藏，保留占位便于未来启用 #}
 
+    {% if report.metadata.shape_analysis %}
+    <h2 class="section-title"><i class="fas fa-draw-polygon"></i> 统计点形状分析</h2>
+    <div class="table-card">
+      {% if report.metadata.shape_analysis.error %}
+        <p class="text-danger"><i class="fas fa-triangle-exclamation"></i> 形状分析失败：{{ report.metadata.shape_analysis.error }}</p>
+      {% elif report.metadata.shape_analysis.enabled %}
+        <div class="row g-4 align-items-center">
+          <div class="col-lg-5">
+            <h5 class="mb-3"><i class="fas fa-star"></i> 相似度评分
+              <span class="badge bg-primary">{{ report.metadata.shape_analysis.score }} / 100</span>
+            </h5>
+            <p class="mb-2">{{ report.metadata.shape_analysis.summary }}</p>
+            <ul class="mb-3">
+              <li>直方图相似度：{{ (report.metadata.shape_analysis.histogram_similarity * 100) | round(1) }}%</li>
+              <li>质心相似度：{{ (report.metadata.shape_analysis.centroid_similarity * 100) | round(1) }}%</li>
+              <li>覆盖重叠率：{{ (report.metadata.shape_analysis.coverage_overlap * 100) | round(1) }}%</li>
+              <li>统计点数量：测试 {{ report.metadata.shape_analysis.test_points }} 个，对比 {{ report.metadata.shape_analysis.reference_points }} 个</li>
+            </ul>
+            <small class="text-muted d-block">测试机：{{ report.metadata.shape_analysis.test_image_path }}</small>
+            <small class="text-muted d-block">对比机：{{ report.metadata.shape_analysis.reference_image_path }}</small>
+          </div>
+          <div class="col-lg-7">
+            {% if report.metadata.shape_analysis.image_filename %}
+            <img src="{{ report.metadata.shape_analysis.image_filename }}" alt="统计点形状分析对比图" class="img-fluid rounded border shadow-sm">
+            {% endif %}
+          </div>
+        </div>
+      {% else %}
+        <p class="muted">未启用统计点形状分析。</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
     {% if report.metadata.integrated_trend.datasets %}
     <h2 class="section-title"><i class="fas fa-wave-square"></i> RpG/BpG 综合趋势</h2>
     <div class="table-card">
@@ -366,6 +414,9 @@
 
     <h2 class="section-title"><i class="fas fa-table"></i> 字段对比明细</h2>
     <div class="table-card">
+      {% if report.metadata.comparison_sorting and report.metadata.comparison_sorting.enabled %}
+      <p class="muted mb-3"><i class="fas fa-sort-amount-down-alt"></i> 当前列表已按相似度从高到低排序展示。</p>
+      {% endif %}
       <input type="text" id="comparison-search" class="form-control search-input" placeholder="🔍 输入关键字过滤表格...">
       <div class="table-container">
         <table id="comparison-table" class="table table-hover align-middle mb-0">
@@ -394,7 +445,12 @@
             <tr>
               <td class="sticky-col sticky-col-1">{{ row.filename1 }}</td>
               <td class="sticky-col sticky-col-2">{{ row.filename2 }}</td>
-              <td>{{ row.similarity | round(3) }}</td>
+              <td>
+                <span class="similarity-rank">
+                  {% if row.rank %}<span class="rank-badge">#{{ row.rank }}</span>{% endif %}
+                  <span>{{ row.similarity | round(3) }}</span>
+                </span>
+              </td>
               {% for cell in row.cells %}
               <td>{{ cell.before }}</td>
               <td>{{ cell.after }}</td>
