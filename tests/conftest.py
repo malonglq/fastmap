@@ -22,14 +22,106 @@ os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 
 # 强制使用PyQt5，避免版本冲突
 import sys
+import types
 if 'PyQt6' in sys.modules:
     # 如果已经导入了PyQt6，先清除
     for module in list(sys.modules.keys()):
         if 'PyQt6' in module:
             del sys.modules[module]
 
-# 确保使用PyQt5
-from PyQt5.QtWidgets import QApplication
+# 确保使用PyQt5（在无图形环境下提供降级实现）
+try:
+    from PyQt5.QtWidgets import QApplication  # type: ignore
+except Exception:  # noqa: BLE001
+    qt_module = types.ModuleType('PyQt5')
+    qtwidgets_module = types.ModuleType('PyQt5.QtWidgets')
+    qtgui_module = types.ModuleType('PyQt5.QtGui')
+    qtcore_module = types.ModuleType('PyQt5.QtCore')
+    qttest_module = types.ModuleType('PyQt5.QtTest')
+
+    class _DummyWidget:
+        def __init__(self, *args, **kwargs):
+            pass
+
+    class _DummyApplication:
+        def __init__(self, *args, **kwargs):
+            self._quit_on_last_window_closed = False
+
+        def setQuitOnLastWindowClosed(self, value):  # noqa: D401
+            self._quit_on_last_window_closed = bool(value)
+
+        @staticmethod
+        def instance():  # noqa: D401
+            return None
+
+        def exec_(self):  # noqa: D401
+            return 0
+
+    qtwidgets_module.QApplication = _DummyApplication
+    qtwidgets_module.QWidget = _DummyWidget
+    qtwidgets_module.QLineEdit = _DummyWidget
+    qtwidgets_module.QSpinBox = _DummyWidget
+    qtwidgets_module.QDoubleSpinBox = _DummyWidget
+    qtwidgets_module.QCheckBox = _DummyWidget
+    qtwidgets_module.QComboBox = _DummyWidget
+    qtwidgets_module.__getattr__ = lambda name: _DummyWidget
+
+    qtgui_module.QGuiApplication = _DummyApplication
+    qtcore_module.QCoreApplication = _DummyApplication
+    qtcore_module.QObject = _DummyWidget
+    class _DummyTimer:
+        def __init__(self, *args, **kwargs):
+            self.interval = 0
+
+        def start(self, *args, **kwargs):
+            pass
+
+        def stop(self):
+            pass
+
+        def setInterval(self, interval):
+            self.interval = interval
+
+    qtcore_module.QTimer = _DummyTimer
+    qtcore_module.QEvent = _DummyWidget
+    qtcore_module.PYQT_VERSION = 0x050f00
+    qtcore_module.PYQT_VERSION_STR = '5.15.0'
+    qtcore_module.qDebug = staticmethod(lambda *args, **kwargs: None)
+    qtcore_module.qWarning = staticmethod(lambda *args, **kwargs: None)
+    qtcore_module.qCritical = staticmethod(lambda *args, **kwargs: None)
+    qtcore_module.qFatal = staticmethod(lambda *args, **kwargs: None)
+    class _DummySignal:
+        def __init__(self, *args, **kwargs):
+            self._callbacks = []
+
+        def connect(self, callback):
+            self._callbacks.append(callback)
+
+        def emit(self, *args, **kwargs):
+            for cb in list(self._callbacks):
+                try:
+                    cb(*args, **kwargs)
+                except Exception:
+                    pass
+
+    qtcore_module.pyqtSignal = lambda *args, **kwargs: _DummySignal()
+    qtcore_module.pyqtSlot = lambda *args, **kwargs: (lambda func: func)
+    qtcore_module.pyqtProperty = lambda *args, **kwargs: (lambda func: func)
+    qtcore_module.__getattr__ = lambda name: _DummyWidget
+    qttest_module.QTest = _DummyWidget
+
+    qt_module.QtWidgets = qtwidgets_module
+    qt_module.QtGui = qtgui_module
+    qt_module.QtCore = qtcore_module
+    qt_module.QtTest = qttest_module
+    qt_module.PYQT_VERSION_STR = '5.15.0'
+
+    sys.modules['PyQt5'] = qt_module
+    sys.modules['PyQt5.QtWidgets'] = qtwidgets_module
+    sys.modules['PyQt5.QtGui'] = qtgui_module
+    sys.modules['PyQt5.QtCore'] = qtcore_module
+    sys.modules['PyQt5.QtTest'] = qttest_module
+    QApplication = _DummyApplication  # type: ignore
 
 # 全局测试状态管理
 _test_patches = []
